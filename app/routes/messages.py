@@ -8,7 +8,7 @@ router = APIRouter(tags=["messages"])
 
 
 @router.post("/api/v1/messages")
-def send_message(body: SendMessageRequest):
+def send_message(body: SendMessageRequest) -> SendMessageResponse:
     guidance = GuidanceWrapper(
         model=body.preferredModel,
         handlebars=body.template.template,
