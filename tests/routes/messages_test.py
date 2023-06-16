@@ -8,7 +8,9 @@ def test_send_message(test_client, mocker):
     mocker.patch.object(
         GuidanceWrapper,
         "query",
-        return_value=Content(type=ContentType.TEXT, textContent="some content"),
+        return_value=Content(
+            type=ContentType.TEXT, textContent="some content"
+        ),
         autospec=True,
     )
 

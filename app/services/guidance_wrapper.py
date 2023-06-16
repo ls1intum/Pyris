@@ -5,7 +5,9 @@ from app.models.dtos import Content, ContentType, LLMModel
 
 
 class GuidanceWrapper:
-    def __init__(self, model: LLMModel, handlebars: str, parameters: dict = {}) -> None:
+    def __init__(
+        self, model: LLMModel, handlebars: str, parameters: dict = {}
+    ) -> None:
         self.model = model
         self.handlebars = handlebars
         self.parameters = parameters
