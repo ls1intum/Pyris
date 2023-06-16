@@ -1,4 +1,5 @@
 import guidance
+from types import MappingProxyType
 
 from app.config import settings
 from app.models.dtos import Content, ContentType, LLMModel
@@ -12,7 +13,7 @@ class GuidanceWrapper:
     ) -> None:
         self.model = model
         self.handlebars = handlebars
-        self.parameters = parameters
+        self.parameters = MappingProxyType(parameters)
 
     def query(self) -> Content:
         """Get response from a chosen LLM model.
