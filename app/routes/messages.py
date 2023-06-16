@@ -18,7 +18,7 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
 
     try:
         content = guidance.query()
-    except (KeyError, ValueError) as e:
+    except ValueError as e:
         raise BadDataException(str(e))
 
     return SendMessageResponse(
