@@ -5,6 +5,8 @@ from app.models.dtos import Content, ContentType, LLMModel
 
 
 class GuidanceWrapper:
+    """A wrapper service to all guidance package's methods."""
+
     def __init__(
         self, model: LLMModel, handlebars: str, parameters: dict = {}
     ) -> None:
@@ -13,6 +15,12 @@ class GuidanceWrapper:
         self.parameters = parameters
 
     def query(self) -> Content:
+        """Get response from a chosen LLM model.
+
+        Returns:
+            Text content object with LLM's response.
+        """
+
         template = guidance(self.handlebars)
         result = template(
             llm=self._get_llm(),
