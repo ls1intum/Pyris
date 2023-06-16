@@ -5,6 +5,7 @@
 - Install **[Poetry](https://python-poetry.org/)**
 - Install packages: `poetry install`
 - Activate the virtual environment: `poetry shell`
+- Copy `.env.example` to `.env` and change necessary values
 
 ## Run server
 - Run server: `uvicorn app.main:app --reload`
