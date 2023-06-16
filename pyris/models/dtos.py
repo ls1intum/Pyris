@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class LLMModel(str, Enum):
@@ -28,7 +28,7 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     class Message(BaseModel):
-        sentAt: datetime = datetime.now()
+        sentAt: datetime = datetime.now(timezone.utc)
         content: Content
 
     usedModel: LLMModel
