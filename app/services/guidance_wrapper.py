@@ -19,13 +19,23 @@ class GuidanceWrapper:
 
         Returns:
             Text content object with LLM's response.
+
+        Raises:
+            ValueError: if parameters missing required keys.
+            ValueError: if handlebars do not generate 'response'
         """
 
         template = guidance(self.handlebars)
-        result = template(
-            llm=self._get_llm(),
-            **self.parameters,
-        )
+        try:
+            result = template(
+                llm=self._get_llm(),
+                **self.parameters,
+            )
+        except KeyError:
+            raise ValueError("The parameters miss required keys")
+
+        if "response" not in result:
+            raise ValueError("The handlebars do not generate 'response'")
 
         return Content(type=ContentType.TEXT, textContent=result["response"])
 
