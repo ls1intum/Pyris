@@ -1,7 +1,7 @@
 import guidance
-from pyris.config import settings
 
-from pyris.models.dtos import Content, ContentType, LLMModel
+from app.config import settings
+from app.models.dtos import Content, ContentType, LLMModel
 
 
 class GuidanceWrapper:

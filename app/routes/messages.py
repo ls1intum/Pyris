@@ -1,13 +1,13 @@
+from fastapi import APIRouter
 from datetime import datetime, timezone
-from app import app
-from pyris.models.dtos import SendMessageRequest, SendMessageResponse
-from flask_pydantic import validate
 
-from pyris.services.guidance_wrapper import GuidanceWrapper
+from app.models.dtos import SendMessageRequest, SendMessageResponse
+from app.services.guidance_wrapper import GuidanceWrapper
+
+router = APIRouter(tags=["messages"])
 
 
-@app.route("/send-message", methods=["POST"])
-@validate()
+@router.post("/api/v1/messages")
 def send_message(body: SendMessageRequest):
     guidance = GuidanceWrapper(
         model=body.preferredModel,
