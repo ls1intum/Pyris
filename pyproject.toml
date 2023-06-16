@@ -21,6 +21,8 @@ pytest = "^7.3.2"
 pytest-mock = "^3.11.1"
 freezegun = "^1.2.2"
 guidance = "^0.0.63"
+black = "^23.3.0"
+flake8 = "^6.0.0"
 
 
 [build-system]
