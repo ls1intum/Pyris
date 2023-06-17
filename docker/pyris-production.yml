@@ -9,6 +9,7 @@ services:
         extends:
             file: ./pyris.yml
             service: pyris-app
+        image: ghcr.io/ls1intum/pyris:${PYRIS_DOCKER_TAG:-latest}
         depends_on:
             nginx:
                 condition: service_started
