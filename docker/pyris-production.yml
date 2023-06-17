@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Setup for a test server with MySQL
+# Setup for a Pyris production server.
 # ----------------------------------------------------------------------------------------------------------------------
-# It is designed to take in a lot of environment variables to take in all the configuration of the test server.
+# It is designed to take in a lot of environment variables to take in all the configuration of the deployment.
 # ----------------------------------------------------------------------------------------------------------------------
 
 services:
