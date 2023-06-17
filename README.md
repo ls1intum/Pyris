@@ -17,8 +17,8 @@
 
 ## With docker
 - (optional) Install **[Task](https://taskfile.dev)**
-- Build docker: `docker-compose build` or `task build`
-- Run server: `docker-compose up -d` or `task up`
-- Stop server: `docker-compose down` or `task down`
+- Build docker: `docker compose build` or `task build`
+- Run server: `docker compose up -d` or `task up`
+- Stop server: `docker compose down` or `task down`
 
 Checkout `Taskfile.yml` for more idiomatic commands
