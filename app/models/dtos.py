@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class LLMModel(str, Enum):
-    GPT35_TURBO = "gpt-3.5-turbo"
+    GPT35_TURBO = "GPT35_TURBO"
 
 
 class ContentType(str, Enum):
