@@ -16,8 +16,8 @@ def test_send_message(test_client, mocker):
 
     body = {
         "template": {
-            "templateId": 123,
-            "template": "{{#user~}}I want a response to the following query:\
+            "id": 123,
+            "content": "{{#user~}}I want a response to the following query:\
             {{query}}{{~/user}}{{#assistant~}}\
             {{gen 'response' temperature=0.0 max_tokens=500}}{{~/assistant}}",
         },
@@ -69,8 +69,8 @@ def test_send_message_raise_value_error(test_client, mocker):
     )
     body = {
         "template": {
-            "templateId": 123,
-            "template": "some template",
+            "id": 123,
+            "content": "some template",
         },
         "preferredModel": "gpt-3.5-turbo",
         "parameters": {"query": "Some query"},
