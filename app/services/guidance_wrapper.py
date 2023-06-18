@@ -1,5 +1,4 @@
 import guidance
-from types import MappingProxyType
 
 from app.config import settings
 from app.models.dtos import Content, ContentType, LLMModel
@@ -12,11 +11,14 @@ class GuidanceWrapper:
     MODELS_MAPPING = {LLMModel.GPT35_TURBO: "gpt-3.5-turbo"}
 
     def __init__(
-        self, model: LLMModel, handlebars: str, parameters: dict = {}
+        self, model: LLMModel, handlebars: str, parameters=None
     ) -> None:
+        if parameters is None:
+            parameters = {}
+
         self.model = model
         self.handlebars = handlebars
-        self.parameters = MappingProxyType(parameters)
+        self.parameters = parameters
 
     def query(self) -> Content:
         """Get response from a chosen LLM model.
