@@ -16,12 +16,12 @@ def test_send_message(test_client, mocker):
 
     body = {
         "template": {
-            "templateId": 123,
-            "template": "{{#user~}}I want a response to the following query:\
+            "id": 123,
+            "content": "{{#user~}}I want a response to the following query:\
             {{query}}{{~/user}}{{#assistant~}}\
             {{gen 'response' temperature=0.0 max_tokens=500}}{{~/assistant}}",
         },
-        "preferredModel": "gpt-3.5-turbo",
+        "preferredModel": "GPT35_TURBO",
         "parameters": {
             "course": "Intro to Java",
             "exercise": "Fun With Sets",
@@ -31,7 +31,7 @@ def test_send_message(test_client, mocker):
     response = test_client.post("/api/v1/messages", json=body)
     assert response.status_code == 200
     assert response.json() == {
-        "usedModel": "gpt-3.5-turbo",
+        "usedModel": "GPT35_TURBO",
         "message": {
             "sentAt": "2023-06-16T01:21:34+00:00",
             "content": {"textContent": "some content", "type": "text"},
@@ -69,10 +69,10 @@ def test_send_message_raise_value_error(test_client, mocker):
     )
     body = {
         "template": {
-            "templateId": 123,
-            "template": "some template",
+            "id": 123,
+            "content": "some template",
         },
-        "preferredModel": "gpt-3.5-turbo",
+        "preferredModel": "GPT35_TURBO",
         "parameters": {"query": "Some query"},
     }
     response = test_client.post("/api/v1/messages", json=body)

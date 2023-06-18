@@ -26,7 +26,7 @@ def test_query_success(mocker):
 
     assert isinstance(result, Content)
     assert result.type == ContentType.TEXT
-    assert result.textContent == "the output"
+    assert result.text_content == "the output"
 
 
 def test_query_missing_required_params(mocker):
@@ -51,7 +51,7 @@ def test_query_missing_required_params(mocker):
 
         assert isinstance(result, Content)
         assert result.type == ContentType.TEXT
-        assert result.textContent == "the output"
+        assert result.text_content == "the output"
 
 
 def test_query_handlebars_not_generate_response(mocker):
@@ -75,4 +75,4 @@ def test_query_handlebars_not_generate_response(mocker):
 
         assert isinstance(result, Content)
         assert result.type == ContentType.TEXT
-        assert result.textContent == "the output"
+        assert result.text_content == "the output"
