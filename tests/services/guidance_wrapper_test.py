@@ -46,7 +46,7 @@ def test_query_missing_required_params(mocker):
         parameters={"somethingelse": "Something"},
     )
 
-    with pytest.raises(ValueError, match="The parameters miss required keys"):
+    with pytest.raises(KeyError, match="Command/variable 'query' not found!"):
         result = guidance_wrapper.query()
 
         assert isinstance(result, Content)
