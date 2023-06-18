@@ -5,7 +5,7 @@ line-length = 79
 name = "pyris"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Timor Morrien <timor.morrien@tum.de>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
