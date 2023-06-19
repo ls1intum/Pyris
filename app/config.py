@@ -1,16 +1,12 @@
-from pydantic import BaseSettings
+from pydantic import BaseModel
+from pyaml_env import parse_config
 
 
-class Settings(BaseSettings):
-    openai_token: str
-    openai_api_base: str
-    openai_api_type: str
-    openai_api_version: str
-    openai_deployment_id: str
+class Settings(BaseModel):
+    class PyrisSettings(BaseModel):
+        llm: dict
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    pyris: PyrisSettings
 
 
-settings = Settings()
+settings = Settings.parse_obj(parse_config("application.yml"))

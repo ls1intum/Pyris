@@ -42,11 +42,5 @@ class GuidanceWrapper:
         return Content(type=ContentType.TEXT, textContent=result["response"])
 
     def _get_llm(self):
-        return guidance.llms.OpenAI(
-            model=self.MODELS_MAPPING[self.model.value],
-            token=settings.openai_token,
-            api_base=settings.openai_api_base,
-            api_type=settings.openai_api_type,
-            api_version=settings.openai_api_version,
-            deployment_id=settings.openai_deployment_id,
-        )
+        llm_credentials = settings.pyris.llm[self.model.value]
+        return guidance.llms.OpenAI(**llm_credentials)

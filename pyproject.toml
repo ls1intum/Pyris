@@ -23,6 +23,7 @@ freezegun = "^1.2.2"
 guidance = "0.0.61"
 black = "^23.3.0"
 flake8 = "^6.0.0"
+pyaml-env = "^1.2.1"
 
 
 [build-system]
