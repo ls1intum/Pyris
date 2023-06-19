@@ -15,8 +15,8 @@ services:
                 condition: service_started
         pull_policy: always
         restart: always
-        env_file:
-            - ${PYRIS_ENV_FILE:-../.env}
+        volumes:
+            - ${PYRIS_APPLICATION_YML_FILE:-../application.example.yml}:/app/application.yml:ro
         networks:
             - pyris
 
