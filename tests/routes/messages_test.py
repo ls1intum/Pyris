@@ -86,3 +86,28 @@ def test_send_message_raise_value_error(test_client, mocker):
             }
         ]
     }
+
+
+def test_send_message_raise_key_error(test_client, mocker):
+    mocker.patch.object(
+        GuidanceWrapper, "query", side_effect=KeyError("key error message")
+    )
+    body = {
+        "template": {
+            "id": 123,
+            "content": "some template",
+        },
+        "preferredModel": "GPT35_TURBO",
+        "parameters": {"query": "Some query"},
+    }
+    response = test_client.post("/api/v1/messages", json=body)
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "loc": [],
+                "msg": "'key error message'",
+                "type": "value_error.bad_data",
+            }
+        ]
+    }
