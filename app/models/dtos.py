@@ -1,10 +1,10 @@
 from enum import Enum
-from pydantic import BaseModel
-from datetime import datetime, timezone
+from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class LLMModel(str, Enum):
-    GPT35_TURBO = "gpt-3.5-turbo"
+    GPT35_TURBO = "GPT35_TURBO"
 
 
 class ContentType(str, Enum):
@@ -12,24 +12,26 @@ class ContentType(str, Enum):
 
 
 class Content(BaseModel):
-    textContent: str
+    text_content: str = Field(..., alias="textContent")
     type: ContentType
 
 
 class SendMessageRequest(BaseModel):
     class Template(BaseModel):
-        templateId: int
-        template: str
+        id: int
+        content: str
 
     template: Template
-    preferredModel: LLMModel
+    preferred_model: LLMModel = Field(..., alias="preferredModel")
     parameters: dict
 
 
 class SendMessageResponse(BaseModel):
     class Message(BaseModel):
-        sentAt: datetime = datetime.now(timezone.utc)
+        sent_at: datetime = Field(
+            alias="sentAt", default_factory=datetime.utcnow
+        )
         content: Content
 
-    usedModel: LLMModel
+    used_model: LLMModel = Field(..., alias="usedModel")
     message: Message
