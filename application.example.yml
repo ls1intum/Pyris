@@ -1,4 +1,5 @@
 pyris:
+  api_key: secret
   llm:
     GPT35_TURBO:
       model:

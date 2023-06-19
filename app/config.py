@@ -4,6 +4,7 @@ from pyaml_env import parse_config
 
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
+        api_key: str
         llm: dict
 
     pyris: PyrisSettings
