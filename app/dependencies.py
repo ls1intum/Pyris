@@ -18,6 +18,6 @@ def _get_api_key(request: StarletteRequest) -> str:
 
 
 class PermissionsValidator:
-    async def __call__(self, api_key: str = Depends(_get_api_key)):
+    def __call__(self, api_key: str = Depends(_get_api_key)):
         if api_key != settings.pyris.api_key:
             raise PermissionDeniedException
