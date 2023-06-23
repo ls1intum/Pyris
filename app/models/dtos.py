@@ -9,6 +9,12 @@ class LLMModel(str, Enum):
     GPT35_TURBO_0613 = "GPT35_TURBO_0613"
 
 
+class LLMStatus(str, Enum):
+    UP = "UP"
+    DOWN = "DOWN"
+    NOT_AVAILABLE = "NOT_AVAILABLE"
+
+
 class ContentType(str, Enum):
     TEXT = "text"
 
@@ -37,3 +43,8 @@ class SendMessageResponse(BaseModel):
 
     used_model: LLMModel = Field(..., alias="usedModel")
     message: Message
+
+
+class ModelStatus(BaseModel):
+    model: LLMModel
+    status: LLMStatus
