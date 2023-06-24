@@ -21,7 +21,11 @@ class CircuitBreaker:
             raise ValueError("Too many failures! Please try again later.")
 
         try:
-            return func()
+            response = func()
+            cache_store.set(
+                status_key, cls.Status.CLOSED, ex=cls.STATUS_CACHE_CLOSED_TTL
+            )
+            return response
         except accepted_exceptions as e:
             raise e
         except Exception as e:
