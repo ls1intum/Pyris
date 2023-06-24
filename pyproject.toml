@@ -24,6 +24,7 @@ black = "^23.3.0"
 flake8 = "^6.0.0"
 pyaml-env = "^1.2.1"
 gunicorn = "^20.1.0"
+redis = {extras = ["hiredis"], version = "^4.5.5"}
 
 
 [build-system]

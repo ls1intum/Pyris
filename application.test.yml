@@ -1,5 +1,8 @@
 pyris:
   api_key: secret
+  redis:
+    host: localhost
+    port: 9736
   llm:
     GPT35_TURBO:
       model:

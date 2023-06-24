@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from app.core.custom_exceptions import BadDataException
 from app.dependencies import PermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse
+from app.services.circuit_breaker import CircuitBreaker
 from app.services.guidance_wrapper import GuidanceWrapper
 
 router = APIRouter(tags=["messages"])
@@ -20,7 +21,10 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     )
 
     try:
-        content = guidance.query()
+        content = CircuitBreaker.protected_call(
+            guidance.query,
+            key=body.preferred_model,
+        )
     except (KeyError, ValueError) as e:
         raise BadDataException(str(e))
 
