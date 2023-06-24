@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.development
+    environment:
+      - DOCKER=1
     depends_on:
       - cache
     ports:

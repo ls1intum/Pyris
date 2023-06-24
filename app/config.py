@@ -18,10 +18,11 @@ class Settings(BaseModel):
 
     @classmethod
     def get_settings(cls):
+        postfix = "-docker" if "DOCKER" in os.environ else ""
         if "RUN_ENV" in os.environ and os.environ["RUN_ENV"] == "test":
-            file_path = "application.test.yml"
+            file_path = f"application{postfix}.test.yml"
         else:
-            file_path = "application.yml"
+            file_path = f"application{postfix}.yml"
 
         return Settings.parse_obj(parse_config(file_path))
 
