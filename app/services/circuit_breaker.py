@@ -12,9 +12,9 @@ class CircuitBreaker:
         CLOSED = "CLOSED"
 
     @classmethod
-    def protected_call(cls, func, key):
-        num_failures_key = f"{key}:num_failures"
-        status_key = f"{key}:status"
+    def protected_call(cls, func, cache_key: str, accepted_exceptions: tuple):
+        num_failures_key = f"{cache_key}:num_failures"
+        status_key = f"{cache_key}:status"
 
         status = cache_store.get(status_key)
         if status == cls.Status.OPEN:
@@ -22,7 +22,7 @@ class CircuitBreaker:
 
         try:
             return func()
-        except (KeyError, ValueError) as e:
+        except accepted_exceptions as e:
             raise e
         except Exception as e:
             num_failures = cache_store.incr(num_failures_key)
@@ -35,8 +35,8 @@ class CircuitBreaker:
             raise e
 
     @classmethod
-    def get_status(cls, func, key):
-        status_key = f"{key}:status"
+    def get_status(cls, func, cache_key: str):
+        status_key = f"{cache_key}:status"
         status = cache_store.get(status_key)
 
         if status:

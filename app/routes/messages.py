@@ -22,8 +22,9 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
 
     try:
         content = CircuitBreaker.protected_call(
-            guidance.query,
-            key=body.preferred_model,
+            func=guidance.query,
+            cache_key=body.preferred_model,
+            accepted_exceptions=(KeyError, ValueError),
         )
     except (KeyError, ValueError) as e:
         raise BadDataException(str(e))

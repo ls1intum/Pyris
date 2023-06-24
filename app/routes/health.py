@@ -16,8 +16,8 @@ def checkhealth():
     for model in LLMModel:
         guidance.llms.OpenAI.cache.clear()
         circuit_status = CircuitBreaker.get_status(
-            GuidanceWrapper(model=model).is_up,
-            key=model,
+            func=GuidanceWrapper(model=model).is_up,
+            cache_key=model,
         )
         status = (
             LLMStatus.UP
