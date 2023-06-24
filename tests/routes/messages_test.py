@@ -1,3 +1,4 @@
+import pytest
 from freezegun import freeze_time
 from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
@@ -124,3 +125,45 @@ def test_send_message_without_authorization_header(test_client):
     response = test_client.post("/api/v1/messages", json={})
     assert response.status_code == 401
     assert response.json()["detail"] == "Requires authentication"
+
+
+def test_send_message_fail_three_times(
+    test_client, mocker, headers, test_cache_store
+):
+    mocker.patch.object(GuidanceWrapper, "query", side_effect=Exception)
+    body = {
+        "template": {
+            "id": 123,
+            "content": "some template",
+        },
+        "preferredModel": "GPT35_TURBO",
+        "parameters": {"query": "Some query"},
+    }
+
+    for _ in range(3):
+        try:
+            test_client.post("/api/v1/messages", headers=headers, json=body)
+        except Exception:
+            ...
+
+    # Restrict access
+    response = test_client.post("/api/v1/messages", headers=headers, json=body)
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "loc": [],
+                "msg": "Too many failures! Please try again later.",
+                "type": "value_error.bad_data",
+            }
+        ]
+    }
+
+    # Can access after TTL
+    test_cache_store.delete("LLMModel.GPT35_TURBO:status")
+    test_cache_store.delete("LLMModel.GPT35_TURBO:num_failures")
+    with pytest.raises(Exception):
+        response = test_client.post(
+            "/api/v1/messages", headers=headers, json=body
+        )
+        assert response.status_code == 500

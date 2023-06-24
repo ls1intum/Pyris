@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.development
+    depends_on:
+      - cache
     ports:
       - "8000:8000"
     volumes:
