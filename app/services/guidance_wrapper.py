@@ -7,6 +7,9 @@ from app.models.dtos import Content, ContentType, LLMModel
 class GuidanceWrapper:
     """A wrapper service to all guidance package's methods."""
 
+    def __new__(cls, *_, **__):
+        return super(GuidanceWrapper, cls).__new__(cls)
+
     def __init__(
         self, model: LLMModel, handlebars="", parameters=None
     ) -> None:
