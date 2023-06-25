@@ -3,6 +3,7 @@ version: "3.9"
 
 services:
   server:
+    container_name: pyris-server
     build:
       context: .
       dockerfile: Dockerfile.development
@@ -16,8 +17,11 @@ services:
       - .:/app
     networks:
       - pyris
+    stdin_open: true
+    tty: true
 
   cache:
+    container_name: pyris-cache
     image: redis
     networks:
       - pyris
