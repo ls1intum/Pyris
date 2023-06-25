@@ -48,6 +48,7 @@ class GuidanceWrapper:
             True if the model is up, False otherwise.
         """
 
+        guidance.llms.OpenAI.cache.clear()
         handlebars = """
         {{#user~}}Say 1{{~/user}}
         {{#assistant~}}

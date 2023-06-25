@@ -1,4 +1,3 @@
-import guidance
 from fastapi import APIRouter, Depends
 
 from app.dependencies import PermissionsValidator
@@ -14,7 +13,6 @@ def checkhealth():
     result = []
 
     for model in LLMModel:
-        guidance.llms.OpenAI.cache.clear()
         circuit_status = CircuitBreaker.get_status(
             func=GuidanceWrapper(model=model).is_up,
             cache_key=model,
