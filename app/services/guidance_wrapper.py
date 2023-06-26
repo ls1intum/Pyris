@@ -27,6 +27,9 @@ class GuidanceWrapper:
             ValueError: if handlebars do not generate 'response'
         """
 
+        self.parameters["studentRepository"]["BinSea_java"] = \
+            self.parameters["studentRepository"]["src/gad/binarysearch/BinSea.java"]
+
         template = guidance(self.handlebars)
         result = template(
             llm=self._get_llm(),
