@@ -40,6 +40,7 @@ class GuidanceWrapper:
         if "response" not in result:
             raise ValueError("The handlebars do not generate 'response'")
 
+        print(result)
         return Content(type=ContentType.TEXT, textContent=result["response"])
 
     def _get_llm(self):
