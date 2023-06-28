@@ -27,6 +27,8 @@ class GuidanceWrapper:
             ValueError: if handlebars do not generate 'response'
         """
 
+        print(self.parameters)
+
         # Check if studentRepository is in parameters
         if "studentRepository" in self.parameters and "src/gad/binarysearch/BinSea.java" in self.parameters["studentRepository"]:
             self.parameters["studentRepository"]["BinSea_java"] = self.parameters["studentRepository"]["src/gad/binarysearch/BinSea.java"]
