@@ -3,8 +3,12 @@ from datetime import datetime, timezone
 
 from parsimonious.exceptions import IncompleteParseError
 
-from app.core.custom_exceptions import MissingParameterException, InvalidTemplateException, InternalServerException, \
-    InvalidModelException
+from app.core.custom_exceptions import (
+    MissingParameterException,
+    InvalidTemplateException,
+    InternalServerException,
+    InvalidModelException,
+)
 from app.dependencies import PermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse, LLMModel
 from app.services.guidance_wrapper import GuidanceWrapper

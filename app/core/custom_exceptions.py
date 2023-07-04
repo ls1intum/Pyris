@@ -19,7 +19,7 @@ class PermissionDeniedException(HTTPException):
             detail={
                 "type": "not_authorized",
                 "errorMessage": "Permission denied",
-            }
+            },
         )
 
 
