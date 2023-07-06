@@ -22,7 +22,7 @@ class CircuitBreaker:
         Params:
             func: function to be called
             cache_key: key to be used in the cache store
-            accepted_exceptions: exceptions that are not considereds failures
+            accepted_exceptions: exceptions that are not considered failures
 
         Raises:
             ValueError: if within the last STATUS_CACHE_OPEN_TTL seconds,
@@ -55,13 +55,13 @@ class CircuitBreaker:
             raise e
 
     @classmethod
-    def get_status(cls, func, cache_key: str):
+    def get_status(cls, checkhealth_func, cache_key: str):
         """Get the status of the cache_key.
         If the key is not in the cache, performs the function call.
         Otherwise, returns the cached value.
 
         Params:
-            func: function to be called. This function only returns a boolean.
+            checkhealth_func: function to be called. Only returns a boolean.
             cache_key: key to be used in the cache store
 
         Returns: Status of the cache_key.
@@ -75,7 +75,7 @@ class CircuitBreaker:
 
         is_up = False
         try:
-            is_up = func()
+            is_up = checkhealth_func()
         except Exception:
             ...
 

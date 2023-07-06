@@ -14,7 +14,7 @@ def checkhealth():
 
     for model in LLMModel:
         circuit_status = CircuitBreaker.get_status(
-            func=GuidanceWrapper(model=model).is_up,
+            checkhealth_func=GuidanceWrapper(model=model).is_up,
             cache_key=model,
         )
         status = (
