@@ -3,15 +3,9 @@ from pydantic import BaseModel
 from pyaml_env import parse_config
 
 
-class RedisSettings(BaseModel):
-    host: str
-    port: int
-
-
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
         api_key: str
-        redis: RedisSettings
         llm: dict
 
     pyris: PyrisSettings

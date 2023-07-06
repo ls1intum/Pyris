@@ -9,8 +9,6 @@ services:
       dockerfile: Dockerfile.development
     environment:
       - DOCKER=1
-    depends_on:
-      - cache
     ports:
       - "8000:8000"
     volumes:
@@ -19,14 +17,6 @@ services:
       - pyris
     stdin_open: true
     tty: true
-
-  cache:
-    container_name: pyris-cache
-    image: redis
-    networks:
-      - pyris
-    ports:
-      - '6379:6379'
 
 networks:
   pyris:
