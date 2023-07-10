@@ -6,8 +6,8 @@ class CircuitBreaker:
     """Circuit breaker pattern."""
 
     MAX_FAILURES = 3
-    STATUS_CACHE_CLOSED_TTL = 300
-    STATUS_CACHE_OPEN_TTL = 30
+    CLOSED_TTL_SECONDS = 300
+    OPEN_TTL_SECONDS = 30
 
     class Status(str, Enum):
         OPEN = "OPEN"
@@ -25,7 +25,7 @@ class CircuitBreaker:
             accepted_exceptions: exceptions that are not considered failures
 
         Raises:
-            ValueError: if within the last STATUS_CACHE_OPEN_TTL seconds,
+            ValueError: if within the last OPEN_TTL_SECONDS seconds,
             the function throws an exception for the MAX_FAILURES-th time.
         """
 
@@ -39,17 +39,17 @@ class CircuitBreaker:
         try:
             response = func()
             cache_store.set(
-                status_key, cls.Status.CLOSED, ex=cls.STATUS_CACHE_CLOSED_TTL
+                status_key, cls.Status.CLOSED, ex=cls.CLOSED_TTL_SECONDS
             )
             return response
         except accepted_exceptions as e:
             raise e
         except Exception as e:
             num_failures = cache_store.incr(num_failures_key)
-            cache_store.expire(num_failures_key, cls.STATUS_CACHE_OPEN_TTL)
+            cache_store.expire(num_failures_key, cls.OPEN_TTL_SECONDS)
             if num_failures >= cls.MAX_FAILURES:
                 cache_store.set(
-                    status_key, cls.Status.OPEN, ex=cls.STATUS_CACHE_OPEN_TTL
+                    status_key, cls.Status.OPEN, ex=cls.OPEN_TTL_SECONDS
                 )
 
             raise e
@@ -81,11 +81,9 @@ class CircuitBreaker:
 
         if is_up:
             cache_store.set(
-                status_key, cls.Status.CLOSED, ex=cls.STATUS_CACHE_CLOSED_TTL
+                status_key, cls.Status.CLOSED, ex=cls.CLOSED_TTL_SECONDS
             )
             return cls.Status.CLOSED
 
-        cache_store.set(
-            status_key, cls.Status.OPEN, ex=cls.STATUS_CACHE_OPEN_TTL
-        )
+        cache_store.set(status_key, cls.Status.OPEN, ex=cls.OPEN_TTL_SECONDS)
         return cls.Status.OPEN
