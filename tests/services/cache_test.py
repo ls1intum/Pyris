@@ -7,21 +7,21 @@ class TestInMemoryCacheStore:
     def test_set_and_get(self, test_cache_store):
         test_cache_store.set("test_key", "test_value")
         assert test_cache_store.get("test_key") == "test_value"
-        assert test_cache_store._cache["test_key"].ttl is None
+        assert test_cache_store._cache["test_key"].expired_at is None
 
     @freeze_time("2023-06-16 03:21:34 +02:00")
     def test_set_and_get_an_existing_key(self, test_cache_store):
         test_cache_store.set("test_key", "test_value", ex=30)
         assert test_cache_store.get("test_key") == "test_value"
-        assert test_cache_store._cache["test_key"].ttl == datetime(
+        assert test_cache_store._cache["test_key"].expired_at == datetime(
             year=2023, month=6, day=16, hour=1, minute=22, second=4
         )
 
         test_cache_store.set("test_key", "test_value2")
         assert test_cache_store.get("test_key") == "test_value2"
-        assert test_cache_store._cache["test_key"].ttl is None
+        assert test_cache_store._cache["test_key"].expired_at is None
 
-    def test_set_and_get_before_ttl(self, test_cache_store):
+    def test_set_and_get_before_expired_time(self, test_cache_store):
         initial_datetime = datetime(
             year=1, month=1, day=1, hour=15, minute=2, second=3
         )
@@ -32,18 +32,18 @@ class TestInMemoryCacheStore:
         with freeze_time(initial_datetime) as frozen_datetime:
             test_cache_store.set("test_key", "test_value", ex=40)
             assert test_cache_store.get("test_key") == "test_value"
-            assert test_cache_store._cache["test_key"].ttl == datetime(
+            assert test_cache_store._cache["test_key"].expired_at == datetime(
                 year=1, month=1, day=1, hour=15, minute=2, second=43
             )
 
             frozen_datetime.move_to(other_datetime)
 
             assert test_cache_store.get("test_key") == "test_value"
-            assert test_cache_store._cache["test_key"].ttl == datetime(
+            assert test_cache_store._cache["test_key"].expired_at == datetime(
                 year=1, month=1, day=1, hour=15, minute=2, second=43
             )
 
-    def test_set_and_get_after_ttl(self, test_cache_store):
+    def test_set_and_get_after_expired_time(self, test_cache_store):
         initial_datetime = datetime(
             year=1, month=1, day=1, hour=15, minute=2, second=3
         )
@@ -54,7 +54,7 @@ class TestInMemoryCacheStore:
         with freeze_time(initial_datetime) as frozen_datetime:
             test_cache_store.set("test_key", "test_value", ex=30)
             assert test_cache_store.get("test_key") == "test_value"
-            assert test_cache_store._cache["test_key"].ttl == datetime(
+            assert test_cache_store._cache["test_key"].expired_at == datetime(
                 year=1, month=1, day=1, hour=15, minute=2, second=33
             )
 
@@ -67,7 +67,7 @@ class TestInMemoryCacheStore:
     def test_expire_a_existing_key(self, test_cache_store):
         test_cache_store.set("test_key", "test_value")
         test_cache_store.expire("test_key", 30)
-        assert test_cache_store._cache["test_key"].ttl == datetime(
+        assert test_cache_store._cache["test_key"].expired_at == datetime(
             year=2023, month=6, day=16, hour=1, minute=22, second=4
         )
 

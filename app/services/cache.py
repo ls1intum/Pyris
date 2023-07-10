@@ -64,7 +64,7 @@ class CacheStoreInterface(ABC):
 class InMemoryCacheStore(CacheStoreInterface):
     class CacheValue(BaseModel):
         value: Any
-        ttl: Union[datetime, None]
+        expired_at: Union[datetime, None]
 
     def __init__(self):
         self._cache: dict[str, Union[InMemoryCacheStore.CacheValue, None]] = {}
@@ -74,31 +74,31 @@ class InMemoryCacheStore(CacheStoreInterface):
         data = self._cache.get(name)
         if data is None:
             return None
-        if data.ttl and current_time > data.ttl:
+        if data.expired_at and current_time > data.expired_at:
             del self._cache[name]
             return None
         return data.value
 
     def set(self, name: str, value, ex: Union[int, None] = None):
         self._cache[name] = InMemoryCacheStore.CacheValue(
-            value=value, ttl=None
+            value=value, expired_at=None
         )
         if ex is not None:
             self.expire(name, ex)
 
     def expire(self, name: str, ex: int):
         current_time = datetime.now()
-        ttl = current_time + timedelta(seconds=ex)
+        expired_at = current_time + timedelta(seconds=ex)
         data = self._cache.get(name)
         if data is None:
             return
-        data.ttl = ttl
+        data.expired_at = expired_at
 
     def incr(self, name: str) -> int:
         value = self.get(name)
         if value is None:
             self._cache[name] = InMemoryCacheStore.CacheValue(
-                value=1, ttl=None
+                value=1, expired_at=None
             )
             return 1
         if isinstance(value, int):
