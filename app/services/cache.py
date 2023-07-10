@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Any
+from pydantic import BaseModel
 
 
 class CacheStoreInterface(ABC):
@@ -51,42 +52,50 @@ class CacheStoreInterface(ABC):
 
 
 class InMemoryCacheStore(CacheStoreInterface):
+    class CacheValue(BaseModel):
+        value: Any
+        ttl: Union[datetime, None]
+
     def __init__(self):
-        self._cache = {}
+        self._cache: dict[str, Union[InMemoryCacheStore.CacheValue, None]] = {}
 
     def get(self, name: str):
         current_time = datetime.now()
-        ttl = self._cache.get(f"{name}:ttl")
-        if ttl and current_time > ttl:
-            del self._cache[name]
-            del self._cache[f"{name}:ttl"]
+        data = self._cache.get(name)
+        if data is None:
             return None
-
-        return self._cache.get(name)
+        if data.ttl and current_time > data.ttl:
+            del self._cache[name]
+            return None
+        return data.value
 
     def set(self, name: str, value, ex: Union[int, None] = None):
-        self._cache[name] = value
-        if ex is None:
-            self._cache[f"{name}:ttl"] = None
-        else:
+        self._cache[name] = InMemoryCacheStore.CacheValue(
+            value=value, ttl=None
+        )
+        if ex is not None:
             self.expire(name, ex)
 
     def expire(self, name: str, ex: int):
         current_time = datetime.now()
         ttl = current_time + timedelta(seconds=ex)
-
-        self._cache[f"{name}:ttl"] = ttl
+        data = self._cache.get(name)
+        if data is None:
+            return
+        data.ttl = ttl
 
     def incr(self, name: str):
         value = self.get(name)
         if value is None:
-            self._cache[name] = 1
-        elif isinstance(value, int):
-            self._cache[name] += 1
-        else:
-            raise TypeError("value is not an integer")
-
-        return self._cache[name]
+            self._cache[name] = InMemoryCacheStore.CacheValue(
+                value=1, ttl=None
+            )
+            return 1
+        if isinstance(value, int):
+            value += 1
+            self.set(name, value)
+            return value
+        raise TypeError("value is not an integer")
 
     def flushdb(self):
         self._cache = {}
@@ -94,7 +103,6 @@ class InMemoryCacheStore(CacheStoreInterface):
     def delete(self, name: str):
         if name in self._cache:
             del self._cache[name]
-            del self._cache[f"{name}:ttl"]
 
 
 cache_store = InMemoryCacheStore()
