@@ -8,7 +8,10 @@ class CacheStoreInterface(ABC):
     @abstractmethod
     def get(self, name: str):
         """
-        Return the value at key ``name``, or None if the key doesn't exist
+        Get the value at key ``name``
+
+        Returns:
+            The value at key ``name``, or None if the key doesn't exist
         """
         pass
 
@@ -29,10 +32,17 @@ class CacheStoreInterface(ABC):
         pass
 
     @abstractmethod
-    def incr(self, name: str):
-        """Increase the integer value of a key ``name`` by 1.
+    def incr(self, name: str) -> int:
+        """
+        Increase the integer value of a key ``name`` by 1.
         If the key does not exist, it is set to 0
         before performing the operation.
+
+        Returns:
+            The value of key ``name`` after the increment
+
+        Raises:
+            TypeError: if cache value is not an integer
         """
         pass
 
@@ -59,7 +69,7 @@ class InMemoryCacheStore(CacheStoreInterface):
     def __init__(self):
         self._cache: dict[str, Union[InMemoryCacheStore.CacheValue, None]] = {}
 
-    def get(self, name: str):
+    def get(self, name: str) -> Union[Any, None]:
         current_time = datetime.now()
         data = self._cache.get(name)
         if data is None:
@@ -84,7 +94,7 @@ class InMemoryCacheStore(CacheStoreInterface):
             return
         data.ttl = ttl
 
-    def incr(self, name: str):
+    def incr(self, name: str) -> int:
         value = self.get(name)
         if value is None:
             self._cache[name] = InMemoryCacheStore.CacheValue(

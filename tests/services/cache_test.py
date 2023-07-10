@@ -77,12 +77,14 @@ class TestInMemoryCacheStore:
         assert "test_key" not in test_cache_store._cache
 
     def test_incr_a_non_existing_key(self, test_cache_store):
-        test_cache_store.incr("test_key")
+        response = test_cache_store.incr("test_key")
+        assert response == 1
         assert test_cache_store.get("test_key") == 1
 
     def test_incr_a_existing_key(self, test_cache_store):
         test_cache_store.set("test_key", 1)
-        test_cache_store.incr("test_key")
+        response = test_cache_store.incr("test_key")
+        assert response == 2
         assert test_cache_store.get("test_key") == 2
 
     def test_incr_a_existing_key_not_a_number(self, test_cache_store):
