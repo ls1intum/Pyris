@@ -1,5 +1,8 @@
+import logging
 from enum import Enum
 from app.services.cache import cache_store
+
+log = logging.getLogger(__name__)
 
 
 class CircuitBreaker:
@@ -76,8 +79,8 @@ class CircuitBreaker:
         is_up = False
         try:
             is_up = checkhealth_func()
-        except Exception:
-            ...
+        except Exception as e:
+            log.error(e)
 
         if is_up:
             cache_store.set(
