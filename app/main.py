@@ -29,7 +29,9 @@ async def _startup():
     cpu_usage = Gauge("system_cpu_usage_percent", "CPU Usage (in %)")
     cpu_usage.set_function(get_cpu_usage)
 
-    memory_usage = Gauge("system_memory_usage_bytes", "Memory Usage (in bytes)")
+    memory_usage = Gauge(
+        "system_memory_usage_bytes", "Memory Usage (in bytes)"
+    )
     memory_usage.set_function(get_memory_usage)
 
     instrumentator.expose(app)
