@@ -24,6 +24,8 @@ black = "^23.3.0"
 flake8 = "^6.0.0"
 pyaml-env = "^1.2.1"
 gunicorn = "^20.1.0"
+prometheus-fastapi-instrumentator = "^6.0.0"
+psutil = "^5.9.5"
 
 [build-system]
 requires = ["poetry-core"]
