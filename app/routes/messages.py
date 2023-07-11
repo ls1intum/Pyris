@@ -37,7 +37,7 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
         raise MissingParameterException(str(e))
     except (SyntaxError, IncompleteParseError) as e:
         raise InvalidTemplateException(str(e))
-    except BaseException as e:
+    except Exception as e:
         raise InternalServerException(str(e))
 
     # Turn content into an array if it's not already
