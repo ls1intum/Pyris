@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
-from typing import Callable
-from prometheus_fastapi_instrumentator.metrics import Info
-from prometheus_client import Counter, Gauge
+from prometheus_client import  Gauge
 import psutil
 import os
 
