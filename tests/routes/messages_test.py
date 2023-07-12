@@ -1,4 +1,3 @@
-import pytest
 from freezegun import freeze_time
 from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
@@ -77,15 +76,12 @@ def test_send_message_raise_value_error(test_client, headers, mocker):
         "parameters": {"query": "Some query"},
     }
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
-    assert response.status_code == 422
+    assert response.status_code == 500
     assert response.json() == {
-        "detail": [
-            {
-                "loc": [],
-                "msg": "value error message",
-                "type": "value_error.bad_data",
-            }
-        ]
+        "detail": {
+            "type": "other",
+            "errorMessage": "value error message",
+        }
     }
 
 
@@ -102,15 +98,12 @@ def test_send_message_raise_key_error(test_client, headers, mocker):
         "parameters": {"query": "Some query"},
     }
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
-    assert response.status_code == 422
+    assert response.status_code == 400
     assert response.json() == {
-        "detail": [
-            {
-                "loc": [],
-                "msg": "'key error message'",
-                "type": "value_error.bad_data",
-            }
-        ]
+        "detail": {
+            "type": "missing_parameter",
+            "errorMessage": "'key error message'",
+        }
     }
 
 
@@ -118,13 +111,19 @@ def test_send_message_with_wrong_api_key(test_client):
     headers = {"Authorization": "wrong api key"}
     response = test_client.post("/api/v1/messages", headers=headers, json={})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert response.json()["detail"] == {
+        "type": "not_authorized",
+        "errorMessage": "Permission denied",
+    }
 
 
 def test_send_message_without_authorization_header(test_client):
     response = test_client.post("/api/v1/messages", json={})
     assert response.status_code == 401
-    assert response.json()["detail"] == "Requires authentication"
+    assert response.json()["detail"] == {
+        "type": "not_authenticated",
+        "errorMessage": "Requires authentication",
+    }
 
 
 def test_send_message_fail_three_times(
@@ -148,22 +147,16 @@ def test_send_message_fail_three_times(
 
     # Restrict access
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
-    assert response.status_code == 422
+    assert response.status_code == 500
     assert response.json() == {
-        "detail": [
-            {
-                "loc": [],
-                "msg": "Too many failures! Please try again later.",
-                "type": "value_error.bad_data",
-            }
-        ]
+        "detail": {
+            "errorMessage": "Too many failures! Please try again later.",
+            "type": "other",
+        }
     }
 
     # Can access after TTL
     test_cache_store.delete("LLMModel.GPT35_TURBO:status")
     test_cache_store.delete("LLMModel.GPT35_TURBO:num_failures")
-    with pytest.raises(Exception):
-        response = test_client.post(
-            "/api/v1/messages", headers=headers, json=body
-        )
-        assert response.status_code == 500
+    response = test_client.post("/api/v1/messages", headers=headers, json=body)
+    assert response.status_code == 500

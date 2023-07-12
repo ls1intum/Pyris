@@ -41,10 +41,16 @@ def test_checkhealth_with_wrong_api_key(test_client):
     headers = {"Authorization": "wrong api key"}
     response = test_client.get("/api/v1/health", headers=headers)
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert response.json()["detail"] == {
+        "type": "not_authorized",
+        "errorMessage": "Permission denied",
+    }
 
 
 def test_checkhealth_without_authorization_header(test_client):
     response = test_client.get("/api/v1/health")
     assert response.status_code == 401
-    assert response.json()["detail"] == "Requires authentication"
+    assert response.json()["detail"] == {
+        "type": "not_authenticated",
+        "errorMessage": "Requires authentication",
+    }
