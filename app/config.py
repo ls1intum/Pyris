@@ -1,20 +1,23 @@
 import os
-from pydantic import BaseModel
+
 from pyaml_env import parse_config
+from pydantic import BaseModel
+
+
+class LLMModelConfig(BaseModel):
+    name: str
+    description: str
+    llm_credentials: dict
+
+
+class APIKeyConfig(BaseModel):
+    token: str
+    comment: str
+    llm_access: list[str]
 
 
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
-        class APIKeyConfig(BaseModel):
-            token: str
-            comment: str
-            llm_access: list[str]
-
-        class LLMModelConfig(BaseModel):
-            name: str
-            description: str
-            llm_credentials: dict
-
         api_keys: list[APIKeyConfig]
         llms: dict[str, LLMModelConfig]
 
@@ -31,10 +34,3 @@ class Settings(BaseModel):
 
 
 settings = Settings.get_settings()
-
-# get keys of settings.pyris.llms and for loop over them with print
-for key in set(settings.pyris.llms.keys()):
-    print(key)
-
-for key in settings.pyris.api_keys:
-    print(key)

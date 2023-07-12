@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
 from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends
 from parsimonious.exceptions import IncompleteParseError
 
 from app.core.custom_exceptions import (
@@ -9,12 +9,10 @@ from app.core.custom_exceptions import (
     InternalServerException,
     InvalidModelException,
 )
-from app.dependencies import PermissionsValidator
-from app.models.dtos import SendMessageRequest, SendMessageResponse, LLMModel
-from app.core.custom_exceptions import BadDataException
 from app.dependencies import TokenPermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse
 from app.services.guidance_wrapper import GuidanceWrapper
+from config import settings
 
 router = APIRouter(tags=["messages"])
 
@@ -24,7 +22,7 @@ router = APIRouter(tags=["messages"])
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
     try:
-        model = LLMModel(body.preferred_model)
+        model = settings.pyris.llms[body.preferred_model]
     except ValueError as e:
         raise InvalidModelException(str(e))
 

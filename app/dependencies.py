@@ -1,10 +1,10 @@
 from fastapi import Depends
 from starlette.requests import Request as StarletteRequest
-from app.config import settings
+from app.config import settings, APIKeyConfig
 
 from app.core.custom_exceptions import (
     PermissionDeniedException,
-    RequiresAuthenticationException,
+    RequiresAuthenticationException, InvalidModelException,
 )
 
 
@@ -18,10 +18,10 @@ def _get_api_key(request: StarletteRequest) -> str:
 
 
 class TokenValidator:
-    async def __call__(self, request: StarletteRequest, api_key: str = Depends(_get_api_key)) -> str:
+    async def __call__(self, request: StarletteRequest, api_key: str = Depends(_get_api_key)) -> APIKeyConfig:
         for key in settings.pyris.api_keys:
             if key.token == api_key:
-                return api_key
+                return key
         raise PermissionDeniedException
 
 
@@ -33,7 +33,7 @@ class TokenPermissionsValidator:
                 if body.get("preferredModel") in key.llm_access:
                     return
                 else:
-                    raise PermissionDeniedException
+                    raise InvalidModelException(str(body.get("preferredModel")))
         raise PermissionDeniedException
 
 
