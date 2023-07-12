@@ -1,6 +1,6 @@
 import guidance
 
-from app.config import settings, LLMModelConfig
+from app.config import LLMModelConfig
 from app.models.dtos import Content, ContentType
 
 
