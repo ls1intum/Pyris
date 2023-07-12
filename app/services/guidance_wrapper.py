@@ -39,5 +39,5 @@ class GuidanceWrapper:
         return Content(type=ContentType.TEXT, textContent=result["response"])
 
     def _get_llm(self):
-        llm_credentials = settings.pyris.llm[self.model.value]
+        llm_credentials = settings.pyris.llms[self.model].llm_credentials
         return guidance.llms.OpenAI(**llm_credentials)

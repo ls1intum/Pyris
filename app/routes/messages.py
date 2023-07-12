@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from datetime import datetime, timezone
 
 from app.core.custom_exceptions import BadDataException
-from app.dependencies import PermissionsValidator
+from app.dependencies import TokenPermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse
 from app.services.guidance_wrapper import GuidanceWrapper
 
@@ -10,7 +10,7 @@ router = APIRouter(tags=["messages"])
 
 
 @router.post(
-    "/api/v1/messages", dependencies=[Depends(PermissionsValidator())]
+    "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
     guidance = GuidanceWrapper(

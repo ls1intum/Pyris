@@ -24,7 +24,7 @@ class SendMessageRequest(BaseModel):
         content: str
 
     template: Template
-    preferred_model: LLMModel = Field(..., alias="preferredModel")
+    preferred_model: str = Field(..., alias="preferredModel")
     parameters: dict
 
 
@@ -35,5 +35,5 @@ class SendMessageResponse(BaseModel):
         )
         content: list[Content]
 
-    used_model: LLMModel = Field(..., alias="usedModel")
+    used_model: str = Field(..., alias="usedModel")
     message: Message

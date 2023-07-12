@@ -5,8 +5,18 @@ from pyaml_env import parse_config
 
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
-        api_key: str
-        llm: dict
+        class APIKeyConfig(BaseModel):
+            token: str
+            comment: str
+            llm_access: list[str]
+
+        class LLMModelConfig(BaseModel):
+            name: str
+            description: str
+            llm_credentials: dict
+
+        api_keys: list[APIKeyConfig]
+        llms: dict[str, LLMModelConfig]
 
     pyris: PyrisSettings
 
@@ -21,3 +31,10 @@ class Settings(BaseModel):
 
 
 settings = Settings.get_settings()
+
+# get keys of settings.pyris.llms and for loop over them with print
+for key in set(settings.pyris.llms.keys()):
+    print(key)
+
+for key in settings.pyris.api_keys:
+    print(key)
