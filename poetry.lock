@@ -684,6 +684,20 @@ files = [
 ]
 
 [[package]]
+name = "hazelcast-python-client"
+version = "5.3.0"
+description = "Hazelcast Python Client"
+optional = false
+python-versions = "*"
+files = [
+    {file = "hazelcast-python-client-5.3.0.tar.gz", hash = "sha256:9defd4adf4d25d66ca49383c78d8762960ae6ab96a3e1fecaa729b026542a5fc"},
+    {file = "hazelcast_python_client-5.3.0-py3-none-any.whl", hash = "sha256:effba1748ba57b2dbb1a5aaa912e52ee039ed49f2d20dab7540fe7ac9c72688c"},
+]
+
+[package.extras]
+stats = ["psutil"]
+
+[[package]]
 name = "httpcore"
 version = "0.17.2"
 description = "A minimal low-level HTTP client."
@@ -1685,4 +1699,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "b83563649a2522f40201bf8dc85840d598af963506883d700b744b5c5660bb13"
+content-hash = "e9b1efc973bd3001cecab42718d04a9f043b378647fa5695ba4a26469f237c9c"
