@@ -52,6 +52,11 @@ def test_protected_call_too_many_failures_not_in_a_row(
             )
 
         frozen_datetime.move_to(other_datetime)
+
+        # NOTE: Hazelcast doesn't expire with freezegun
+        test_cache_store.delete("test_key:status")
+        test_cache_store.delete("test_key:num_failures")
+
         with pytest.raises(KeyError, match="foo"):
             CircuitBreaker.protected_call(
                 func=mock_function,

@@ -1,5 +1,9 @@
 pyris:
   api_key: secret
+  cache:
+    hazelcast:
+      host: cache
+      port: 5701
   llm:
     GPT35_TURBO:
       model:

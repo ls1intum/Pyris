@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Union, Any
 from pydantic import BaseModel
+from app.services.hazelcast_client import hazelcast_client
 
 
 class CacheStoreInterface(ABC):
@@ -115,4 +116,39 @@ class InMemoryCacheStore(CacheStoreInterface):
             del self._cache[name]
 
 
-cache_store = InMemoryCacheStore()
+class HazelcastCacheStore(CacheStoreInterface):
+    def __init__(self):
+        self._cache = hazelcast_client.get_map("cache_store").blocking()
+
+    def get(self, name: str) -> Union[Any, None]:
+        return self._cache.get(name)
+
+    def set(self, name: str, value, ex: Union[int, None] = None):
+        self._cache.put(name, value, ex)
+
+    def expire(self, name: str, ex: int):
+        self._cache.set_ttl(name, ex)
+
+    def incr(self, name: str) -> int:
+        flag = False
+        value = 0
+        while not flag:
+            value = self._cache.get(name)
+            if value is None:
+                self._cache.set(name, 1)
+                return 1
+            if not isinstance(value, int):
+                raise TypeError("value is not an integer")
+
+            flag = self._cache.replace_if_same(name, value, value + 1)
+
+        return value + 1
+
+    def flushdb(self):
+        self._cache.clear()
+
+    def delete(self, name: str):
+        self._cache.remove(name)
+
+
+cache_store = HazelcastCacheStore()

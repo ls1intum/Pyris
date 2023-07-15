@@ -3,9 +3,18 @@ from pydantic import BaseModel
 from pyaml_env import parse_config
 
 
+class CacheSettings(BaseModel):
+    class CacheParams(BaseModel):
+        host: str
+        port: int
+
+    hazelcast: CacheParams
+
+
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
         api_key: str
+        cache: CacheSettings
         llm: dict
 
     pyris: PyrisSettings
