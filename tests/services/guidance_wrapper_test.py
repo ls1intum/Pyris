@@ -1,8 +1,11 @@
 import pytest
 import guidance
 
-from app.models.dtos import Content, ContentType, LLMModel
+from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
+from app.config import LLMModelConfig
+
+llm_model_config = LLMModelConfig(name="test", description="test", llm_credentials={})
 
 
 def test_query_success(mocker):
@@ -17,7 +20,7 @@ def test_query_success(mocker):
     {{gen 'response' temperature=0.0 max_tokens=500}}{{~/assistant}}"""
 
     guidance_wrapper = GuidanceWrapper(
-        model=LLMModel.GPT35_TURBO,
+        model=llm_model_config,
         handlebars=handlebars,
         parameters={"query": "Some query"},
     )
@@ -41,7 +44,7 @@ def test_query_missing_required_params(mocker):
     {{gen 'response' temperature=0.0 max_tokens=500}}{{~/assistant}}"""
 
     guidance_wrapper = GuidanceWrapper(
-        model=LLMModel.GPT35_TURBO,
+        model=llm_model_config,
         handlebars=handlebars,
         parameters={"somethingelse": "Something"},
     )
@@ -63,7 +66,7 @@ def test_query_handlebars_not_generate_response(mocker):
 
     handlebars = "Not a valid handlebars"
     guidance_wrapper = GuidanceWrapper(
-        model=LLMModel.GPT35_TURBO,
+        model=llm_model_config,
         handlebars=handlebars,
         parameters={"query": "Something"},
     )

@@ -12,7 +12,7 @@ from app.core.custom_exceptions import (
 from app.dependencies import TokenPermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse
 from app.services.guidance_wrapper import GuidanceWrapper
-from config import settings
+from app.config import settings
 
 router = APIRouter(tags=["messages"])
 

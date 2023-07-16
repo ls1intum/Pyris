@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 
 from app.dependencies import TokenValidator
-from config import settings, APIKeyConfig
-from models.dtos import LLMModelResponse
+from app.config import settings, APIKeyConfig
+from app.models.dtos import LLMModelResponse
 
 router = APIRouter(tags=["models"])
 
 
-@router.get("/api/v1/models", dependencies=[Depends(TokenValidator())])
+@router.get("/api/v1/models")
 def send_message(
     api_key_config: APIKeyConfig = Depends(TokenValidator()),
 ) -> list[LLMModelResponse]:

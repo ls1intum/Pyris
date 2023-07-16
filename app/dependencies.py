@@ -20,7 +20,7 @@ def _get_api_key(request: StarletteRequest) -> str:
 
 class TokenValidator:
     async def __call__(
-        self, request: StarletteRequest, api_key: str = Depends(_get_api_key)
+        self, api_key: str = Depends(_get_api_key)
     ) -> APIKeyConfig:
         for key in settings.pyris.api_keys:
             if key.token == api_key:
