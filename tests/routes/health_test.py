@@ -37,6 +37,42 @@ def test_checkhealth(test_client, headers, mocker):
     objC.is_up.assert_called_once()
 
 
+def test_checkhealth_save_to_cache(
+    test_client, test_cache_store, headers, mocker
+):
+    objA = mocker.Mock()
+    objB = mocker.Mock()
+    objC = mocker.Mock()
+
+    def side_effect_func(*_, **kwargs):
+        if kwargs["model"] == LLMModel.GPT35_TURBO:
+            return objA
+        elif kwargs["model"] == LLMModel.GPT35_TURBO_16K_0613:
+            return objB
+        elif kwargs["model"] == LLMModel.GPT35_TURBO_0613:
+            return objC
+
+    mocker.patch(
+        "app.services.guidance_wrapper.GuidanceWrapper.__new__",
+        side_effect=side_effect_func,
+    )
+    mocker.patch.object(objA, "is_up", return_value=True)
+    mocker.patch.object(objB, "is_up", return_value=False)
+    mocker.patch.object(objC, "is_up", return_value=True)
+
+    assert test_cache_store.get("LLMModel.GPT35_TURBO:status") is None
+    assert test_cache_store.get("LLMModel.GPT35_TURBO_16K_0613:status") is None
+    assert test_cache_store.get("LLMModel.GPT35_TURBO_0613:status") is None
+
+    test_client.get("/api/v1/health", headers=headers)
+
+    assert test_cache_store.get("LLMModel.GPT35_TURBO:status") == "CLOSED"
+    assert (
+        test_cache_store.get("LLMModel.GPT35_TURBO_16K_0613:status") == "OPEN"
+    )
+    assert test_cache_store.get("LLMModel.GPT35_TURBO_0613:status") == "CLOSED"
+
+
 def test_checkhealth_with_wrong_api_key(test_client):
     headers = {"Authorization": "wrong api key"}
     response = test_client.get("/api/v1/health", headers=headers)

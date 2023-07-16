@@ -147,6 +147,8 @@ def test_send_message_fail_three_times(
 
     # Restrict access
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
+    assert test_cache_store.get("LLMModel.GPT35_TURBO:status") == "OPEN"
+    assert test_cache_store.get("LLMModel.GPT35_TURBO:num_failures") == 3
     assert response.status_code == 500
     assert response.json() == {
         "detail": {
