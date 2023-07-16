@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.get("/api/v1/health", dependencies=[Depends(PermissionsValidator())])
-def checkhealth():
+def checkhealth() -> list[ModelStatus]:
     result = []
 
     for model in LLMModel:
