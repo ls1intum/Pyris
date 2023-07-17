@@ -5,7 +5,9 @@ from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
 from app.config import LLMModelConfig
 
-llm_model_config = LLMModelConfig(name="test", description="test", llm_credentials={})
+llm_model_config = LLMModelConfig(
+    name="test", description="test", llm_credentials={}
+)
 
 
 def test_query_success(mocker):

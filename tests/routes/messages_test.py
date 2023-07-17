@@ -3,9 +3,13 @@ from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
 import app.config as config
 
-llm_model_config = config.LLMModelConfig(name="test", description="test", llm_credentials={})
+llm_model_config = config.LLMModelConfig(
+    name="test", description="test", llm_credentials={}
+)
 config.settings.pyris.llms = {"GPT35_TURBO": llm_model_config}
-api_key_config = config.APIKeyConfig(token="secret", comment="test", llm_access=["GPT35_TURBO"])
+api_key_config = config.APIKeyConfig(
+    token="secret", comment="test", llm_access=["GPT35_TURBO"]
+)
 config.settings.pyris.api_keys = [api_key_config]
 
 
@@ -51,7 +55,11 @@ def test_send_message_missing_model(test_client, headers):
 
 
 def test_send_message_missing_params(test_client, headers):
-    response = test_client.post("/api/v1/messages", headers=headers, json={"preferredModel": "GPT35_TURBO"})
+    response = test_client.post(
+        "/api/v1/messages",
+        headers=headers,
+        json={"preferredModel": "GPT35_TURBO"},
+    )
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
