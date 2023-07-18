@@ -35,7 +35,7 @@ def test_query_success(mocker):
 
 
 @pytest.mark.skip(
-    reason="This tests library behavior that has changed with the Guidance version bump"
+    reason="This tests library behavior changed by Guidance version bump"
 )
 def test_query_missing_required_params(mocker):
     mocker.patch.object(
