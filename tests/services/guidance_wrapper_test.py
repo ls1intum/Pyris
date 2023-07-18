@@ -34,7 +34,9 @@ def test_query_success(mocker):
     assert result.text_content == "the output"
 
 
-@pytest.mark.skip(reason="This tests library behavior that has changed with the Guidance version bump")
+@pytest.mark.skip(
+    reason="This tests library behavior that has changed with the Guidance version bump"
+)
 def test_query_missing_required_params(mocker):
     mocker.patch.object(
         GuidanceWrapper,
@@ -78,7 +80,7 @@ def test_query_handlebars_not_generate_response(mocker):
     )
 
     with pytest.raises(
-            ValueError, match="The handlebars do not generate 'response'"
+        ValueError, match="The handlebars do not generate 'response'"
     ):
         result = guidance_wrapper.query()
 
