@@ -4,7 +4,7 @@ line-length = 79
 [tool.poetry]
 name = "pyris"
 version = "0.1.0"
-description = ""
+description = " "
 authors = ["Khoa Nguyen <khoa.nguyen@tum.de>", "Timor Morrien <timor.morrien@tum.de>"]
 readme = "README.md"
 
@@ -24,6 +24,7 @@ black = "^23.3.0"
 flake8 = "^6.0.0"
 pyaml-env = "^1.2.1"
 gunicorn = "^20.1.0"
+parsimonious = "^0.10.0"
 
 
 [build-system]
