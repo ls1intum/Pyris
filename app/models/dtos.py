@@ -3,12 +3,6 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 
-class LLMModel(str, Enum):
-    GPT35_TURBO = "GPT35_TURBO"
-    GPT35_TURBO_16K_0613 = "GPT35_TURBO_16K_0613"
-    GPT35_TURBO_0613 = "GPT35_TURBO_0613"
-
-
 class LLMStatus(str, Enum):
     UP = "UP"
     DOWN = "DOWN"
@@ -41,10 +35,16 @@ class SendMessageResponse(BaseModel):
         )
         content: list[Content]
 
-    used_model: LLMModel = Field(..., alias="usedModel")
+    used_model: str = Field(..., alias="usedModel")
     message: Message
 
 
 class ModelStatus(BaseModel):
-    model: LLMModel
+    model: str
     status: LLMStatus
+
+
+class LLMModelResponse(BaseModel):
+    id: str
+    name: str
+    description: str

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
 from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends
 from parsimonious.exceptions import IncompleteParseError
 
 from app.core.custom_exceptions import (
@@ -9,20 +9,21 @@ from app.core.custom_exceptions import (
     InternalServerException,
     InvalidModelException,
 )
-from app.dependencies import PermissionsValidator
-from app.models.dtos import SendMessageRequest, SendMessageResponse, LLMModel
+from app.dependencies import TokenPermissionsValidator
+from app.models.dtos import SendMessageRequest, SendMessageResponse
 from app.services.circuit_breaker import CircuitBreaker
 from app.services.guidance_wrapper import GuidanceWrapper
+from app.config import settings
 
 router = APIRouter(tags=["messages"])
 
 
 @router.post(
-    "/api/v1/messages", dependencies=[Depends(PermissionsValidator())]
+    "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
     try:
-        model = LLMModel(body.preferred_model)
+        model = settings.pyris.llms[body.preferred_model]
     except ValueError as e:
         raise InvalidModelException(str(e))
 
@@ -35,7 +36,7 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     try:
         content = CircuitBreaker.protected_call(
             func=guidance.query,
-            cache_key=model,
+            cache_key=body.preferred_model,
             accepted_exceptions=(KeyError, SyntaxError, IncompleteParseError),
         )
     except KeyError as e:

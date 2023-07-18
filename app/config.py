@@ -1,6 +1,19 @@
 import os
-from pydantic import BaseModel
+
 from pyaml_env import parse_config
+from pydantic import BaseModel
+
+
+class LLMModelConfig(BaseModel):
+    name: str
+    description: str
+    llm_credentials: dict
+
+
+class APIKeyConfig(BaseModel):
+    token: str
+    comment: str
+    llm_access: list[str]
 
 
 class CacheSettings(BaseModel):
@@ -13,9 +26,9 @@ class CacheSettings(BaseModel):
 
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
-        api_key: str
+        api_keys: list[APIKeyConfig]
+        llms: dict[str, LLMModelConfig]
         cache: CacheSettings
-        llm: dict
 
     pyris: PyrisSettings
 
