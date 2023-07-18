@@ -1,5 +1,4 @@
 pyris:
-  api_key: secret
   cache:
     hazelcast:
       host: cache
