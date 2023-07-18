@@ -1,6 +1,16 @@
 from freezegun import freeze_time
 from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
+import app.config as config
+
+llm_model_config = config.LLMModelConfig(
+    name="test", description="test", llm_credentials={}
+)
+config.settings.pyris.llms = {"GPT35_TURBO": llm_model_config}
+api_key_config = config.APIKeyConfig(
+    token="secret", comment="test", llm_access=["GPT35_TURBO"]
+)
+config.settings.pyris.api_keys = [api_key_config]
 
 
 @freeze_time("2023-06-16 03:21:34 +02:00")
@@ -39,18 +49,22 @@ def test_send_message(test_client, headers, mocker):
     }
 
 
-def test_send_message_missing_params(test_client, headers):
+def test_send_message_missing_model(test_client, headers):
     response = test_client.post("/api/v1/messages", headers=headers, json={})
+    assert response.status_code == 404
+
+
+def test_send_message_missing_params(test_client, headers):
+    response = test_client.post(
+        "/api/v1/messages",
+        headers=headers,
+        json={"preferredModel": "GPT35_TURBO"},
+    )
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
             {
                 "loc": ["body", "template"],
-                "msg": "field required",
-                "type": "value_error.missing",
-            },
-            {
-                "loc": ["body", "preferredModel"],
                 "msg": "field required",
                 "type": "value_error.missing",
             },
@@ -76,15 +90,12 @@ def test_send_message_raise_value_error(test_client, headers, mocker):
         "parameters": {"query": "Some query"},
     }
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
-    assert response.status_code == 422
+    assert response.status_code == 500
     assert response.json() == {
-        "detail": [
-            {
-                "loc": [],
-                "msg": "value error message",
-                "type": "value_error.bad_data",
-            }
-        ]
+        "detail": {
+            "type": "other",
+            "errorMessage": "value error message",
+        }
     }
 
 
@@ -101,15 +112,12 @@ def test_send_message_raise_key_error(test_client, headers, mocker):
         "parameters": {"query": "Some query"},
     }
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
-    assert response.status_code == 422
+    assert response.status_code == 400
     assert response.json() == {
-        "detail": [
-            {
-                "loc": [],
-                "msg": "'key error message'",
-                "type": "value_error.bad_data",
-            }
-        ]
+        "detail": {
+            "type": "missing_parameter",
+            "errorMessage": "'key error message'",
+        }
     }
 
 
@@ -117,10 +125,16 @@ def test_send_message_with_wrong_api_key(test_client):
     headers = {"Authorization": "wrong api key"}
     response = test_client.post("/api/v1/messages", headers=headers, json={})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert response.json()["detail"] == {
+        "type": "not_authorized",
+        "errorMessage": "Permission denied",
+    }
 
 
 def test_send_message_without_authorization_header(test_client):
     response = test_client.post("/api/v1/messages", json={})
     assert response.status_code == 401
-    assert response.json()["detail"] == "Requires authentication"
+    assert response.json()["detail"] == {
+        "type": "not_authenticated",
+        "errorMessage": "Requires authentication",
+    }

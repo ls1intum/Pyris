@@ -1,28 +1,45 @@
-from fastapi import APIRouter, Depends
 from datetime import datetime, timezone
 
-from app.core.custom_exceptions import BadDataException
-from app.dependencies import PermissionsValidator
+from fastapi import APIRouter, Depends
+from parsimonious.exceptions import IncompleteParseError
+
+from app.core.custom_exceptions import (
+    MissingParameterException,
+    InvalidTemplateException,
+    InternalServerException,
+    InvalidModelException,
+)
+from app.dependencies import TokenPermissionsValidator
 from app.models.dtos import SendMessageRequest, SendMessageResponse
 from app.services.guidance_wrapper import GuidanceWrapper
+from app.config import settings
 
 router = APIRouter(tags=["messages"])
 
 
 @router.post(
-    "/api/v1/messages", dependencies=[Depends(PermissionsValidator())]
+    "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
+    try:
+        model = settings.pyris.llms[body.preferred_model]
+    except ValueError as e:
+        raise InvalidModelException(str(e))
+
     guidance = GuidanceWrapper(
-        model=body.preferred_model,
+        model=model,
         handlebars=body.template.content,
         parameters=body.parameters,
     )
 
     try:
         content = guidance.query()
-    except (KeyError, ValueError) as e:
-        raise BadDataException(str(e))
+    except KeyError as e:
+        raise MissingParameterException(str(e))
+    except (SyntaxError, IncompleteParseError) as e:
+        raise InvalidTemplateException(str(e))
+    except Exception as e:
+        raise InternalServerException(str(e))
 
     # Turn content into an array if it's not already
     if not isinstance(content, list):
