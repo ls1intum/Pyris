@@ -151,7 +151,9 @@ def test_send_message_without_authorization_header(test_client):
 def test_send_message_fail_three_times(
     test_client, mocker, headers, test_cache_store
 ):
-    mocker.patch.object(GuidanceWrapper, "query", side_effect=Exception)
+    mocker.patch.object(
+        GuidanceWrapper, "query", side_effect=Exception("some error")
+    )
     body = {
         "template": {
             "id": 123,
@@ -184,3 +186,9 @@ def test_send_message_fail_three_times(
     test_cache_store.delete("GPT35_TURBO:num_failures")
     response = test_client.post("/api/v1/messages", headers=headers, json=body)
     assert response.status_code == 500
+    assert response.json() == {
+        "detail": {
+            "errorMessage": "some error",
+            "type": "other",
+        }
+    }
