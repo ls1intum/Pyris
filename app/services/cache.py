@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Union, Any
+from typing import Optional, Any
 from pydantic import BaseModel
 from app.services.hazelcast_client import hazelcast_client
 
 
 class CacheStoreInterface(ABC):
     @abstractmethod
-    def get(self, name: str):
+    def get(self, name: str) -> Any:
         """
         Get the value at key ``name``
 
@@ -17,7 +17,7 @@ class CacheStoreInterface(ABC):
         pass
 
     @abstractmethod
-    def set(self, name: str, value, ex: Union[int, None] = None):
+    def set(self, name: str, value, ex: Optional[int] = None):
         """
         Set the value at key ``name`` to ``value``
 
@@ -65,12 +65,12 @@ class CacheStoreInterface(ABC):
 class InMemoryCacheStore(CacheStoreInterface):
     class CacheValue(BaseModel):
         value: Any
-        expired_at: Union[datetime, None]
+        expired_at: Optional[datetime]
 
     def __init__(self):
-        self._cache: dict[str, Union[InMemoryCacheStore.CacheValue, None]] = {}
+        self._cache: dict[str, Optional[InMemoryCacheStore.CacheValue]] = {}
 
-    def get(self, name: str) -> Union[Any, None]:
+    def get(self, name: str) -> Any:
         current_time = datetime.now()
         data = self._cache.get(name)
         if data is None:
@@ -80,7 +80,7 @@ class InMemoryCacheStore(CacheStoreInterface):
             return None
         return data.value
 
-    def set(self, name: str, value, ex: Union[int, None] = None):
+    def set(self, name: str, value, ex: Optional[int] = None):
         self._cache[name] = InMemoryCacheStore.CacheValue(
             value=value, expired_at=None
         )
@@ -120,10 +120,10 @@ class HazelcastCacheStore(CacheStoreInterface):
     def __init__(self):
         self._cache = hazelcast_client.get_map("cache_store").blocking()
 
-    def get(self, name: str) -> Union[Any, None]:
+    def get(self, name: str) -> Any:
         return self._cache.get(name)
 
-    def set(self, name: str, value, ex: Union[int, None] = None):
+    def set(self, name: str, value, ex: Optional[int] = None):
         self._cache.put(name, value, ex)
 
     def expire(self, name: str, ex: int):
