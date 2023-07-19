@@ -1,3 +1,8 @@
 def truncate(history: list[any], max_length: int):
-    return history[-max_length:]
+    if max_length == 0:
+        return []
 
+    if max_length > 0:
+        return history[:max_length]
+
+    return history[max_length:]
