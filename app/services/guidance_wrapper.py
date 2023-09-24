@@ -1,8 +1,11 @@
+from typing import cast
+
 import guidance
 
-from app.config import LLMModelConfig
+from app.config import LLMModelConfig, OpenAIConfig, StrategyLLMConfig
 from app.models.dtos import Content, ContentType
 from app.services.guidance_functions import truncate
+from app.llms.strategy_llm import StrategyLLM
 
 
 class GuidanceWrapper:
@@ -69,5 +72,11 @@ class GuidanceWrapper:
         return content == "1"
 
     def _get_llm(self):
-        llm_credentials = self.model.llm_credentials
-        return guidance.llms.OpenAI(**llm_credentials)
+        if isinstance(self.model, OpenAIConfig):
+            return guidance.llms.OpenAI(
+                **cast(OpenAIConfig, self.model).llm_credentials
+            )
+        elif isinstance(self.model, StrategyLLMConfig):
+            return StrategyLLM(cast(StrategyLLMConfig, self.model).llms)
+        else:
+            raise ValueError("Invalid model type: " + str(type(self.model)))

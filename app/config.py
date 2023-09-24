@@ -1,13 +1,38 @@
 import os
 
 from pyaml_env import parse_config
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+
+
+class LLMModelSpecs(BaseModel):
+    context_length: int
 
 
 class LLMModelConfig(BaseModel):
+    type: str
     name: str
     description: str
+
+
+class OpenAIConfig(LLMModelConfig):
+    spec: LLMModelSpecs
     llm_credentials: dict
+
+    @validator("type")
+    def check_type(cls, v):
+        if v != "openai":
+            raise ValueError("Invalid type:" + v + " != openai")
+        return v
+
+
+class StrategyLLMConfig(LLMModelConfig):
+    llms: list[str]
+
+    @validator("type")
+    def check_type(cls, v):
+        if v != "strategy":
+            raise ValueError("Invalid type:" + v + " != strategy")
+        return v
 
 
 class APIKeyConfig(BaseModel):
@@ -27,7 +52,7 @@ class CacheSettings(BaseModel):
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
         api_keys: list[APIKeyConfig]
-        llms: dict[str, LLMModelConfig]
+        llms: dict[str, OpenAIConfig | StrategyLLMConfig]
         cache: CacheSettings
 
     pyris: PyrisSettings
