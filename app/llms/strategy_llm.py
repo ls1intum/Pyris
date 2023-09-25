@@ -121,7 +121,11 @@ class StrategyLLMSession(LLMSession):
             log.error(
                 "No viable LLMs found! Using LLM with longest context length."
             )
-            llm_configs = self.llm.llm_configs
+            llm_configs = {
+                llm_key: config for llm_key, config in self.llm.llm_configs.items() if llm_key not in exclude_llms
+            }
+            if llm_configs.__len__() == 0:
+                raise ValueError("All LLMs are excluded!")
             selected_llm = max(
                 llm_configs,
                 key=lambda llm_key: llm_configs[llm_key].spec.context_length,
@@ -149,21 +153,19 @@ class StrategyLLMSession(LLMSession):
 
         exclude_llms = []
 
-        try:
-            response = await CircuitBreaker.protected_call(
-                func=call, cache_key=self.current_session_key
-            )
-        except Exception as e:
-            log.error(
-                f"Exception {e} while making request! "
-                f"Trying again with a different LLM."
-            )
-            exclude_llms.append(self.current_session_key)
-            self.set_correct_session(prompt, max_tokens, exclude_llms)
-            response = await CircuitBreaker.protected_call(
-                func=call, cache_key=self.current_session_key
-            )
-        return response
+        while True:
+            try:
+                response = await CircuitBreaker.protected_call_async(
+                    func=call, cache_key=self.current_session_key
+                )
+                return response
+            except Exception as e:
+                log.error(
+                    f"Exception '{e}' while making request! "
+                    f"Trying again with a different LLM."
+                )
+                exclude_llms.append(self.current_session_key)
+                self.set_correct_session(prompt, max_tokens, exclude_llms)
 
     def __exit__(self, exc_type, exc_value, traceback):
         return self.current_session.__exit__(exc_type, exc_value, traceback)
