@@ -148,6 +148,8 @@ class StrategyLLMSession(LLMSession):
     async def __call__(self, *args, **kwargs):
         prompt = args[0]
         max_tokens = kwargs["max_tokens"]
+        log.info(f"Trying to make request using strategy "
+                 f"llm with llms [{self.llm.llm_keys}]")
         self.set_correct_session(prompt, max_tokens)
 
         def call():
