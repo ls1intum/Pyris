@@ -54,7 +54,8 @@ class CircuitBreaker:
     async def protected_call_async(
         cls, func, cache_key: str, accepted_exceptions: tuple = ()
     ):
-        """Wrap function call to avoid too many failures in a row. Async version.
+        """Wrap function call to avoid too many failures in a row.
+        Async version.
 
         Params:
             func: function to be called

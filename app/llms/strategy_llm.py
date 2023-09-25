@@ -122,7 +122,9 @@ class StrategyLLMSession(LLMSession):
                 "No viable LLMs found! Using LLM with longest context length."
             )
             llm_configs = {
-                llm_key: config for llm_key, config in self.llm.llm_configs.items() if llm_key not in exclude_llms
+                llm_key: config
+                for llm_key, config in self.llm.llm_configs.items()
+                if llm_key not in exclude_llms
             }
             if llm_configs.__len__() == 0:
                 raise ValueError("All LLMs are excluded!")
