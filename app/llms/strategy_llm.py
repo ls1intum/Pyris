@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any
 
-from guidance.llms import LLM, OpenAI, LLMSession
+from guidance.llms import LLM, LLMSession
 
 from app.config import settings, OpenAIConfig
 from app.services.cache import cache_store
@@ -30,7 +30,7 @@ class StrategyLLM(LLM):
             llm_key: settings.pyris.llms[llm_key] for llm_key in self.llm_keys
         }
         self.llm_instances = {
-            llm_key: OpenAI(**llm_config.llm_credentials)
+            llm_key: llm_config.get_instance()
             for llm_key, llm_config in self.llm_configs.items()
         }
         self.llm_sessions = {}
@@ -89,35 +89,25 @@ class StrategyLLMSession(LLMSession):
         )
         return prompt_token_length + max_tokens
 
-    def get_llms_with_context_length(
-        self, prompt: str, max_tokens: int
-    ) -> [str]:
-        return [
-            llm_key
-            for llm_key in self.llm.llm_keys
-            if self.llm.llm_configs[llm_key].spec.context_length
-            >= self.get_total_context_length(prompt, llm_key, max_tokens)
-        ]
-
-    def get_available_llms(self, llms: [str]) -> [str]:
-        return [
-            llm_key
-            for llm_key in llms
-            if cache_store.get(llm_key + ":status") != "OPEN"
-        ]
-
     def set_correct_session(
         self, prompt: str, max_tokens: int, exclude_llms=None
     ):
         if exclude_llms is None:
             exclude_llms = []
-        viable_llms = self.get_llms_with_context_length(prompt, max_tokens)
-        viable_llms = self.get_available_llms(viable_llms)
-        viable_llms = [
-            llm_key for llm_key in viable_llms if llm_key not in exclude_llms
-        ]
 
-        if viable_llms.__len__() == 0:
+        selected_llm = None
+
+        for llm_key in self.llm.llm_keys:
+            if (llm_key not in exclude_llms
+                and cache_store.get(llm_key + ":status") != "OPEN"
+                and self.llm.llm_configs[llm_key].spec.context_length
+                    >= self.get_total_context_length(prompt,
+                                                     llm_key,
+                                                     max_tokens)):
+                selected_llm = llm_key
+                break
+
+        if selected_llm is None:
             log.error(
                 "No viable LLMs found! Using LLM with longest context length."
             )
@@ -132,8 +122,7 @@ class StrategyLLMSession(LLMSession):
                 llm_configs,
                 key=lambda llm_key: llm_configs[llm_key].spec.context_length,
             )
-        else:
-            selected_llm = viable_llms[0]
+        
         log.info("Selected LLM: " + selected_llm)
 
         self.current_session_key = selected_llm
