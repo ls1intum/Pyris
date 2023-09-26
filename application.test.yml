@@ -21,5 +21,5 @@ pyris:
         api_type: ""
         api_version: ""
         deployment_id: ""
-        model: ""
+        model: "gpt-3.5-turbo"
         token: ""
