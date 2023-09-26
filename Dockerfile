@@ -7,4 +7,4 @@ RUN poetry install
 COPY app /app/app
 
 EXPOSE 8000
-CMD ["poetry", "run", "gunicorn", "app.main:app", "--workers", "4", "--threads", "16", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
+CMD ["poetry", "run", "gunicorn", "app.main:app", "--workers", "4", "--threads", "8", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
