@@ -51,6 +51,7 @@ class StrategyLLMConfig(LLMModelConfig):
             return cls.instance
         # Local import needed to avoid circular dependency
         from app.llms.strategy_llm import StrategyLLM
+
         cls.instance = StrategyLLM(cls.llms)
         return cls.instance
 
@@ -89,5 +90,7 @@ class Settings(BaseModel):
 
 
 settings = Settings.get_settings()
+
+# Init instance, so it is faster during requests
 for value in enumerate(settings.pyris.llms.values()):
     value[1].get_instance()

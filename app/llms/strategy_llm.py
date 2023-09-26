@@ -98,12 +98,12 @@ class StrategyLLMSession(LLMSession):
         selected_llm = None
 
         for llm_key in self.llm.llm_keys:
-            if (llm_key not in exclude_llms
+            if (
+                llm_key not in exclude_llms
                 and cache_store.get(llm_key + ":status") != "OPEN"
                 and self.llm.llm_configs[llm_key].spec.context_length
-                    >= self.get_total_context_length(prompt,
-                                                     llm_key,
-                                                     max_tokens)):
+                >= self.get_total_context_length(prompt, llm_key, max_tokens)
+            ):
                 selected_llm = llm_key
                 break
 
@@ -122,7 +122,7 @@ class StrategyLLMSession(LLMSession):
                 llm_configs,
                 key=lambda llm_key: llm_configs[llm_key].spec.context_length,
             )
-        
+
         log.info("Selected LLM: " + selected_llm)
 
         self.current_session_key = selected_llm
