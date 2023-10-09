@@ -33,7 +33,7 @@ def test_query_success(mocker):
     result = guidance_wrapper.query()
 
     assert isinstance(result, dict)
-    assert result['response'] == "the output"
+    assert result["response"] == "the output"
 
 
 def test_query_using_truncate_function(mocker):
@@ -58,8 +58,8 @@ def test_query_using_truncate_function(mocker):
     result = guidance_wrapper.query()
 
     assert isinstance(result, dict)
-    assert result['answer'] == "the output"
-    assert result['response'] == "the"
+    assert result["answer"] == "the output"
+    assert result["response"] == "the"
 
 
 def test_query_missing_required_params(mocker):
@@ -83,4 +83,4 @@ def test_query_missing_required_params(mocker):
         result = guidance_wrapper.query()
 
         assert isinstance(result, dict)
-        assert result['response'] == "the output"
+        assert result["response"] == "the output"

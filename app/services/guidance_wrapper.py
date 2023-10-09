@@ -1,7 +1,6 @@
 import guidance
 
 from app.config import LLMModelConfig
-from app.models.dtos import Content, ContentType
 from app.services.guidance_functions import truncate
 
 
@@ -21,7 +20,7 @@ class GuidanceWrapper:
         self.handlebars = handlebars
         self.parameters = parameters
 
-    def query(self) -> Content:
+    def query(self) -> dict:
         """Get response from a chosen LLM model.
 
         Returns:
@@ -33,8 +32,9 @@ class GuidanceWrapper:
         """
 
         import re
+
         pattern = r'{{(?:gen|geneach|set) [\'"]([^\'"]+)[\'"]$}}'
-        var_names = re.findall(pattern, input_string)
+        var_names = re.findall(pattern, self.handlebars)
 
         template = guidance(self.handlebars)
         result = template(
@@ -47,7 +47,9 @@ class GuidanceWrapper:
             raise result._exception
 
         generated_vars = {
-            var_name: result[var_name] for var_name in var_names if var_name in result
+            var_name: result[var_name]
+            for var_name in var_names
+            if var_name in result
         }
 
         return generated_vars
@@ -69,7 +71,7 @@ class GuidanceWrapper:
         content = (
             GuidanceWrapper(model=self.model, handlebars=handlebars)
             .query()
-            .text_content
+            .get("response")
         )
         return content == "1"
 

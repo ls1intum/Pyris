@@ -25,9 +25,7 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     used_model: str = Field(..., alias="usedModel")
-    sent_at: datetime = Field(
-        alias="sentAt", default_factory=datetime.utcnow
-    )
+    sent_at: datetime = Field(alias="sentAt", default_factory=datetime.utcnow)
     content: dict
 
 
