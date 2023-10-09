@@ -31,9 +31,9 @@ def test_send_message(test_client, headers, mocker):
     mocker.patch.object(
         GuidanceWrapper,
         "query",
-        return_value=Content(
-            type=ContentType.TEXT, textContent="some content"
-        ),
+        return_value={
+            "response": "some content",
+        },
         autospec=True,
     )
 
@@ -55,9 +55,9 @@ def test_send_message(test_client, headers, mocker):
     assert response.status_code == 200
     assert response.json() == {
         "usedModel": "GPT35_TURBO",
-        "message": {
-            "sentAt": "2023-06-16T01:21:34+00:00",
-            "content": [{"textContent": "some content", "type": "text"}],
+        "sentAt": "2023-06-16T01:21:34+00:00",
+        "content": {
+            "response": "some content",
         },
     }
 

@@ -52,13 +52,8 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     except Exception as e:
         raise InternalServerException(str(e))
 
-    # Turn content into an array if it's not already
-    if not isinstance(content, list):
-        content = [content]
-
     return SendMessageResponse(
         usedModel=body.preferred_model,
-        message=SendMessageResponse.Message(
-            sentAt=datetime.now(timezone.utc), content=content
-        ),
+        sentAt=datetime.now(timezone.utc),
+        content=content,
     )

@@ -32,6 +32,10 @@ class GuidanceWrapper:
             ValueError: if handlebars do not generate 'response'
         """
 
+        import re
+        pattern = r'{{(?:gen|geneach|set) [\'"]([^\'"]+)[\'"]$}}'
+        var_names = re.findall(pattern, input_string)
+
         template = guidance(self.handlebars)
         result = template(
             llm=self._get_llm(),
@@ -42,10 +46,11 @@ class GuidanceWrapper:
         if isinstance(result._exception, Exception):
             raise result._exception
 
-        if "response" not in result:
-            raise ValueError("The handlebars do not generate 'response'")
+        generated_vars = {
+            var_name: result[var_name] for var_name in var_names if var_name in result
+        }
 
-        return Content(type=ContentType.TEXT, textContent=result["response"])
+        return generated_vars
 
     def is_up(self) -> bool:
         """Check if the chosen LLM model is up.
