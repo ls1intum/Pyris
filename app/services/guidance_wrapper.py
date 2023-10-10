@@ -31,8 +31,11 @@ class GuidanceWrapper:
             ValueError: if handlebars do not generate 'response'
         """
 
+        # Perform a regex search to find the names of the variables being generated
+        # by the handlebars template
+        # This regex matches strings like: {{gen 'response' temperature=0.0 max_tokens=500}}
+        # and extracts the variable name 'response'
         import re
-
         pattern = r'{{(?:gen|geneach|set) [\'"]([^\'"]+)[\'"]$}}'
         var_names = re.findall(pattern, self.handlebars)
 
