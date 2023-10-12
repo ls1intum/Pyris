@@ -62,7 +62,7 @@ def execute_call(body: SendMessageRequest) -> dict:
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
     generated_vars = execute_call(body)
 
-    # Restore the old behavior of only returning the 'response' variable for the v1 API
+    # Restore the old behavior of throwing an exception if no 'response' variable was generated
     if "response" not in generated_vars:
         raise InternalServerException(
             str(ValueError("The handlebars do not generate 'response'"))
@@ -75,7 +75,7 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
             content=[
                 Content(
                     type=ContentType.TEXT,
-                    textContent=generated_vars["response"],
+                    textContent=generated_vars["response"],  # V1 behavior: only return the 'response' variable
                 )
             ],
         ),
@@ -91,5 +91,5 @@ def send_message_v2(body: SendMessageRequest) -> SendMessageResponseV2:
     return SendMessageResponseV2(
         usedModel=body.preferred_model,
         sentAt=datetime.now(timezone.utc),
-        content=generated_vars,
+        content=generated_vars,  # V2 behavior: return all variables generated in the program
     )
