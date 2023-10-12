@@ -11,7 +11,13 @@ from app.core.custom_exceptions import (
     InvalidModelException,
 )
 from app.dependencies import TokenPermissionsValidator
-from app.models.dtos import SendMessageRequest, SendMessageResponse
+from app.models.dtos import (
+    SendMessageRequest,
+    SendMessageResponse,
+    Content,
+    ContentType,
+    SendMessageResponseV2,
+)
 from app.services.circuit_breaker import CircuitBreaker
 from app.services.guidance_wrapper import GuidanceWrapper
 from app.config import settings
@@ -19,10 +25,7 @@ from app.config import settings
 router = APIRouter(tags=["messages"])
 
 
-@router.post(
-    "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
-)
-def send_message(body: SendMessageRequest) -> SendMessageResponse:
+def execute_call(body: SendMessageRequest) -> dict:
     try:
         model = settings.pyris.llms[body.preferred_model]
     except ValueError as e:
@@ -35,7 +38,7 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     )
 
     try:
-        content = CircuitBreaker.protected_call(
+        return CircuitBreaker.protected_call(
             func=guidance.query,
             cache_key=body.preferred_model,
             accepted_exceptions=(
@@ -52,8 +55,41 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     except Exception as e:
         raise InternalServerException(str(e))
 
+
+@router.post(
+    "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
+)
+def send_message(body: SendMessageRequest) -> SendMessageResponse:
+    generated_vars = execute_call(body)
+
+    # Restore the old behavior of only returning the 'response' variable for the v1 API
+    if "response" not in generated_vars:
+        raise InternalServerException(
+            str(ValueError("The handlebars do not generate 'response'"))
+        )
+
     return SendMessageResponse(
         usedModel=body.preferred_model,
+        message=SendMessageResponse.Message(
+            sentAt=datetime.now(timezone.utc),
+            content=[
+                Content(
+                    type=ContentType.TEXT,
+                    textContent=generated_vars["response"],
+                )
+            ],
+        ),
+    )
+
+
+@router.post(
+    "/api/v2/messages", dependencies=[Depends(TokenPermissionsValidator())]
+)
+def send_message_v2(body: SendMessageRequest) -> SendMessageResponseV2:
+    generated_vars = execute_call(body)
+
+    return SendMessageResponseV2(
+        usedModel=body.preferred_model,
         sentAt=datetime.now(timezone.utc),
-        content=content,
+        content=generated_vars,
     )
