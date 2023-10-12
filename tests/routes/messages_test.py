@@ -1,6 +1,5 @@
 import pytest
 from freezegun import freeze_time
-from app.models.dtos import Content, ContentType
 from app.services.guidance_wrapper import GuidanceWrapper
 import app.config as config
 

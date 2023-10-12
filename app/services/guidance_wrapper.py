@@ -31,10 +31,12 @@ class GuidanceWrapper:
             Reraises exception from guidance package
         """
 
-        # Perform a regex search to find the names of the variables being generated
-        # by the handlebars template
-        # This regex matches strings like: {{gen 'response' temperature=0.0 max_tokens=500}}
-        # and extracts the variable name 'response'
+        # Perform a regex search to find the names of the variables
+        # being generated in the program. This regex matches strings like:
+        #    {{gen 'response' temperature=0.0 max_tokens=500}}
+        #    {{#geneach 'values' num_iterations=3}}
+        #    {{set 'answer' (truncate response 3)}}
+        # and extracts the variable names 'response', 'values', and 'answer'
         pattern = r'{{#?(?:gen|geneach|set) +[\'"]([^\'"]+)[\'"]'
         var_names = re.findall(pattern, self.handlebars)
 
