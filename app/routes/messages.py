@@ -75,7 +75,9 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
             content=[
                 Content(
                     type=ContentType.TEXT,
-                    textContent=generated_vars["response"],  # V1 behavior: only return the 'response' variable
+                    textContent=generated_vars[
+                        "response"
+                    ],  # V1 behavior: only return the 'response' variable
                 )
             ],
         ),

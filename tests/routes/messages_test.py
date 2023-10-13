@@ -50,7 +50,9 @@ def test_send_message(test_client, headers, mocker):
             "query": "Some query",
         },
     }
-    response_v1 = test_client.post("/api/v1/messages", headers=headers, json=body)
+    response_v1 = test_client.post(
+        "/api/v1/messages", headers=headers, json=body
+    )
     assert response_v1.status_code == 200
     assert response_v1.json() == {
         "usedModel": "GPT35_TURBO",
@@ -60,7 +62,9 @@ def test_send_message(test_client, headers, mocker):
         },
     }
 
-    response_v2 = test_client.post("/api/v2/messages", headers=headers, json=body)
+    response_v2 = test_client.post(
+        "/api/v2/messages", headers=headers, json=body
+    )
     assert response_v2.status_code == 200
     assert response_v2.json() == {
         "usedModel": "GPT35_TURBO",
