@@ -21,7 +21,6 @@ class Content(BaseModel):
 
 class SendMessageRequest(BaseModel):
     class Template(BaseModel):
-        id: int
         content: str
 
     template: Template
