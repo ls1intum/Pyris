@@ -40,6 +40,12 @@ class SendMessageResponse(BaseModel):
     message: Message
 
 
+class SendMessageRequestV2(BaseModel):
+    template: str
+    preferred_model: str = Field(..., alias="preferredModel")
+    parameters: dict
+
+
 class SendMessageResponseV2(BaseModel):
     used_model: str = Field(..., alias="usedModel")
     sent_at: datetime = Field(alias="sentAt", default_factory=datetime.utcnow)

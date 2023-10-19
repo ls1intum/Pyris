@@ -16,6 +16,7 @@ from app.models.dtos import (
     SendMessageResponse,
     Content,
     ContentType,
+    SendMessageRequestV2,
     SendMessageResponseV2,
 )
 from app.services.circuit_breaker import CircuitBreaker
@@ -25,22 +26,22 @@ from app.config import settings
 router = APIRouter(tags=["messages"])
 
 
-def execute_call(body: SendMessageRequest) -> dict:
+def execute_call(template, preferred_model, parameters) -> dict:
     try:
-        model = settings.pyris.llms[body.preferred_model]
+        model = settings.pyris.llms[preferred_model]
     except ValueError as e:
         raise InvalidModelException(str(e))
 
     guidance = GuidanceWrapper(
         model=model,
-        handlebars=body.template.content,
-        parameters=body.parameters,
+        handlebars=template,
+        parameters=parameters,
     )
 
     try:
         return CircuitBreaker.protected_call(
             func=guidance.query,
-            cache_key=body.preferred_model,
+            cache_key=preferred_model,
             accepted_exceptions=(
                 KeyError,
                 SyntaxError,
@@ -60,7 +61,7 @@ def execute_call(body: SendMessageRequest) -> dict:
     "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
-    generated_vars = execute_call(body)
+    generated_vars = execute_call(body.template.content, body.preferred_model, body.parameters)
 
     # V1: Throw an exception if no 'response' variable was generated
     if "response" not in generated_vars:
@@ -87,8 +88,8 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
 @router.post(
     "/api/v2/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
-def send_message_v2(body: SendMessageRequest) -> SendMessageResponseV2:
-    generated_vars = execute_call(body)
+def send_message_v2(body: SendMessageRequestV2) -> SendMessageResponseV2:
+    generated_vars = execute_call(body.template, body.preferred_model, body.parameters)
 
     return SendMessageResponseV2(
         usedModel=body.preferred_model,
