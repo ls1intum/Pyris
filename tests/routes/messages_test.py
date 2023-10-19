@@ -62,6 +62,31 @@ def test_send_message(test_client, headers, mocker):
         },
     }
 
+
+@freeze_time("2023-06-16 03:21:34 +02:00")
+@pytest.mark.usefixtures("model_configs")
+def test_send_message_v2(test_client, headers, mocker):
+    mocker.patch.object(
+        GuidanceWrapper,
+        "query",
+        return_value={
+            "response": "some content",
+        },
+        autospec=True,
+    )
+
+    body = {
+        "template": "{{#user~}}I want a response to the following query:\
+            {{query}}{{~/user}}{{#assistant~}}\
+            {{gen 'response' temperature=0.0 max_tokens=500}}{{~/assistant}}",
+        "preferredModel": "GPT35_TURBO",
+        "parameters": {
+            "course": "Intro to Java",
+            "exercise": "Fun With Sets",
+            "query": "Some query",
+        },
+    }
+
     response_v2 = test_client.post(
         "/api/v2/messages", headers=headers, json=body
     )
