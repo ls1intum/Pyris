@@ -61,7 +61,9 @@ def execute_call(template, preferred_model, parameters) -> dict:
     "/api/v1/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message(body: SendMessageRequest) -> SendMessageResponse:
-    generated_vars = execute_call(body.template.content, body.preferred_model, body.parameters)
+    generated_vars = execute_call(
+        body.template.content, body.preferred_model, body.parameters
+    )
 
     # V1: Throw an exception if no 'response' variable was generated
     if "response" not in generated_vars:
@@ -89,7 +91,9 @@ def send_message(body: SendMessageRequest) -> SendMessageResponse:
     "/api/v2/messages", dependencies=[Depends(TokenPermissionsValidator())]
 )
 def send_message_v2(body: SendMessageRequestV2) -> SendMessageResponseV2:
-    generated_vars = execute_call(body.template, body.preferred_model, body.parameters)
+    generated_vars = execute_call(
+        body.template, body.preferred_model, body.parameters
+    )
 
     return SendMessageResponseV2(
         usedModel=body.preferred_model,
