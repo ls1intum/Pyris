@@ -10,7 +10,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.103.1"
+fastapi = "^0.104.1"
 uvicorn = "^0.23.2"
 httpx = "^0.25.0"
 orjson = "^3.9.1"
