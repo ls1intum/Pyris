@@ -16,7 +16,10 @@ def new_add_text_to_chat_mode(chat_mode):
     else:
         print("new_add_text_to_chat_mode", chat_mode.items())
         for c in chat_mode["choices"]:
-            c["text"] = c["message"]["content"]
+            if "message" in c and "content" in c["message"]:
+                c["text"] = c["message"]["content"]
+            else:
+                c["text"] = ""
         return chat_mode
 
 
