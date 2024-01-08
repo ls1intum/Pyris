@@ -135,5 +135,7 @@ class CircuitBreaker:
                 )
                 return cls.Status.CLOSED
 
-            cache_store.set(status_key, cls.Status.OPEN, ex=cls.OPEN_TTL_SECONDS)
+            cache_store.set(
+                status_key, cls.Status.OPEN, ex=cls.OPEN_TTL_SECONDS
+            )
             return cls.Status.OPEN

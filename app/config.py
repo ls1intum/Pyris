@@ -1,8 +1,26 @@
 import os
+import types
 
 from guidance.llms import OpenAI
+import guidance.llms._openai
 from pyaml_env import parse_config
 from pydantic import BaseModel, validator, Field, typing
+
+old_add_text_to_chat_mode = guidance.llms._openai.add_text_to_chat_mode
+
+
+def new_add_text_to_chat_mode(chat_mode):
+    if isinstance(chat_mode, (types.AsyncGeneratorType, types.GeneratorType)):
+        print("new_add_text_to_chat_mode", chat_mode)
+        return guidance.llms._openai.add_text_to_chat_mode_generator(chat_mode)
+    else:
+        print("new_add_text_to_chat_mode", chat_mode.items())
+        for c in chat_mode["choices"]:
+            c["text"] = c["message"]["content"]
+        return chat_mode
+
+
+guidance.llms._openai.add_text_to_chat_mode = new_add_text_to_chat_mode
 
 
 class LLMModelSpecs(BaseModel):
