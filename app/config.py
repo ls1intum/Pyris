@@ -4,17 +4,15 @@ import types
 from guidance.llms import OpenAI
 import guidance.llms._openai
 from pyaml_env import parse_config
-from pydantic import BaseModel, validator, Field, typing
+from pydantic import BaseModel, validator
 
 old_add_text_to_chat_mode = guidance.llms._openai.add_text_to_chat_mode
 
 
 def new_add_text_to_chat_mode(chat_mode):
     if isinstance(chat_mode, (types.AsyncGeneratorType, types.GeneratorType)):
-        print("new_add_text_to_chat_mode", chat_mode)
         return guidance.llms._openai.add_text_to_chat_mode_generator(chat_mode)
     else:
-        print("new_add_text_to_chat_mode", chat_mode.items())
         for c in chat_mode["choices"]:
             if "message" in c and "content" in c["message"]:
                 c["text"] = c["message"]["content"]
@@ -42,7 +40,6 @@ class LLMModelConfig(BaseModel):
 class OpenAIConfig(LLMModelConfig):
     spec: LLMModelSpecs
     llm_credentials: dict
-    instance: typing.Any = Field(repr=False)
 
     @validator("type")
     def check_type(cls, v):
@@ -52,15 +49,10 @@ class OpenAIConfig(LLMModelConfig):
 
     def get_instance(cls):
         return OpenAI(**cls.llm_credentials)
-        # if cls.instance is not None:
-        #     return cls.instance
-        # cls.instance = OpenAI(**cls.llm_credentials)
-        # return cls.instance
 
 
 class StrategyLLMConfig(LLMModelConfig):
     llms: list[str]
-    instance: typing.Any = Field(repr=False)
 
     @validator("type")
     def check_type(cls, v):
@@ -72,13 +64,6 @@ class StrategyLLMConfig(LLMModelConfig):
         from app.llms.strategy_llm import StrategyLLM
 
         return StrategyLLM(cls.llms)
-        # if#  cls.instance is not None:
-        #     return cls.instance
-        # # Local import needed to avoid circular dependency
-        # from app.llms.strategy_llm import StrategyLLM
-        #
-        # cls.instance = StrategyLLM(cls.llms)
-        # return cls.instance
 
 
 class APIKeyConfig(BaseModel):
