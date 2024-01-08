@@ -30,10 +30,11 @@ class OpenAIConfig(LLMModelConfig):
         return v
 
     def get_instance(cls):
-        if cls.instance is not None:
-            return cls.instance
-        cls.instance = OpenAI(**cls.llm_credentials)
-        return cls.instance
+        return OpenAI(**cls.llm_credentials)
+        # if cls.instance is not None:
+        #     return cls.instance
+        # cls.instance = OpenAI(**cls.llm_credentials)
+        # return cls.instance
 
 
 class StrategyLLMConfig(LLMModelConfig):
@@ -47,13 +48,16 @@ class StrategyLLMConfig(LLMModelConfig):
         return v
 
     def get_instance(cls):
-        if cls.instance is not None:
-            return cls.instance
-        # Local import needed to avoid circular dependency
         from app.llms.strategy_llm import StrategyLLM
 
-        cls.instance = StrategyLLM(cls.llms)
-        return cls.instance
+        return StrategyLLM(cls.llms)
+        # if#  cls.instance is not None:
+        #     return cls.instance
+        # # Local import needed to avoid circular dependency
+        # from app.llms.strategy_llm import StrategyLLM
+        #
+        # cls.instance = StrategyLLM(cls.llms)
+        # return cls.instance
 
 
 class APIKeyConfig(BaseModel):
