@@ -1,6 +1,6 @@
 import os
 import types
-
+import copy
 from guidance.llms import OpenAI
 import guidance.llms._openai
 from pyaml_env import parse_config
@@ -48,7 +48,9 @@ class OpenAIConfig(LLMModelConfig):
         return v
 
     def get_instance(cls):
-        return OpenAI(**cls.llm_credentials)
+        print("Specs", cls.llm_credentials)
+        llm_credentials = copy.deepcopy(cls.llm_credentials)
+        return OpenAI(**llm_credentials)
 
 
 class StrategyLLMConfig(LLMModelConfig):
