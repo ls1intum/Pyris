@@ -1,7 +1,11 @@
 from domain import IrisMessage
 from llm import LlmManager
 from llm import RequestHandlerInterface, CompletionArguments
-from llm.wrapper import LlmCompletionWrapperInterface, LlmChatCompletionWrapperInterface, LlmEmbeddingWrapperInterface
+from llm.wrapper import (
+    LlmCompletionWrapperInterface,
+    LlmChatCompletionWrapperInterface,
+    LlmEmbeddingWrapperInterface,
+)
 
 type BasicRequestHandlerModel = str
 
@@ -21,7 +25,9 @@ class BasicRequestHandler(RequestHandlerInterface):
         else:
             raise NotImplementedError
 
-    def chat_completion(self, messages: list[IrisMessage], arguments: CompletionArguments) -> IrisMessage:
+    def chat_completion(
+        self, messages: list[IrisMessage], arguments: CompletionArguments
+    ) -> IrisMessage:
         llm = self.llm_manager.get_llm_by_id(self.model).llm
         if isinstance(llm, LlmChatCompletionWrapperInterface):
             return llm.chat_completion(messages, arguments)

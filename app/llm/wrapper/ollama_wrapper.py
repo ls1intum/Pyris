@@ -1,6 +1,4 @@
 from ollama import Client, Message
-from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam
 
 from domain import IrisMessage
 from llm import CompletionArguments

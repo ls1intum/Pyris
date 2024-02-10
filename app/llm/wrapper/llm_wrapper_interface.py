@@ -2,7 +2,11 @@ from abc import ABCMeta, abstractmethod
 
 from llm import CompletionArguments
 
-type LlmWrapperInterface = LlmCompletionWrapperInterface | LlmChatCompletionWrapperInterface | LlmEmbeddingWrapperInterface
+type LlmWrapperInterface = (
+    LlmCompletionWrapperInterface
+    | LlmChatCompletionWrapperInterface
+    | LlmEmbeddingWrapperInterface
+)
 
 
 class LlmCompletionWrapperInterface(metaclass=ABCMeta):
@@ -10,8 +14,7 @@ class LlmCompletionWrapperInterface(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'completion') and
-                callable(subclass.completion))
+        return hasattr(subclass, "completion") and callable(subclass.completion)
 
     @abstractmethod
     def completion(self, prompt: str, arguments: CompletionArguments) -> str:
@@ -24,11 +27,14 @@ class LlmChatCompletionWrapperInterface(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'chat_completion') and
-                callable(subclass.chat_completion))
+        return hasattr(subclass, "chat_completion") and callable(
+            subclass.chat_completion
+        )
 
     @abstractmethod
-    def chat_completion(self, messages: list[any], arguments: CompletionArguments) -> any:
+    def chat_completion(
+        self, messages: list[any], arguments: CompletionArguments
+    ) -> any:
         """Create a completion from the chat messages"""
         raise NotImplementedError
 
@@ -38,8 +44,9 @@ class LlmEmbeddingWrapperInterface(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'create_embedding') and
-                callable(subclass.create_embedding))
+        return hasattr(subclass, "create_embedding") and callable(
+            subclass.create_embedding
+        )
 
     @abstractmethod
     def create_embedding(self, text: str) -> list[float]:
