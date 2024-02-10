@@ -5,11 +5,7 @@ from llm import CompletionArguments
 from llm.wrapper import LlmCompletionWrapperInterface
 
 
-class OpenAICompletionWrapper(LlmCompletionWrapperInterface):
-
-    def __init__(self, model: str, api_key: str):
-        self.client = OpenAI(api_key=api_key)
-        self.model = model
+class BaseOpenAICompletionWrapper(LlmCompletionWrapperInterface):
 
     def __init__(self, client, model: str):
         self.client = client
@@ -25,11 +21,19 @@ class OpenAICompletionWrapper(LlmCompletionWrapperInterface):
         )
         return response
 
+
+class OpenAICompletionWrapper(BaseOpenAICompletionWrapper):
+
+    def __init__(self, model: str, api_key: str):
+        client = OpenAI(api_key=api_key)
+        model = model
+        super().__init__(client, model)
+
     def __str__(self):
         return f"OpenAICompletion('{self.model}')"
 
 
-class AzureCompletionWrapper(OpenAICompletionWrapper):
+class AzureCompletionWrapper(BaseOpenAICompletionWrapper):
 
     def __init__(
         self,

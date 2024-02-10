@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
+from domain import IrisMessage
 from llm import CompletionArguments
 
 type LlmWrapperInterface = (
@@ -34,7 +35,7 @@ class LlmChatCompletionWrapperInterface(metaclass=ABCMeta):
     @abstractmethod
     def chat_completion(
         self, messages: list[any], arguments: CompletionArguments
-    ) -> any:
+    ) -> IrisMessage:
         """Create a completion from the chat messages"""
         raise NotImplementedError
 

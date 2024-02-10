@@ -6,11 +6,7 @@ from llm.wrapper import (
 )
 
 
-class OpenAIEmbeddingWrapper(LlmEmbeddingWrapperInterface):
-
-    def __init__(self, model: str, api_key: str):
-        self.client = OpenAI(api_key=api_key)
-        self.model = model
+class BaseOpenAIEmbeddingWrapper(LlmEmbeddingWrapperInterface):
 
     def __init__(self, client, model: str):
         self.client = client
@@ -24,11 +20,19 @@ class OpenAIEmbeddingWrapper(LlmEmbeddingWrapperInterface):
         )
         return response.data[0].embedding
 
+
+class OpenAIEmbeddingWrapper(BaseOpenAIEmbeddingWrapper):
+
+    def __init__(self, model: str, api_key: str):
+        client = OpenAI(api_key=api_key)
+        model = model
+        super().__init__(client, model)
+
     def __str__(self):
         return f"OpenAIEmbedding('{self.model}')"
 
 
-class AzureEmbeddingWrapper(OpenAIEmbeddingWrapper):
+class AzureEmbeddingWrapper(BaseOpenAIEmbeddingWrapper):
 
     def __init__(
         self,
