@@ -11,15 +11,12 @@ from llm.wrapper import (
 
 def convert_to_ollama_messages(messages: list[IrisMessage]) -> list[Message]:
     return [
-        Message(role=message.role.value, content=message.message_text)
-        for message in messages
+        Message(role=message.role.value, content=message.text) for message in messages
     ]
 
 
 def convert_to_iris_message(message: Message) -> IrisMessage:
-    return IrisMessage(
-        role=IrisMessageRole(message["role"]), message_text=message["content"]
-    )
+    return IrisMessage(role=IrisMessageRole(message["role"]), text=message["content"])
 
 
 class OllamaWrapper(

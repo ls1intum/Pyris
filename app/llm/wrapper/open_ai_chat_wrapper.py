@@ -10,15 +10,14 @@ def convert_to_open_ai_messages(
     messages: list[IrisMessage],
 ) -> list[ChatCompletionMessageParam]:
     return [
-        {"role": message.role.value, "content": message.message_text}
-        for message in messages
+        {"role": message.role.value, "content": message.text} for message in messages
     ]
 
 
 def convert_to_iris_message(message: ChatCompletionMessageParam) -> IrisMessage:
     # Get IrisMessageRole from the string message.role
     message_role = IrisMessageRole(message.role)
-    return IrisMessage(role=message_role, message_text=message.content)
+    return IrisMessage(role=message_role, text=message.content)
 
 
 class BaseOpenAIChatCompletionWrapper(LlmChatCompletionWrapperInterface):

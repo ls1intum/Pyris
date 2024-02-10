@@ -9,13 +9,11 @@ class IrisMessageRole(Enum):
 
 class IrisMessage:
     role: IrisMessageRole
-    message_text: str
+    text: str
 
-    def __init__(self, role: IrisMessageRole, message_text: str):
+    def __init__(self, role: IrisMessageRole, text: str):
         self.role = role
-        self.message_text = message_text
+        self.text = text
 
     def __str__(self):
-        return (
-            f"IrisMessage(role={self.role.value}, message_text='{self.message_text}')"
-        )
+        return f"IrisMessage(role={self.role.value}, text='{self.text}')"
