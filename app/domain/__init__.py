@@ -1,1 +1,1 @@
-from message import IrisMessage
+from domain.message import IrisMessage

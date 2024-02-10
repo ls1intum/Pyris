@@ -16,7 +16,7 @@ def convert_to_ollama_messages(messages: list[IrisMessage]) -> list[Message]:
 
 
 def convert_to_iris_message(message: Message) -> IrisMessage:
-    return IrisMessage(role=message.role, message_text=message.content)
+    return IrisMessage(role=message["role"], message_text=message["content"])
 
 
 class OllamaWrapper(
@@ -43,4 +43,7 @@ class OllamaWrapper(
 
     def create_embedding(self, text: str) -> list[float]:
         response = self.client.embeddings(model=self.model, prompt=text)
-        return response
+        return list(response)
+
+    def __str__(self):
+        return f"Ollama('{self.model}')"

@@ -23,7 +23,9 @@ class BasicRequestHandler(RequestHandlerInterface):
         if isinstance(llm, LlmCompletionWrapperInterface):
             return llm.completion(prompt, arguments)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"The LLM {llm.__str__()} does not support completion"
+            )
 
     def chat_completion(
         self, messages: list[IrisMessage], arguments: CompletionArguments
@@ -32,11 +34,15 @@ class BasicRequestHandler(RequestHandlerInterface):
         if isinstance(llm, LlmChatCompletionWrapperInterface):
             return llm.chat_completion(messages, arguments)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"The LLM {llm.__str__()} does not support chat completion"
+            )
 
     def create_embedding(self, text: str) -> list[float]:
         llm = self.llm_manager.get_llm_by_id(self.model).llm
         if isinstance(llm, LlmEmbeddingWrapperInterface):
             return llm.create_embedding(text)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"The LLM {llm.__str__()} does not support embedding"
+            )
