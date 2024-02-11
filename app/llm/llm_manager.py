@@ -6,6 +6,7 @@ from common import Singleton
 from llm.wrapper import AbstractLlmWrapper
 
 
+# TODO: Replace with pydantic in a future PR
 def create_llm_wrapper(config: dict) -> AbstractLlmWrapper:
     if config["type"] == "openai":
         from llm.wrapper import OpenAICompletionWrapper
