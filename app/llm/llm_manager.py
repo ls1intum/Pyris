@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 import yaml
 
 from common import Singleton
-from llm.wrapper import AbstractLlmWrapper, LlmWrapper
+from llm.wrapper import LlmWrapper
 
 
 # Small workaround to get pydantic discriminators working
@@ -14,7 +14,7 @@ class LlmList(BaseModel):
 
 
 class LlmManager(metaclass=Singleton):
-    entries: list[AbstractLlmWrapper]
+    entries: list[LlmWrapper]
 
     def __init__(self):
         self.entries = []

@@ -1,4 +1,3 @@
-from llm.wrapper.abstract_llm_wrapper import AbstractLlmWrapper
 from llm.wrapper.open_ai_completion_wrapper import (
     OpenAICompletionWrapper,
     AzureCompletionWrapper,
@@ -7,6 +6,7 @@ from llm.wrapper.open_ai_chat_wrapper import (
     OpenAIChatCompletionWrapper,
     AzureChatCompletionWrapper,
 )
+from llm.wrapper.open_ai_dalle_wrapper import OpenAIDalleWrapper
 from llm.wrapper.open_ai_embedding_wrapper import (
     OpenAIEmbeddingWrapper,
     AzureEmbeddingWrapper,
@@ -21,4 +21,5 @@ type LlmWrapper = (
     | OpenAIEmbeddingWrapper
     | AzureEmbeddingWrapper
     | OllamaWrapper
+    | OpenAIDalleWrapper
 )

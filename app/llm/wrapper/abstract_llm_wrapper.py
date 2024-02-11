@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from pydantic import BaseModel
 
-from domain import IrisMessage
+from domain import IrisMessage, IrisImage
 from llm import CompletionArguments
 
 
@@ -55,4 +55,19 @@ class AbstractLlmEmbeddingWrapper(AbstractLlmWrapper, metaclass=ABCMeta):
     @abstractmethod
     def create_embedding(self, text: str) -> list[float]:
         """Create an embedding from the text"""
+        raise NotImplementedError
+
+
+class AbstractLlmImageGenerationWrapper(AbstractLlmWrapper, metaclass=ABCMeta):
+    """Abstract class for the llm image generation wrappers"""
+
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return hasattr(subclass, "generate_images") and callable(
+            subclass.generate_images
+        )
+
+    @abstractmethod
+    def generate_images(self, prompt: str, n: int, **kwargs) -> list[IrisImage]:
+        """Generate images from the prompt"""
         raise NotImplementedError
