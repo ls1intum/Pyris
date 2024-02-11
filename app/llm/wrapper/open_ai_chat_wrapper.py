@@ -1,9 +1,9 @@
 from openai.lib.azure import AzureOpenAI
-from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 from domain import IrisMessage, IrisMessageRole
 from llm import CompletionArguments
-from llm.wrapper import LlmChatCompletionWrapperInterface
+from llm.wrapper import AbstractLlmChatCompletionWrapper
 
 
 def convert_to_open_ai_messages(
@@ -14,15 +14,16 @@ def convert_to_open_ai_messages(
     ]
 
 
-def convert_to_iris_message(message: ChatCompletionMessageParam) -> IrisMessage:
+def convert_to_iris_message(message: ChatCompletionMessage) -> IrisMessage:
     # Get IrisMessageRole from the string message.role
     message_role = IrisMessageRole(message.role)
     return IrisMessage(role=message_role, text=message.content)
 
 
-class BaseOpenAIChatCompletionWrapper(LlmChatCompletionWrapperInterface):
+class BaseOpenAIChatCompletionWrapper(AbstractLlmChatCompletionWrapper):
 
-    def __init__(self, client, model: str):
+    def __init__(self, client, model: str, **kwargs):
+        super().__init__(**kwargs)
         self.client = client
         self.model = model
 
@@ -41,12 +42,12 @@ class BaseOpenAIChatCompletionWrapper(LlmChatCompletionWrapperInterface):
 
 class OpenAIChatCompletionWrapper(BaseOpenAIChatCompletionWrapper):
 
-    def __init__(self, model: str, api_key: str):
+    def __init__(self, model: str, api_key: str, **kwargs):
         from openai import OpenAI
 
         client = OpenAI(api_key=api_key)
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"OpenAIChat('{self.model}')"
@@ -61,6 +62,7 @@ class AzureChatCompletionWrapper(BaseOpenAIChatCompletionWrapper):
         azure_deployment: str,
         api_version: str,
         api_key: str,
+        **kwargs,
     ):
         client = AzureOpenAI(
             azure_endpoint=endpoint,
@@ -69,7 +71,7 @@ class AzureChatCompletionWrapper(BaseOpenAIChatCompletionWrapper):
             api_key=api_key,
         )
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"AzureChat('{self.model}')"

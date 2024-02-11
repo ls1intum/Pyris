@@ -3,10 +3,10 @@ import os
 import yaml
 
 from common import Singleton
-from llm.wrapper import LlmWrapperInterface
+from llm.wrapper import AbstractLlmWrapper
 
 
-def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
+def create_llm_wrapper(config: dict) -> AbstractLlmWrapper:
     if config["type"] == "openai":
         from llm.wrapper import OpenAICompletionWrapper
 
@@ -15,6 +15,9 @@ def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
         from llm.wrapper import AzureCompletionWrapper
 
         return AzureCompletionWrapper(
+            id=config["id"],
+            name=config["name"],
+            description=config["description"],
             model=config["model"],
             endpoint=config["endpoint"],
             azure_deployment=config["azure_deployment"],
@@ -25,12 +28,19 @@ def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
         from llm.wrapper import OpenAIChatCompletionWrapper
 
         return OpenAIChatCompletionWrapper(
-            model=config["model"], api_key=config["api_key"]
+            id=config["id"],
+            name=config["name"],
+            description=config["description"],
+            model=config["model"],
+            api_key=config["api_key"],
         )
     elif config["type"] == "azure_chat":
         from llm.wrapper import AzureChatCompletionWrapper
 
         return AzureChatCompletionWrapper(
+            id=config["id"],
+            name=config["name"],
+            description=config["description"],
             model=config["model"],
             endpoint=config["endpoint"],
             azure_deployment=config["azure_deployment"],
@@ -45,6 +55,9 @@ def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
         from llm.wrapper import AzureEmbeddingWrapper
 
         return AzureEmbeddingWrapper(
+            id=config["id"],
+            name=config["name"],
+            description=config["description"],
             model=config["model"],
             endpoint=config["endpoint"],
             azure_deployment=config["azure_deployment"],
@@ -55,6 +68,9 @@ def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
         from llm.wrapper import OllamaWrapper
 
         return OllamaWrapper(
+            id=config["id"],
+            name=config["name"],
+            description=config["description"],
             model=config["model"],
             host=config["host"],
         )
@@ -62,27 +78,15 @@ def create_llm_wrapper(config: dict) -> LlmWrapperInterface:
         raise Exception(f"Unknown LLM type: {config['type']}")
 
 
-class LlmManagerEntry:
-    id: str
-    llm: LlmWrapperInterface
-
-    def __init__(self, config: dict):
-        self.id = config["id"]
-        self.llm = create_llm_wrapper(config)
-
-    def __str__(self):
-        return f"{self.id}: {self.llm}"
-
-
 class LlmManager(metaclass=Singleton):
-    llms: list[LlmManagerEntry]
+    entries: list[AbstractLlmWrapper]
 
     def __init__(self):
-        self.llms = []
+        self.entries = []
         self.load_llms()
 
     def get_llm_by_id(self, llm_id):
-        for llm in self.llms:
+        for llm in self.entries:
             if llm.id == llm_id:
                 return llm
 
@@ -94,4 +98,4 @@ class LlmManager(metaclass=Singleton):
         with open(path, "r") as file:
             loaded_llms = yaml.safe_load(file)
 
-        self.llms = [LlmManagerEntry(llm) for llm in loaded_llms]
+        self.entries = [create_llm_wrapper(llm) for llm in loaded_llms]

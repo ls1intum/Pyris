@@ -3,9 +3,9 @@ from ollama import Client, Message
 from domain import IrisMessage, IrisMessageRole
 from llm import CompletionArguments
 from llm.wrapper import (
-    LlmChatCompletionWrapperInterface,
-    LlmCompletionWrapperInterface,
-    LlmEmbeddingWrapperInterface,
+    AbstractLlmChatCompletionWrapper,
+    AbstractLlmCompletionWrapper,
+    AbstractLlmEmbeddingWrapper,
 )
 
 
@@ -20,12 +20,13 @@ def convert_to_iris_message(message: Message) -> IrisMessage:
 
 
 class OllamaWrapper(
-    LlmCompletionWrapperInterface,
-    LlmChatCompletionWrapperInterface,
-    LlmEmbeddingWrapperInterface,
+    AbstractLlmCompletionWrapper,
+    AbstractLlmChatCompletionWrapper,
+    AbstractLlmEmbeddingWrapper,
 ):
 
-    def __init__(self, model: str, host: str):
+    def __init__(self, model: str, host: str, **kwargs):
+        super().__init__(**kwargs)
         self.client = Client(host=host)  # TODO: Add authentication (httpx auth?)
         self.model = model
 

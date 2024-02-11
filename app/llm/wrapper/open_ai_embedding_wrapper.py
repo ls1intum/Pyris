@@ -2,13 +2,14 @@ from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
 
 from llm.wrapper import (
-    LlmEmbeddingWrapperInterface,
+    AbstractLlmEmbeddingWrapper,
 )
 
 
-class BaseOpenAIEmbeddingWrapper(LlmEmbeddingWrapperInterface):
+class BaseOpenAIEmbeddingWrapper(AbstractLlmEmbeddingWrapper):
 
-    def __init__(self, client, model: str):
+    def __init__(self, client, model: str, **kwargs):
+        super().__init__(**kwargs)
         self.client = client
         self.model = model
 
@@ -23,10 +24,10 @@ class BaseOpenAIEmbeddingWrapper(LlmEmbeddingWrapperInterface):
 
 class OpenAIEmbeddingWrapper(BaseOpenAIEmbeddingWrapper):
 
-    def __init__(self, model: str, api_key: str):
+    def __init__(self, model: str, api_key: str, **kwargs):
         client = OpenAI(api_key=api_key)
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"OpenAIEmbedding('{self.model}')"
@@ -41,6 +42,7 @@ class AzureEmbeddingWrapper(BaseOpenAIEmbeddingWrapper):
         azure_deployment: str,
         api_version: str,
         api_key: str,
+        **kwargs,
     ):
         client = AzureOpenAI(
             azure_endpoint=endpoint,
@@ -49,7 +51,7 @@ class AzureEmbeddingWrapper(BaseOpenAIEmbeddingWrapper):
             api_key=api_key,
         )
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"AzureEmbedding('{self.model}')"

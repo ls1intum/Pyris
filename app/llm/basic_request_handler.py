@@ -2,9 +2,9 @@ from domain import IrisMessage
 from llm import LlmManager
 from llm import RequestHandlerInterface, CompletionArguments
 from llm.wrapper import (
-    LlmCompletionWrapperInterface,
-    LlmChatCompletionWrapperInterface,
-    LlmEmbeddingWrapperInterface,
+    AbstractLlmCompletionWrapper,
+    AbstractLlmChatCompletionWrapper,
+    AbstractLlmEmbeddingWrapper,
 )
 
 type BasicRequestHandlerModel = str
@@ -20,7 +20,7 @@ class BasicRequestHandler(RequestHandlerInterface):
 
     def completion(self, prompt: str, arguments: CompletionArguments) -> str:
         llm = self.llm_manager.get_llm_by_id(self.model).llm
-        if isinstance(llm, LlmCompletionWrapperInterface):
+        if isinstance(llm, AbstractLlmCompletionWrapper):
             return llm.completion(prompt, arguments)
         else:
             raise NotImplementedError(
@@ -31,7 +31,7 @@ class BasicRequestHandler(RequestHandlerInterface):
         self, messages: list[IrisMessage], arguments: CompletionArguments
     ) -> IrisMessage:
         llm = self.llm_manager.get_llm_by_id(self.model).llm
-        if isinstance(llm, LlmChatCompletionWrapperInterface):
+        if isinstance(llm, AbstractLlmChatCompletionWrapper):
             return llm.chat_completion(messages, arguments)
         else:
             raise NotImplementedError(
@@ -40,7 +40,7 @@ class BasicRequestHandler(RequestHandlerInterface):
 
     def create_embedding(self, text: str) -> list[float]:
         llm = self.llm_manager.get_llm_by_id(self.model).llm
-        if isinstance(llm, LlmEmbeddingWrapperInterface):
+        if isinstance(llm, AbstractLlmEmbeddingWrapper):
             return llm.create_embedding(text)
         else:
             raise NotImplementedError(

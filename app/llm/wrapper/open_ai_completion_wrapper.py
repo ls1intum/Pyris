@@ -2,12 +2,13 @@ from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
 
 from llm import CompletionArguments
-from llm.wrapper import LlmCompletionWrapperInterface
+from llm.wrapper import AbstractLlmCompletionWrapper
 
 
-class BaseOpenAICompletionWrapper(LlmCompletionWrapperInterface):
+class BaseOpenAICompletionWrapper(AbstractLlmCompletionWrapper):
 
-    def __init__(self, client, model: str):
+    def __init__(self, client, model: str, **kwargs):
+        super().__init__(**kwargs)
         self.client = client
         self.model = model
 
@@ -24,10 +25,10 @@ class BaseOpenAICompletionWrapper(LlmCompletionWrapperInterface):
 
 class OpenAICompletionWrapper(BaseOpenAICompletionWrapper):
 
-    def __init__(self, model: str, api_key: str):
+    def __init__(self, model: str, api_key: str, **kwargs):
         client = OpenAI(api_key=api_key)
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"OpenAICompletion('{self.model}')"
@@ -42,6 +43,7 @@ class AzureCompletionWrapper(BaseOpenAICompletionWrapper):
         azure_deployment: str,
         api_version: str,
         api_key: str,
+        **kwargs,
     ):
         client = AzureOpenAI(
             azure_endpoint=endpoint,
@@ -50,7 +52,7 @@ class AzureCompletionWrapper(BaseOpenAICompletionWrapper):
             api_key=api_key,
         )
         model = model
-        super().__init__(client, model)
+        super().__init__(client, model, **kwargs)
 
     def __str__(self):
         return f"AzureCompletion('{self.model}')"

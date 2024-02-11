@@ -3,15 +3,22 @@ from abc import ABCMeta, abstractmethod
 from domain import IrisMessage
 from llm import CompletionArguments
 
-type LlmWrapperInterface = (
-    LlmCompletionWrapperInterface
-    | LlmChatCompletionWrapperInterface
-    | LlmEmbeddingWrapperInterface
-)
+
+class AbstractLlmWrapper(metaclass=ABCMeta):
+    """Abstract class for the llm wrappers"""
+
+    id: str
+    name: str
+    description: str
+
+    def __init__(self, id: str, name: str, description: str):
+        self.id = id
+        self.name = name
+        self.description = description
 
 
-class LlmCompletionWrapperInterface(metaclass=ABCMeta):
-    """Interface for the llm completion wrappers"""
+class AbstractLlmCompletionWrapper(AbstractLlmWrapper, metaclass=ABCMeta):
+    """Abstract class for the llm completion wrappers"""
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -23,8 +30,8 @@ class LlmCompletionWrapperInterface(metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class LlmChatCompletionWrapperInterface(metaclass=ABCMeta):
-    """Interface for the llm chat completion wrappers"""
+class AbstractLlmChatCompletionWrapper(AbstractLlmWrapper, metaclass=ABCMeta):
+    """Abstract class for the llm chat completion wrappers"""
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -40,8 +47,8 @@ class LlmChatCompletionWrapperInterface(metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class LlmEmbeddingWrapperInterface(metaclass=ABCMeta):
-    """Interface for the llm embedding wrappers"""
+class AbstractLlmEmbeddingWrapper(AbstractLlmWrapper, metaclass=ABCMeta):
+    """Abstract class for the llm embedding wrappers"""
 
     @classmethod
     def __subclasshook__(cls, subclass):
