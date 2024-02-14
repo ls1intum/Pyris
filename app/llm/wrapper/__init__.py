@@ -1,24 +1,15 @@
-from llm.wrapper.abstract_llm_wrapper import AbstractLlmWrapper
-from llm.wrapper.open_ai_completion_wrapper import (
-    OpenAICompletionWrapper,
-    AzureCompletionWrapper,
-)
-from llm.wrapper.open_ai_chat_wrapper import (
-    OpenAIChatCompletionWrapper,
-    AzureChatCompletionWrapper,
-)
-from llm.wrapper.open_ai_embedding_wrapper import (
-    OpenAIEmbeddingWrapper,
-    AzureEmbeddingWrapper,
-)
-from llm.wrapper.ollama_wrapper import OllamaWrapper
+from llm.wrapper.model import LanguageModel
+from llm.wrapper.openai_completion import NativeOpenAICompletionModel, AzureOpenAICompletionModel
+from llm.wrapper.openai_chat import NativeOpenAIChatModel, AzureOpenAIChatModel
+from llm.wrapper.openai_embeddings import NativeOpenAIEmbeddingModel, AzureOpenAIEmbeddingModel
+from llm.wrapper.ollama import OllamaModel
 
-type LlmWrapper = (
-    OpenAICompletionWrapper
-    | AzureCompletionWrapper
-    | OpenAIChatCompletionWrapper
-    | AzureChatCompletionWrapper
-    | OpenAIEmbeddingWrapper
-    | AzureEmbeddingWrapper
-    | OllamaWrapper
+type AnyLLM = (
+        NativeOpenAICompletionModel
+        | AzureOpenAICompletionModel
+        | NativeOpenAIChatModel
+        | AzureOpenAIChatModel
+        | NativeOpenAIEmbeddingModel
+        | AzureOpenAIEmbeddingModel
+        | OllamaModel
 )
