@@ -9,8 +9,12 @@ from llm import CompletionArguments
 from llm.wrapper.model import ChatModel
 
 
-def convert_to_open_ai_messages(messages: list[IrisMessage]) -> list[ChatCompletionMessageParam]:
-    return [{"role": message.role.value, "content": message.text} for message in messages]
+def convert_to_open_ai_messages(
+    messages: list[IrisMessage],
+) -> list[ChatCompletionMessageParam]:
+    return [
+        {"role": message.role.value, "content": message.text} for message in messages
+    ]
 
 
 def convert_to_iris_message(message: ChatCompletionMessage) -> IrisMessage:
@@ -24,7 +28,9 @@ class OpenAIChatModel(ChatModel):
     api_key: str
     _client: OpenAI
 
-    def chat(self, messages: list[IrisMessage], arguments: CompletionArguments) -> IrisMessage:
+    def chat(
+        self, messages: list[IrisMessage], arguments: CompletionArguments
+    ) -> IrisMessage:
         response = self._client.chat.completions.create(
             model=self.model,
             messages=convert_to_open_ai_messages(messages),

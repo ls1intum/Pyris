@@ -23,7 +23,9 @@ class CompletionModel(LanguageModel, metaclass=ABCMeta):
     @abstractmethod
     def complete(self, prompt: str, arguments: CompletionArguments) -> str:
         """Create a completion from the prompt"""
-        raise NotImplementedError(f"The LLM {self.__str__()} does not support completion")
+        raise NotImplementedError(
+            f"The LLM {self.__str__()} does not support completion"
+        )
 
 
 class ChatModel(LanguageModel, metaclass=ABCMeta):
@@ -34,9 +36,13 @@ class ChatModel(LanguageModel, metaclass=ABCMeta):
         return hasattr(subclass, "chat") and callable(subclass.chat)
 
     @abstractmethod
-    def chat(self, messages: list[IrisMessage], arguments: CompletionArguments) -> IrisMessage:
+    def chat(
+        self, messages: list[IrisMessage], arguments: CompletionArguments
+    ) -> IrisMessage:
         """Create a completion from the chat messages"""
-        raise NotImplementedError(f"The LLM {self.__str__()} does not support chat completion")
+        raise NotImplementedError(
+            f"The LLM {self.__str__()} does not support chat completion"
+        )
 
 
 class EmbeddingModel(LanguageModel, metaclass=ABCMeta):
@@ -49,4 +55,6 @@ class EmbeddingModel(LanguageModel, metaclass=ABCMeta):
     @abstractmethod
     def embed(self, text: str) -> list[float]:
         """Create an embedding from the text"""
-        raise NotImplementedError(f"The LLM {self.__str__()} does not support embeddings")
+        raise NotImplementedError(
+            f"The LLM {self.__str__()} does not support embeddings"
+        )

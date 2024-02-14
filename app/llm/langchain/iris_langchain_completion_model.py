@@ -26,9 +26,7 @@ class IrisLangchainCompletionModel(BaseLLM):
         generations = []
         args = CompletionArguments(stop=stop)
         for prompt in prompts:
-            completion = self.request_handler.complete(
-                prompt=prompt, arguments=args
-            )
+            completion = self.request_handler.complete(prompt=prompt, arguments=args)
             generations.append([Generation(text=completion)])
         return LLMResult(generations=generations)
 

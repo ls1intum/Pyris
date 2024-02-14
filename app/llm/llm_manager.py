@@ -21,9 +21,7 @@ def load_llms() -> dict[str, LanguageModel]:
         yaml_dict = yaml.safe_load(file)
 
     llms = LLMList.model_validate({"llms": yaml_dict}).llms
-    return {
-        llm.id: llm for llm in llms
-    }
+    return {llm.id: llm for llm in llms}
 
 
 class LlmManager(metaclass=Singleton):

@@ -10,9 +10,12 @@ class RequestHandler(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass) -> bool:
         return (
-                hasattr(subclass, "complete") and callable(subclass.complete)
-                and hasattr(subclass, "chat") and callable(subclass.chat)
-                and hasattr(subclass, "embed") and callable(subclass.embed)
+            hasattr(subclass, "complete")
+            and callable(subclass.complete)
+            and hasattr(subclass, "chat")
+            and callable(subclass.chat)
+            and hasattr(subclass, "embed")
+            and callable(subclass.embed)
         )
 
     @abstractmethod

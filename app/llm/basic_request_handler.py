@@ -15,7 +15,9 @@ class BasicRequestHandler(RequestHandler):
         llm = self.llm_manager.get_by_id(self.model_id)
         return llm.complete(prompt, arguments)
 
-    def chat(self, messages: list[IrisMessage], arguments: CompletionArguments) -> IrisMessage:
+    def chat(
+        self, messages: list[IrisMessage], arguments: CompletionArguments
+    ) -> IrisMessage:
         llm = self.llm_manager.get_by_id(self.model_id)
         return llm.chat(messages, arguments)
 

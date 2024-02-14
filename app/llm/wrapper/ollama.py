@@ -34,8 +34,12 @@ class OllamaModel(
         response = self._client.generate(model=self.model, prompt=prompt)
         return response["response"]
 
-    def chat(self, messages: list[IrisMessage], arguments: CompletionArguments) -> IrisMessage:
-        response = self._client.chat(model=self.model, messages=convert_to_ollama_messages(messages))
+    def chat(
+        self, messages: list[IrisMessage], arguments: CompletionArguments
+    ) -> IrisMessage:
+        response = self._client.chat(
+            model=self.model, messages=convert_to_ollama_messages(messages)
+        )
         return convert_to_iris_message(response["message"])
 
     def embed(self, text: str) -> list[float]:
