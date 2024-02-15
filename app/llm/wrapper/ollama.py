@@ -27,7 +27,7 @@ class OllamaModel(
     host: str
     _client: Client
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         self._client = Client(host=self.host)  # TODO: Add authentication (httpx auth?)
 
     def complete(self, prompt: str, arguments: CompletionArguments) -> str:

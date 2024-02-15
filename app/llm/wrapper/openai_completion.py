@@ -22,10 +22,10 @@ class OpenAICompletionModel(CompletionModel):
         return response
 
 
-class NativeOpenAICompletionModel(OpenAICompletionModel):
+class DirectOpenAICompletionModel(OpenAICompletionModel):
     type: Literal["openai_completion"]
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         self._client = OpenAI(api_key=self.api_key)
 
     def __str__(self):
@@ -38,7 +38,7 @@ class AzureOpenAICompletionModel(OpenAICompletionModel):
     azure_deployment: str
     api_version: str
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any) -> None:
         self._client = AzureOpenAI(
             azure_endpoint=self.endpoint,
             azure_deployment=self.azure_deployment,
