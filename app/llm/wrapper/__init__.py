@@ -11,11 +11,11 @@ from llm.wrapper.openai_embeddings import (
 from llm.wrapper.ollama import OllamaModel
 
 type AnyLLM = (
-        DirectOpenAICompletionModel
-        | AzureOpenAICompletionModel
-        | DirectOpenAIChatModel
-        | AzureOpenAIChatModel
-        | DirectOpenAIEmbeddingModel
-        | AzureOpenAIEmbeddingModel
-        | OllamaModel
+    DirectOpenAICompletionModel
+    | AzureOpenAICompletionModel
+    | DirectOpenAIChatModel
+    | AzureOpenAIChatModel
+    | DirectOpenAIEmbeddingModel
+    | AzureOpenAIEmbeddingModel
+    | OllamaModel
 )
