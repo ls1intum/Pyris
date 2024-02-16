@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 from domain import IrisMessage, IrisMessageRole
 from llm import CompletionArguments
-from llm.wrapper.model import ChatModel
+from llm.external.model import ChatModel
 
 
 def convert_to_open_ai_messages(

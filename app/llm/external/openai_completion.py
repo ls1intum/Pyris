@@ -3,7 +3,7 @@ from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
 
 from llm import CompletionArguments
-from llm.wrapper.model import CompletionModel
+from llm.external.model import CompletionModel
 
 
 class OpenAICompletionModel(CompletionModel):

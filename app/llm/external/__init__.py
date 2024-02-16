@@ -1,14 +1,14 @@
-from llm.wrapper.model import LanguageModel
-from llm.wrapper.openai_completion import (
+from llm.external.model import LanguageModel
+from llm.external.openai_completion import (
     DirectOpenAICompletionModel,
     AzureOpenAICompletionModel,
 )
-from llm.wrapper.openai_chat import DirectOpenAIChatModel, AzureOpenAIChatModel
-from llm.wrapper.openai_embeddings import (
+from llm.external.openai_chat import DirectOpenAIChatModel, AzureOpenAIChatModel
+from llm.external.openai_embeddings import (
     DirectOpenAIEmbeddingModel,
     AzureOpenAIEmbeddingModel,
 )
-from llm.wrapper.ollama import OllamaModel
+from llm.external.ollama import OllamaModel
 
 type AnyLLM = (
     DirectOpenAICompletionModel

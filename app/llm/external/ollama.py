@@ -4,7 +4,7 @@ from ollama import Client, Message
 
 from domain import IrisMessage, IrisMessageRole
 from llm import CompletionArguments
-from llm.wrapper.model import ChatModel, CompletionModel, EmbeddingModel
+from llm.external.model import ChatModel, CompletionModel, EmbeddingModel
 
 
 def convert_to_ollama_messages(messages: list[IrisMessage]) -> list[Message]:
