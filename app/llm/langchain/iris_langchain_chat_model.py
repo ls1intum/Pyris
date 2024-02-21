@@ -12,15 +12,15 @@ from common import (
     convert_iris_message_to_langchain_message,
     convert_langchain_message_to_iris_message,
 )
-from llm import RequestHandlerInterface, CompletionArguments
+from llm import RequestHandler, CompletionArguments
 
 
 class IrisLangchainChatModel(BaseChatModel):
     """Custom langchain chat model for our own request handler"""
 
-    request_handler: RequestHandlerInterface
+    request_handler: RequestHandler
 
-    def __init__(self, request_handler: RequestHandlerInterface, **kwargs: Any) -> None:
+    def __init__(self, request_handler: RequestHandler, **kwargs: Any) -> None:
         super().__init__(request_handler=request_handler, **kwargs)
 
     def _generate(
@@ -31,7 +31,7 @@ class IrisLangchainChatModel(BaseChatModel):
         **kwargs: Any
     ) -> ChatResult:
         iris_messages = [convert_langchain_message_to_iris_message(m) for m in messages]
-        iris_message = self.request_handler.chat_completion(
+        iris_message = self.request_handler.chat(
             iris_messages, CompletionArguments(stop=stop)
         )
         base_message = convert_iris_message_to_langchain_message(iris_message)
