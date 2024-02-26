@@ -1,6 +1,6 @@
-from typing import List, Type, Any, Optional
+from typing import List, Any, Optional
 
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator, Field
 
 from ..domain import (
     Course,
@@ -20,20 +20,20 @@ class SettingsDTO(BaseModel):
 class PipelineExecutionDTO(BaseModel):
     settings: SettingsDTO
     question: Optional[IrisMessage] = None
-    chat_history: Optional[List[IrisMessage]] = None
+    chat_history: Optional[List[IrisMessage]] = Field(alias="chatHistory")
     course: Optional[Course] = None
     exercise: Optional[ProgrammingExercise] = None
-    latest_submission: Optional[ProgrammingSubmission] = None
+    latest_submission: Optional[ProgrammingSubmission] = Field(alias="latestSubmission")
 
 
 class BaseChatPipelineExecutionDTO(PipelineExecutionDTO):
     question: IrisMessage
-    chat_history: List[IrisMessage]
+    chat_history: List[IrisMessage] = Field(alias="chatHistory")
 
 
 class ExercisePipelineExecutionDTO(BaseChatPipelineExecutionDTO):
     course: Course
-    latest_submission: ProgrammingSubmission
+    latest_submission: ProgrammingSubmission = Field(alias="latestSubmission")
     exercise: ProgrammingExercise
 
 
