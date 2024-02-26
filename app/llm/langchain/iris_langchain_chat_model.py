@@ -8,8 +8,8 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.outputs.chat_generation import ChatGeneration
 
-from domain import IrisMessage, IrisMessageRole
-from llm import RequestHandler, CompletionArguments
+from ...domain import IrisMessage, IrisMessageRole
+from ...llm import RequestHandler, CompletionArguments
 
 
 def convert_iris_message_to_base_message(iris_message: IrisMessage) -> BaseMessage:

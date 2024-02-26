@@ -17,4 +17,4 @@ class IrisMessage(BaseModel):
         super().__init__(role=role, text=text)
 
     def __str__(self):
-        return f"IrisMessage(role={self.role.value}, text='{self.text}')"
+        return f"{self.role.value}: {self.text}"

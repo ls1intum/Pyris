@@ -40,7 +40,7 @@ Consider the following exercise context:
     - Problem Statement: {summary}
     - Exercise skeleton code in markdown format:
     ```java
-        {code_parts}
+        {file_content}
     ```
 
 Now continue the ongoing conversation between you and the student by responding to and focussing only on their latest input.

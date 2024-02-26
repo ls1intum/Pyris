@@ -3,10 +3,10 @@ from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import Runnable
 
-from domain import IrisMessage, IrisMessageRole
-from domain.dtos import BaseChatModel
-from llm.langchain import IrisLangchainChatModel
-from pipeline import Pipeline
+from ...domain import IrisMessage, IrisMessageRole, ExerciseExecutionDTOWrapper
+from ...llm import BasicRequestHandler
+from ...llm.langchain import IrisLangchainChatModel
+from ..pipeline import Pipeline
 
 
 class SimpleChatPipeline(Pipeline):
@@ -21,15 +21,17 @@ class SimpleChatPipeline(Pipeline):
     def __str__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
 
-    def __init__(self, llm: IrisLangchainChatModel):
-        self.llm = llm
-        self.pipeline = {"query": itemgetter("query")} | llm | StrOutputParser()
+    def __init__(self):
         super().__init__(implementation_id="simple_chat_pipeline")
+        request_handler = BasicRequestHandler("gpt35")
+        self.llm = IrisLangchainChatModel(request_handler)
+        self.pipeline = {"query": itemgetter("query")} | self.llm | StrOutputParser()
 
-    def __call__(self, dto: BaseChatModel, **kwargs) -> IrisMessage:
+    def __call__(self, wrapper: ExerciseExecutionDTOWrapper, **kwargs) -> IrisMessage:
         """
         Gets a response from the langchain chat model
         """
+        dto = wrapper.dto
         query = dto.query
         if query is None:
             raise ValueError("IrisMessage must not be None")

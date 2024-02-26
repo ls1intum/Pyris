@@ -1,9 +1,29 @@
+from enum import Enum
+
 from pydantic import BaseModel
 
 
-class ProgrammingExercise(BaseModel):
-    title: str
-    problem_statement: str
+class ProgrammingLanguageEnum(str, Enum):
+    JAVA = "JAVA"
+    PYTHON = "PYTHON"
+    C = "C"
+    HASKELL = "HASKELL"
+    KOTLIN = "KOTLIN"
+    VHDL = "VHDL"
+    ASSEMBLER = "ASSEMBLER"
+    SWIFT = "SWIFT"
+    OCAML = "OCAML"
+    EMPTY = "EMPTY"
 
-    def __str__(self):
-        return f'ProgrammingExercise(title="{self.title}", problem_statement="{self.problem_statement}")'
+
+class ProgrammingExercise(BaseModel):
+    id: int
+    name: str
+    programmingLanguage: ProgrammingLanguageEnum
+    templateRepositoryCommitHash: str
+    solutionRepositoryCommitHash: str
+    testsRepositoryCommitHash: str
+    problemStatement: str
+    startDate: str
+    endDate: str
+    isPracticeModeEnabled: bool

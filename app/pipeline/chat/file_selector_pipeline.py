@@ -8,9 +8,10 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
 from domain.submission import BuildLogEntry
-from llm.langchain import IrisLangchainCompletionModel
+from llm import BasicRequestHandler
+from llm.langchain import IrisLangchainChatModel
 from pipeline import Pipeline
-from pipeline.completion.output_models.selected_file_model import SelectedFile
+from pipeline.chat.output_models.output_models.selected_file_model import SelectedFile
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +30,13 @@ class FileSelectionDTO(BaseModel):
 class FileSelectorPipeline(Pipeline):
     """File selector pipeline that selects the relevant file from a list of files."""
 
-    llm: IrisLangchainCompletionModel
+    llm: IrisLangchainChatModel
     pipeline: Runnable
 
-    def __init__(self, llm: IrisLangchainCompletionModel):
+    def __init__(self):
         super().__init__(implementation_id="file_selector_pipeline_reference_impl")
-        self.llm = llm
+        request_handler = BasicRequestHandler("gpt35")
+        self.llm = IrisLangchainChatModel(request_handler)
         # Load prompt from file
         dirname = os.path.dirname(__file__)
         with open(
@@ -46,12 +48,12 @@ class FileSelectorPipeline(Pipeline):
         # Create the prompt
         prompt = PromptTemplate(
             template=prompt_str,
-            input_variables=["repository", "buildLog"],
+            input_variables=["repository", "build_log"],
             partial_variables={"format_instructions": parser.get_format_instructions()},
         )
         logger.debug(parser.get_format_instructions())
         # Create the pipeline
-        self.pipeline = prompt | llm | parser
+        self.pipeline = prompt | self.llm | parser
 
     def __call__(self, dto: FileSelectionDTO, **kwargs) -> SelectedFile:
         """

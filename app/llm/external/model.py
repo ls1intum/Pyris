@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from pydantic import BaseModel
 
-from domain import IrisMessage
-from llm import CompletionArguments
+from ...domain import IrisMessage
+from ...llm import CompletionArguments
 
 
 class LanguageModel(BaseModel, metaclass=ABCMeta):

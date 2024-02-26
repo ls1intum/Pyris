@@ -1,13 +1,12 @@
-from typing import List
+from typing import List, Type, Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, ConfigDict
 
-from domain import (
+from ..domain import (
     Course,
     ProgrammingExercise,
     IrisMessage,
     ProgrammingSubmission,
-    CodeHint,
 )
 
 
@@ -18,60 +17,39 @@ class SettingsDTO(BaseModel):
         return f"SettingsDTO(allowedModels={self.allowedModels})"
 
 
-class BaseChatModel(BaseModel):
-    query: IrisMessage
-    chat_history: List[IrisMessage]
+class PipelineExecutionDTO(BaseModel):
     settings: SettingsDTO
+    question: Optional[IrisMessage] = None
+    chat_history: Optional[List[IrisMessage]] = None
+    course: Optional[Course] = None
+    exercise: Optional[ProgrammingExercise] = None
+    latest_submission: Optional[ProgrammingSubmission] = None
 
-    def __str__(self):
-        return f"BaseChatModel(query={self.query}, chat_history={self.chat_history})"
+
+class BaseChatPipelineExecutionDTO(PipelineExecutionDTO):
+    question: IrisMessage
+    chat_history: List[IrisMessage]
 
 
-class ProgrammingExerciseTutorChatDTO(BaseChatModel):
+class ExercisePipelineExecutionDTO(BaseChatPipelineExecutionDTO):
     course: Course
-    exercise: ProgrammingExercise
-    submission: ProgrammingSubmission
-
-    def __str__(self):
-        return (
-            f"ProgrammingExerciseTutorChatDTO(query={self.query}, course={self.course}, exercise={self.exercise}, "
-            f"submission={self.submission}, settings={self.settings}, chat_history={self.chat_history})"
-        )
-
-
-class CodeEditorChatDTO(BaseChatModel):
-    problem_statement: str
-    solution_repository: dict[str, str]
-    template_repository: dict[str, str]
-    test_repository: dict[str, str]
-
-    def __str__(self):
-        return (
-            f"CodeEditorChatDTO(problem_statement={self.problem_statement}, "
-            f"solution_repository={self.solution_repository}, "
-            f"template_repository={self.template_repository}, test_repository={self.test_repository}, "
-            f"settings={self.settings}, chat_history={self.chat_history})"
-        )
-
-
-class CodeEditorAdaptDTO(BaseModel):
-    problem_statement: str
-    solution_repository: dict[str, str]
-    template_repository: dict[str, str]
-    test_repository: dict[str, str]
-    instructions: str
-
-    def __str__(self):
-        return (
-            f'CodeEditorAdaptDTO(problem_statement="{self.problem_statement}", '
-            f"solution_repository={self.solution_repository}, template_repository={self.template_repository}, "
-            f'test_repository={self.test_repository}, instructions="{self.instructions}")'
-        )
-
-
-class HestiaDTO(BaseModel):
-    code_hint: CodeHint
+    latest_submission: ProgrammingSubmission
     exercise: ProgrammingExercise
 
+
+class ExerciseExecutionDTOWrapper(BaseModel):
+    """Workaround to allow pydantic to validate the type of the DTO."""
+
+    dto: Any
+
+    @classmethod
+    @field_validator("dto")
+    def validate_dto(cls, value):
+        if issubclass(type(value), PipelineExecutionDTO):
+            return value
+        raise TypeError(
+            "Wrong type for 'dto', must be subclass of PipelineExecutionDTO"
+        )
+
     def __str__(self):
-        return f"HestiaDTO(code_hint={self.code_hint}, exercise={self.exercise})"
+        return f"ExecutionDTOWrapper(execution={self.execution})"

@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 import yaml
 
-from common import Singleton
-from llm.external import LanguageModel, AnyLLM
+from ..common import Singleton
+from ..llm.external import LanguageModel, AnyLLM
 
 
 # Small workaround to get pydantic discriminators working
