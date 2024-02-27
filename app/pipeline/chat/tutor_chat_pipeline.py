@@ -56,7 +56,9 @@ class TutorChatPipeline(Pipeline):
                 "history": itemgetter("history"),
                 "exercise_title": itemgetter("exercise_title"),
                 "summary": itemgetter("problem_statement")
-                | RunnableLambda(lambda stmt: summary_pipeline(query=stmt)),
+                | RunnableLambda(
+                    lambda stmt: summary_pipeline(query=stmt), callback=None
+                ),
                 "file_content": itemgetter("file_content"),
             }
             | prompt
@@ -70,7 +72,7 @@ class TutorChatPipeline(Pipeline):
     def __str__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
 
-    def __call__(self, wrapper: ExerciseExecutionDTOWrapper, **kwargs) -> IrisMessage:
+    def __call__(self, dto: TutorChatPipelineExecutionDTO, **kwargs):
         """
         Runs the pipeline
             :param query: The query
