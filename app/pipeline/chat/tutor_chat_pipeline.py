@@ -11,8 +11,9 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable, RunnableLambda
 
-from ...domain import IrisMessage, IrisMessageRole
-from ...domain.dtos import ExerciseExecutionDTOWrapper, ExercisePipelineExecutionDTO
+from domain import TutorChatPipelineExecutionDTO
+from domain.data.message_dto import MessageDTO
+from web.status.status_update import TutorChatStatusCallback
 from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 
@@ -28,7 +29,7 @@ class TutorChatPipeline(Pipeline):
     llm: IrisLangchainChatModel
     pipeline: Runnable
 
-    def __init__(self):
+    def __init__(self, callback: TutorChatStatusCallback):
         super().__init__(implementation_id="tutor_chat_pipeline_reference_impl")
         # Set the langchain chat model
         request_handler = BasicRequestHandler("gpt35")
@@ -79,13 +80,12 @@ class TutorChatPipeline(Pipeline):
             :return: IrisMessage
         """
         logger.debug("Running tutor chat pipeline...")
-        dto = wrapper.dto
         logger.debug(f"DTO: {dto}")
-        query: IrisMessage = dto.question
-        history: List[IrisMessage] = dto.chat_history
+        history: List[MessageDTO] = dto.chat_history[:-1]
+        query: MessageDTO = dto.chat_history[-1]
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.title
-        message = query.text
+        message = query.contents[0].textContent
         if not message:
             raise ValueError("IrisMessage must not be empty")
         response = self.pipeline.invoke(
@@ -98,4 +98,4 @@ class TutorChatPipeline(Pipeline):
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
-        return IrisMessage(role=IrisMessageRole.ASSISTANT, text=response)
+        return MessageDTO(role=IrisMessageRole.ASSISTANT, text=response)

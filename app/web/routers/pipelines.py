@@ -1,9 +1,8 @@
 import logging
 
 from fastapi import APIRouter, status, Response
-from app.domain.dtos import (
-    PipelineExecutionDTO,
-    ExerciseExecutionDTOWrapper,
+from app.domain import (
+    TutorChatPipelineExecutionDTO,
 )
 from app.pipeline.chat.tutor_chat_pipeline import TutorChatPipeline
 
@@ -15,7 +14,6 @@ logger = logging.getLogger(__name__)
 def run_pipeline(variant: str, dto: TutorChatPipelineExecutionDTO):
     pipeline = TutorChatPipeline()
     pipeline(wrapper=dto, callback=None)
-
 
 
 @router.get("/{feature}")
