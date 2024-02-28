@@ -70,7 +70,9 @@ class TutorChatPipeline(Pipeline):
                 "file_content": itemgetter("file_map")
                 | RunnableLambda(
                     lambda file_map: file_selector_pipeline(
-                        dto=FileSelectionDTO(files=file_map.keys(), build_logs=[])
+                        dto=FileSelectionDTO(
+                            files=file_map.keys(), build_logs=itemgetter("build_logs")
+                        )
                     ),
                     callback=None,
                 )
@@ -99,6 +101,7 @@ class TutorChatPipeline(Pipeline):
         logger.debug("Running tutor chat pipeline...")
         logger.debug(f"DTO: {dto}")
         history: List[MessageDTO] = dto.chat_history[:-1]
+        build_logs = dto.latest_submission.build_logs
         query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
@@ -113,6 +116,7 @@ class TutorChatPipeline(Pipeline):
                 "problem_statement": problem_statement,
                 "file_map": file_map,
                 "exercise_title": exercise_title,
+                "build_logs": build_logs,
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
