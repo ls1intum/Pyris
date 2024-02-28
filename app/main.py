@@ -1,5 +1,3 @@
-import os
-
 from fastapi.responses import ORJSONResponse
 from fastapi import FastAPI
 
