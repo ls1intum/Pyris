@@ -1,0 +1,4 @@
+pyris:
+  api_keys:
+    - token: "secret"
+  llm_config_path: "llm_config.yml"

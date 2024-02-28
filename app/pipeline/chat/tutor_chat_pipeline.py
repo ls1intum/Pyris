@@ -26,10 +26,6 @@ from ..pipeline import Pipeline
 logger = logging.getLogger(__name__)
 
 
-class IrisMessageRole:
-    pass
-
-
 class TutorChatPipeline(Pipeline):
     """Tutor chat pipeline that answers exercises related questions from students."""
 
