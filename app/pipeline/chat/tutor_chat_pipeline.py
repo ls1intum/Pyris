@@ -11,12 +11,12 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable, RunnableLambda
 
-from domain import TutorChatPipelineExecutionDTO
-from domain.data.message_dto import MessageDTO
-from domain.iris_message import IrisMessage
-from domain.status.stage_dto import StageDTO
-from domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
-from web.status.status_update import TutorChatStatusCallback
+from ...domain import TutorChatPipelineExecutionDTO
+from ...domain.data.message_dto import MessageDTO
+from ...domain.iris_message import IrisMessage
+from ...domain.status.stage_dto import StageDTO
+from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
+from ...web.status.status_update import TutorChatStatusCallback
 from .file_selector_pipeline import FileSelectorPipeline, FileSelectionDTO
 from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel

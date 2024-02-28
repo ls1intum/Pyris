@@ -8,11 +8,11 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.outputs.chat_generation import ChatGeneration
 
-from common import (
+from ...common import (
     convert_iris_message_to_langchain_message,
     convert_langchain_message_to_iris_message,
 )
-from llm import RequestHandler, CompletionArguments
+from ...llm import RequestHandler, CompletionArguments
 
 
 class IrisLangchainChatModel(BaseChatModel):

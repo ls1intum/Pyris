@@ -3,8 +3,8 @@ from typing import List, Dict
 from pydantic import BaseModel, Field
 
 from datetime import datetime
-from domain.data.build_log_entry import BuildLogEntryDTO
-from domain.data.result_dto import ResultDTO
+from ...domain.data.build_log_entry import BuildLogEntryDTO
+from ...domain.data.result_dto import ResultDTO
 
 
 class SubmissionDTO(BaseModel):

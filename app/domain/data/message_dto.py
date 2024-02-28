@@ -2,8 +2,8 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Literal
 
-from domain.iris_message import IrisMessage
-from message_content_dto import MessageContentDTO
+from ...domain.iris_message import IrisMessage
+from .message_content_dto import MessageContentDTO
 
 from pydantic import BaseModel, Field
 

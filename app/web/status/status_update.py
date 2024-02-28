@@ -3,7 +3,7 @@ from typing import Any
 import requests
 from abc import ABC, abstractmethod
 
-from domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
+from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
 
 
 class StatusCallback(ABC):
@@ -18,8 +18,8 @@ class StatusCallback(ABC):
 
 
 class TutorChatStatusCallback(StatusCallback):
-    def __init__(self, run_id: str):
-        url = f"/api/v1/public/pyris/tutorchat/runs/{run_id}/status"
+    def __init__(self, run_id: str, base_url: str):
+        url = f"https://{base_url}/api/v1/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
         self.run_id = run_id
         super().__init__(url)
 
@@ -27,5 +27,5 @@ class TutorChatStatusCallback(StatusCallback):
         requests.post(
             self.url,
             headers={"Content-Type": "application/json", "Authorization": self.run_id},
-            json=status.json(),
+            json=status.json(by_alias=True),
         )

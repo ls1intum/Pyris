@@ -1,4 +1,4 @@
-from domain.status.status_update_dto import StatusUpdateDTO
+from ...domain.status.status_update_dto import StatusUpdateDTO
 
 
 class TutorChatStatusUpdateDTO(StatusUpdateDTO):

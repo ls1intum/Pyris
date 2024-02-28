@@ -1,2 +1,2 @@
-from basic_request_handler import BasicRequestHandler
-from request_handler_interface import RequestHandler
+from .basic_request_handler import BasicRequestHandler
+from .request_handler_interface import RequestHandler

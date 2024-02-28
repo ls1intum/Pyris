@@ -1,6 +1,7 @@
-from ..domain import IrisMessage
-from ..llm import RequestHandler, CompletionArguments
-from ..llm.llm_manager import LlmManager
+from .request_handler_interface import RequestHandler
+from ...llm import CompletionArguments
+from ...domain import IrisMessage
+from ...llm.llm_manager import LlmManager
 
 
 class BasicRequestHandler(RequestHandler):
