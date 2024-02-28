@@ -14,6 +14,8 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from domain import TutorChatPipelineExecutionDTO
 from domain.data.message_dto import MessageDTO
 from domain.iris_message import IrisMessage
+from domain.status.stage_dto import StageDTO
+from domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
 from web.status.status_update import TutorChatStatusCallback
 from .file_selector_pipeline import FileSelectorPipeline, FileSelectionDTO
 from ...llm import BasicRequestHandler
@@ -120,4 +122,11 @@ class TutorChatPipeline(Pipeline):
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
-        # TODO: Convert response to status update
+        stages = dto.initial_stages
+        stages.append(
+            StageDTO(
+                name="Tutor Chat", weight=1, state="DONE", message="Received response"
+            )
+        )
+        status_dto = TutorChatStatusUpdateDTO(stages=stages, response=response)
+        self.callback.on_status_update(status_dto)
