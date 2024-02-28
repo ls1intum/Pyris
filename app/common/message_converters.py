@@ -2,8 +2,9 @@ from datetime import datetime
 
 from langchain_core.messages import BaseMessage
 
+from ..domain.data.message_content_dto import MessageContentDTO
 from ..domain.iris_message import IrisMessage, IrisMessageRole
-from ..domain.data.message_dto import MessageDTO, MessageContentDTO, IrisMessageSender
+from ..domain.data.message_dto import MessageDTO, IrisMessageSender
 
 
 def convert_iris_message_to_message_dto(iris_message: IrisMessage) -> MessageDTO:

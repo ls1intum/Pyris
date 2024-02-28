@@ -62,25 +62,23 @@ class TutorChatPipeline(Pipeline):
         # Create the pipeline
         summary_pipeline = SummaryPipeline()
         # Create file selector pipeline
-        file_selector_pipeline = FileSelectorPipeline()
+        file_selector_pipeline = FileSelectorPipeline(callback=None)
         self.pipeline = (
             {
                 "question": itemgetter("question"),
                 "history": itemgetter("history"),
                 "exercise_title": itemgetter("exercise_title"),
-                "summary": itemgetter("problem_statement"),
-                "file_content": itemgetter("file_map")
+                "problem_statement": itemgetter("problem_statement"),
+                "programming_language": itemgetter("programming_language"),
+                "file_content": {
+                    "file_map": itemgetter("file_map"),
+                    "build_logs": itemgetter("build_logs"),
+                }
                 | RunnableLambda(
-                    lambda file_map: file_selector_pipeline(
+                    lambda it: file_selector_pipeline(
                         dto=FileSelectionDTO(
-                            files=file_map.keys(), build_logs=itemgetter("build_logs")
+                            files=it["file_map"], build_logs=it["build_logs"]
                         )
-                    ),
-                    callback=None,
-                )
-                | RunnableLambda(
-                    lambda selected_file: (
-                        itemgetter("file_map")[selected_file] if selected_file else ""
                     ),
                 ),
             }
@@ -103,12 +101,13 @@ class TutorChatPipeline(Pipeline):
         logger.debug("Running tutor chat pipeline...")
         logger.debug(f"DTO: {dto}")
         history: List[MessageDTO] = dto.chat_history[:-1]
-        build_logs = dto.latest_submission.build_logs
+        build_logs = dto.latest_submission.build_log_entries
         query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
         message = query.text
         file_map = dto.latest_submission.repository
+        programming_language = dto.exercise.programming_language.value.lower()
         if not message:
             raise ValueError("IrisMessage must not be empty")
         response = self.pipeline.invoke(
@@ -119,14 +118,18 @@ class TutorChatPipeline(Pipeline):
                 "file_map": file_map,
                 "exercise_title": exercise_title,
                 "build_logs": build_logs,
+                "programming_language": programming_language,
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
         stages = dto.initial_stages
         stages.append(
             StageDTO(
-                name="Tutor Chat", weight=1, state="DONE", message="Received response"
+                name="Final Stage",
+                weight=70,
+                state="DONE",
+                message="Generated response",
             )
         )
-        status_dto = TutorChatStatusUpdateDTO(stages=stages, response=response)
+        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
         self.callback.on_status_update(status_dto)

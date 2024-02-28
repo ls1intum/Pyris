@@ -5,9 +5,9 @@ from pydantic import BaseModel, Field
 
 
 class IrisMessageRole(str, Enum):
-    USER = "USER"
-    ASSISTANT = "ASSISTANT"
-    SYSTEM = "SYSTEM"
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
 
 
 class IrisMessage(BaseModel):

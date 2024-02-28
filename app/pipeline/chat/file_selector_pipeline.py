@@ -75,4 +75,8 @@ class FileSelectorPipeline(Pipeline):
                 "build_logs": build_logs,
             }
         )
-        return dto.files[response.selected_file] if response.selected_file else ""
+        return (
+            f"{response.selected_file}:\n{dto.files[response.selected_file]}"
+            if response.selected_file
+            else ""
+        )

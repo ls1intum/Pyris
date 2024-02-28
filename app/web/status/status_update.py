@@ -19,7 +19,9 @@ class StatusCallback(ABC):
 
 class TutorChatStatusCallback(StatusCallback):
     def __init__(self, run_id: str, base_url: str):
-        url = f"https://{base_url}/api/v1/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
+        url = (
+            f"{base_url}/api/v1/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
+        )
         self.run_id = run_id
         super().__init__(url)
 
@@ -27,5 +29,5 @@ class TutorChatStatusCallback(StatusCallback):
         requests.post(
             self.url,
             headers={"Content-Type": "application/json", "Authorization": self.run_id},
-            json=status.json(by_alias=True),
+            json=status.dict(by_alias=True),
         )
