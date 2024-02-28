@@ -1,7 +1,7 @@
-from app.common.singleton_abstract import SingletonABCMeta
+from abc import ABCMeta
 
 
-class Pipeline(metaclass=SingletonABCMeta):
+class Pipeline(metaclass=ABCMeta):
     """Abstract class for all pipelines"""
 
     implementation_id: str
