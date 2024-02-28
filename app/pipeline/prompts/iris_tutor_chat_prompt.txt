@@ -37,9 +37,9 @@ A: I am Iris, the AI programming tutor integrated into Artemis, the online learn
 
 Consider the following exercise context:
     - Title: {exercise_title}
-    - Problem Statement: {summary}
-    - Exercise skeleton code in markdown format:
-    ```java
+    - Problem Statement: {problem_statement}
+    - Exercise skeleton code in Markdown format:
+    ```[{programming_language}]
         {file_content}
     ```
 

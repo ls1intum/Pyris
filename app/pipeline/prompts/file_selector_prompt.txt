@@ -1,10 +1,10 @@
 Select a file from the files list below that is mentioned in the build logs. If no file is in the list is mentioned in the build logs answer with empty string.
 
 Here are the paths of all files:
-{repository}
+{file_names}
 
 Build logs:
-{build_log}
+{build_logs}
 
 {format_instructions}
 

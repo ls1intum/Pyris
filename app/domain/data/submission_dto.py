@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +10,7 @@ from domain.data.result_dto import ResultDTO
 class SubmissionDTO(BaseModel):
     id: int
     date: datetime
-    repository: dict[str, str]
+    repository: Dict[str, str]
     is_practice: bool = Field(alias="isPractice")
     build_failed: bool = Field(alias="buildFailed")
     build_log_entries: List[BuildLogEntryDTO] = Field(alias="buildLogEntries")

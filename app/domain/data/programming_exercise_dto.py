@@ -1,3 +1,5 @@
+from typing import Dict
+
 from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
@@ -20,9 +22,9 @@ class ProgrammingExerciseDTO(BaseModel):
     id: int
     name: str
     programming_language: ProgrammingLanguage = Field(alias="programmingLanguage")
-    template_repository: dict[str, str] = Field(alias="templateRepository")
-    solution_repository: dict[str, str] = Field(alias="solutionRepository")
-    test_repository: dict[str, str] = Field(alias="testRepository")
+    template_repository: Dict[str, str] = Field(alias="templateRepository")
+    solution_repository: Dict[str, str] = Field(alias="solutionRepository")
+    test_repository: Dict[str, str] = Field(alias="testRepository")
     problem_statement: str = Field(alias="problemStatement")
     start_date: datetime = Field(alias="startDate")
     end_date: datetime = Field(alias="endDate")

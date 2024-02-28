@@ -13,7 +13,9 @@ from langchain_core.runnables import Runnable, RunnableLambda
 
 from domain import TutorChatPipelineExecutionDTO
 from domain.data.message_dto import MessageDTO
+from domain.iris_message import IrisMessage
 from web.status.status_update import TutorChatStatusCallback
+from .file_selector_pipeline import FileSelectorPipeline, FileSelectionDTO
 from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 
@@ -23,17 +25,23 @@ from ...pipeline.shared import SummaryPipeline
 logger = logging.getLogger(__name__)
 
 
+class IrisMessageRole:
+    pass
+
+
 class TutorChatPipeline(Pipeline):
     """Tutor chat pipeline that answers exercises related questions from students."""
 
     llm: IrisLangchainChatModel
     pipeline: Runnable
+    callback: TutorChatStatusCallback
 
     def __init__(self, callback: TutorChatStatusCallback):
-        super().__init__(implementation_id="tutor_chat_pipeline_reference_impl")
+        super().__init__(implementation_id="tutor_chat_pipeline")
         # Set the langchain chat model
         request_handler = BasicRequestHandler("gpt35")
         self.llm = IrisLangchainChatModel(request_handler)
+        self.callback = callback
         # Load the prompt from a file
         dirname = os.path.dirname(__file__)
         with open(
@@ -51,16 +59,26 @@ class TutorChatPipeline(Pipeline):
         )
         # Create the pipeline
         summary_pipeline = SummaryPipeline()
+        # Create file selector pipeline
+        file_selector_pipeline = FileSelectorPipeline()
         self.pipeline = (
             {
                 "question": itemgetter("question"),
                 "history": itemgetter("history"),
                 "exercise_title": itemgetter("exercise_title"),
-                "summary": itemgetter("problem_statement")
+                "summary": itemgetter("problem_statement"),
+                "file_content": itemgetter("file_map")
                 | RunnableLambda(
-                    lambda stmt: summary_pipeline(query=stmt), callback=None
+                    lambda file_map: file_selector_pipeline(
+                        dto=FileSelectionDTO(files=file_map.keys(), build_logs=[])
+                    ),
+                    callback=None,
+                )
+                | RunnableLambda(
+                    lambda selected_file: (
+                        itemgetter("file_map")[selected_file] if selected_file else ""
+                    ),
                 ),
-                "file_content": itemgetter("file_content"),
             }
             | prompt
             | self.llm
@@ -77,15 +95,15 @@ class TutorChatPipeline(Pipeline):
         """
         Runs the pipeline
             :param query: The query
-            :return: IrisMessage
         """
         logger.debug("Running tutor chat pipeline...")
         logger.debug(f"DTO: {dto}")
         history: List[MessageDTO] = dto.chat_history[:-1]
-        query: MessageDTO = dto.chat_history[-1]
+        query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
         problem_statement: str = dto.exercise.problem_statement
-        exercise_title: str = dto.exercise.title
-        message = query.contents[0].textContent
+        exercise_title: str = dto.exercise.name
+        message = query.text
+        file_map = dto.latest_submission.repository
         if not message:
             raise ValueError("IrisMessage must not be empty")
         response = self.pipeline.invoke(
@@ -93,9 +111,9 @@ class TutorChatPipeline(Pipeline):
                 "question": message,
                 "history": [message.__str__() for message in history],
                 "problem_statement": problem_statement,
-                "file_content": "",  # TODO add file selector pipeline and get file content
+                "file_map": file_map,
                 "exercise_title": exercise_title,
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
-        return MessageDTO(role=IrisMessageRole.ASSISTANT, text=response)
+        # TODO: Convert response to status update

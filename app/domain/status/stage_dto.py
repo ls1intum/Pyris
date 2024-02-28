@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 from domain.status.stage_state_dto import StageStateDTO
@@ -6,5 +8,11 @@ from domain.status.stage_state_dto import StageStateDTO
 class StageDTO(BaseModel):
     name: str
     weight: int
-    state: StageStateDTO
+    state: Literal[
+        StageStateDTO.NOT_STARTED,
+        StageStateDTO.IN_PROGRESS,
+        StageStateDTO.DONE,
+        StageStateDTO.SKIPPED,
+        StageStateDTO.ERROR,
+    ]
     message: str
