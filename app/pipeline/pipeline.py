@@ -25,5 +25,5 @@ class Pipeline(metaclass=ABCMeta):
         super().__init_subclass__(**kwargs)
         if "__call__" not in cls.__dict__:
             raise NotImplementedError(
-                f"Subclasses of Pipeline interface must implement the __call__ method."
+                "Subclasses of Pipeline interface must implement the __call__ method."
             )

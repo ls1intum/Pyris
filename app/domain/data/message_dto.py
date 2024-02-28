@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Literal, Union
+from typing import List, Literal
 
 from .message_content_dto import MessageContentDTO
 from ...domain.iris_message import IrisMessage

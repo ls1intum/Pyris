@@ -22,7 +22,6 @@ from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
-from ...pipeline.shared import SummaryPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +58,6 @@ class TutorChatPipeline(Pipeline):
                 ("human", "{question}"),
             ]
         )
-        # Create the pipeline
-        summary_pipeline = SummaryPipeline()
         # Create file selector pipeline
         file_selector_pipeline = FileSelectorPipeline(callback=None)
         self.pipeline = (
