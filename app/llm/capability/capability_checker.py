@@ -49,7 +49,11 @@ def calculate_capability_scores(
             # Invert the cost if required
             # The cost is a special case, as depending on how you want to use the scores
             # the cost needs to be considered differently
-            if requirement == "cost" and invert_cost and score != 0:
+            if (
+                requirement in ["input_cost", "output_cost"]
+                and invert_cost
+                and score != 0
+            ):
                 score = 1 / score
             scores.append(score)
 

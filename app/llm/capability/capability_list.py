@@ -69,7 +69,10 @@ class BooleanCapability(BaseModel):
 class CapabilityList(BaseModel):
     """A list of capabilities for a model"""
 
-    cost: InverseOrderedNumberCapability = Field(
+    input_cost: InverseOrderedNumberCapability = Field(
+        default=InverseOrderedNumberCapability(value=0)
+    )
+    output_cost: InverseOrderedNumberCapability = Field(
         default=InverseOrderedNumberCapability(value=0)
     )
     gpt_version_equivalent: OrderedNumberCapability = Field(
@@ -99,7 +102,8 @@ class CapabilityList(BaseModel):
 
 # The weights for the capabilities used in the scoring
 capability_weights = {
-    "cost": 1,
+    "input_cost": 0.5,
+    "output_cost": 0.5,
     "gpt_version_equivalent": 4,
     "speed": 2,
     "context_length": 0.1,
@@ -111,4 +115,7 @@ capability_weights = {
 }
 
 # The default values for the capabilities that are always considered
-always_considered_capabilities_with_default = {"cost": 100000000000000}
+always_considered_capabilities_with_default = {
+    "input_cost": 100000000000000,
+    "output_cost": 100000000000000,
+}

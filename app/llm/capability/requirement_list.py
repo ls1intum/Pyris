@@ -1,7 +1,8 @@
 class RequirementList:
     """A class to represent the requirements you want to match against"""
 
-    cost: float | None
+    input_cost: float | None
+    output_cost: float | None
     gpt_version_equivalent: float | None
     speed: float | None
     context_length: int | None
@@ -13,7 +14,8 @@ class RequirementList:
 
     def __init__(
         self,
-        cost: float | None = None,
+        input_cost: float | None = None,
+        output_cost: float | None = None,
         gpt_version_equivalent: float | None = None,
         speed: float | None = None,
         context_length: int | None = None,
@@ -23,7 +25,8 @@ class RequirementList:
         image_recognition: bool | None = None,
         json_mode: bool | None = None,
     ) -> None:
-        self.cost = cost
+        self.input_cost = input_cost
+        self.output_cost = output_cost
         self.gpt_version_equivalent = gpt_version_equivalent
         self.speed = speed
         self.context_length = context_length
