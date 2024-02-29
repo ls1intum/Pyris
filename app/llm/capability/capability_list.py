@@ -69,25 +69,35 @@ class BooleanCapability(BaseModel):
 class CapabilityList(BaseModel):
     """A list of capabilities for a model"""
 
+    # Cost in $ per 1k input tokens
     input_cost: InverseOrderedNumberCapability = Field(
         default=InverseOrderedNumberCapability(value=0)
     )
+    # Output cost in $ per 1k tokens
     output_cost: InverseOrderedNumberCapability = Field(
         default=InverseOrderedNumberCapability(value=0)
     )
+    # The GPT version that is roughly equivalent to the model
     gpt_version_equivalent: OrderedNumberCapability = Field(
         default=OrderedNumberCapability(value=2)
     )
+    # The speed of the model in tokens per second
     speed: OrderedNumberCapability = Field(default=OrderedNumberCapability(value=0))
+    # The context length of the model in tokens
     context_length: OrderedNumberCapability = Field(
         default=OrderedNumberCapability(value=0)
     )
+    # The vendor of the model e.g. "OpenAI" or "Anthropic"
     vendor: TextCapability = Field(default=TextCapability(value=""))
+    # Whether the model is privacy compliant and can be used for sensitive data
     privacy_compliance: BooleanCapability = Field(
         default=BooleanCapability(value=False)
     )
+    # Whether the model is self-hosted
     self_hosted: BooleanCapability = Field(default=BooleanCapability(value=False))
+    # Whether the model supports image recognition
     image_recognition: BooleanCapability = Field(default=BooleanCapability(value=False))
+    # Whether the model supports a JSON mode
     json_mode: BooleanCapability = Field(default=BooleanCapability(value=False))
 
     @model_validator(mode="before")

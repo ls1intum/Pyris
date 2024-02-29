@@ -1,15 +1,25 @@
 class RequirementList:
     """A class to represent the requirements you want to match against"""
 
+    # Maximum cost in $ per 1k input tokens
     input_cost: float | None
+    # Maximum cost in $ per 1k output tokens
     output_cost: float | None
+    # The minimum GPT version that the model should be roughly equivalent to
     gpt_version_equivalent: float | None
+    # The minimum speed of the model in tokens per second
     speed: float | None
+    # The minimum context length of the model in tokens
     context_length: int | None
+    # The vendor of the model e.g. "OpenAI" or "Anthropic"
     vendor: str | None
+    # Whether the model should be privacy compliant to be used for sensitive data
     privacy_compliance: bool | None
+    # Whether the model should be self-hosted
     self_hosted: bool | None
+    # Whether the model should support image recognition
     image_recognition: bool | None
+    # Whether the model should support a JSON mode
     json_mode: bool | None
 
     def __init__(
