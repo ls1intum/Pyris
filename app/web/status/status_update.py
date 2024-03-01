@@ -22,9 +22,7 @@ class StatusCallback(ABC):
 
 class TutorChatStatusCallback(StatusCallback):
     def __init__(self, run_id: str, base_url: str):
-        url = (
-            f"{base_url}/api/v1/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
-        )
+        url = f"{base_url}/api/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
         self.run_id = run_id
         super().__init__(url)
 
@@ -34,7 +32,7 @@ class TutorChatStatusCallback(StatusCallback):
                 self.url,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": self.run_id,
+                    "Authorization": f"Bearer {self.run_id}",
                 },
                 json=status.dict(by_alias=True),
             ).raise_for_status()
