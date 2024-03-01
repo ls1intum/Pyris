@@ -94,12 +94,12 @@ class TutorChatPipeline(Pipeline):
         logger.debug("Running tutor chat pipeline...")
         logger.debug(f"DTO: {dto}")
         history: List[MessageDTO] = dto.chat_history[:-1]
-        build_logs = dto.latest_submission.build_log_entries
+        build_logs = dto.submission.build_log_entries
         query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
         message = query.text
-        file_map = dto.latest_submission.repository
+        file_map = dto.submission.repository
         programming_language = dto.exercise.programming_language.value.lower()
         if not message:
             raise ValueError("IrisMessage must not be empty")
@@ -115,7 +115,7 @@ class TutorChatPipeline(Pipeline):
             }
         )
         logger.debug(f"Response from tutor chat pipeline: {response}")
-        stages = dto.initial_stages
+        stages = dto.initial_stages or []
         stages.append(
             StageDTO(
                 name="Final Stage",

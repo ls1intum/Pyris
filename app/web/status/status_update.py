@@ -4,6 +4,9 @@ import requests
 from abc import ABC, abstractmethod
 
 from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class StatusCallback(ABC):
@@ -26,8 +29,14 @@ class TutorChatStatusCallback(StatusCallback):
         super().__init__(url)
 
     def on_status_update(self, status: TutorChatStatusUpdateDTO):
-        requests.post(
-            self.url,
-            headers={"Content-Type": "application/json", "Authorization": self.run_id},
-            json=status.dict(by_alias=True),
-        )
+        try:
+            requests.post(
+                self.url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": self.run_id,
+                },
+                json=status.dict(by_alias=True),
+            ).raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error sending status update: {e}")

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -8,4 +8,6 @@ from ..domain.status.stage_dto import StageDTO
 
 class PipelineExecutionDTO(BaseModel):
     settings: PipelineExecutionSettingsDTO
-    initial_stages: List[StageDTO] = Field(alias="initialStages")
+    initial_stages: Optional[List[StageDTO]] = Field(
+        default=None, alias="initialStages"
+    )

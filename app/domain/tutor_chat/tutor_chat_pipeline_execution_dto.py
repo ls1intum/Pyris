@@ -11,7 +11,7 @@ from ...domain.data.submission_dto import SubmissionDTO
 
 
 class TutorChatPipelineExecutionDTO(PipelineExecutionDTO):
-    latest_submission: SubmissionDTO = Field(alias="latestSubmission")
+    submission: SubmissionDTO
     exercise: ProgrammingExerciseDTO
     course: CourseDTO
     chat_history: List[MessageDTO] = Field(alias="chatHistory")

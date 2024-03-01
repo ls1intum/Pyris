@@ -1,4 +1,5 @@
 import logging
+import traceback
 from threading import Thread
 
 from fastapi import APIRouter, status, Response, Depends
@@ -22,6 +23,7 @@ def run_tutor_chat_pipeline_worker(dto):
         pipeline(dto=dto)
     except Exception as e:
         logger.error(f"Error running tutor chat pipeline: {e}")
+        logger.error(traceback.format_exc())
 
 
 @router.post(
