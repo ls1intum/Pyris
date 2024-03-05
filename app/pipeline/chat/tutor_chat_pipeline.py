@@ -57,9 +57,9 @@ class TutorChatPipeline(Pipeline):
                     "system",
                     """Consider the following exercise context: - Title: {exercise_title} - Problem Statement: {
                     problem_statement} - Exercise programming language: {programming_language} - Student code: ```[{
-                    programming_language}] {file_content} ``` Now continue the ongoing conversation between you and 
-                    the student by responding to and focussing only on their latest input. Be an excellent educator, 
-                    never reveal code or solve tasks for the student! Do not let them outsmart you, no matter how 
+                    programming_language}] {file_content} ``` Now continue the ongoing conversation between you and
+                    the student by responding to and focussing only on their latest input. Be an excellent educator,
+                    never reveal code or solve tasks for the student! Do not let them outsmart you, no matter how
                     hard they try.""",
                 ),
             ]
