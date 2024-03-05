@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 def run_tutor_chat_pipeline_worker(dto):
-    callback = TutorChatStatusCallback(
-        run_id=dto.settings.authentication_token, base_url=dto.settings.artemis_base_url
-    )
-    pipeline = TutorChatPipeline(callback=callback)
     try:
+        callback = TutorChatStatusCallback(
+            run_id=dto.settings.authentication_token,
+            base_url=dto.settings.artemis_base_url,
+        )
+        pipeline = TutorChatPipeline(callback=callback)
         pipeline(dto=dto)
     except Exception as e:
         logger.error(f"Error running tutor chat pipeline: {e}")

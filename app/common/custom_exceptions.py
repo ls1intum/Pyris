@@ -21,3 +21,25 @@ class PermissionDeniedException(HTTPException):
                 "errorMessage": "Permission denied",
             },
         )
+
+
+class PipelineInvocationError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "type": "bad_request",
+                "errorMessage": "Cannot invoke pipeline",
+            },
+        )
+
+
+class PipelineNotFoundException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "type": "not_found",
+                "errorMessage": "Pipeline not found",
+            },
+        )

@@ -1,5 +1,5 @@
 import os
-
+from pathlib import Path
 from pydantic import BaseModel
 import yaml
 
@@ -11,22 +11,29 @@ class APIKeyConfig(BaseModel):
 class Settings(BaseModel):
     class PyrisSettings(BaseModel):
         api_keys: list[APIKeyConfig]
-        llm_config_path: str
 
     pyris: PyrisSettings
 
     @classmethod
     def get_settings(cls):
-        postfix = "-docker" if "DOCKER" in os.environ else ""
-        if "RUN_ENV" in os.environ and os.environ["RUN_ENV"] == "test":
-            file_path = f"application{postfix}.test.yml"
-        else:
-            file_path = f"application{postfix}.yml"
-        with open(file_path, "r") as file:
-            settings_file = yaml.safe_load(file)
-        settings_obj = Settings.parse_obj(settings_file)
-        os.environ["LLM_CONFIG_PATH"] = settings_obj.pyris.llm_config_path
-        return settings_obj
+        """Get the settings from the configuration file."""
+        file_path_env = os.environ.get("APPLICATION_YML_PATH")
+        if not file_path_env:
+            raise EnvironmentError(
+                "APPLICATION_YML_PATH environment variable is not set."
+            )
+
+        file_path = Path(file_path_env)
+        try:
+            with open(file_path, "r") as file:
+                settings_file = yaml.safe_load(file)
+            return cls.parse_obj(settings_file)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"Configuration file not found at {file_path}."
+            ) from e
+        except yaml.YAMLError as e:
+            raise yaml.YAMLError(f"Error parsing YAML file at {file_path}.") from e
 
 
 settings = Settings.get_settings()

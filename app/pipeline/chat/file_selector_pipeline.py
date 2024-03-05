@@ -1,13 +1,12 @@
 import logging
 import os
-from typing import List, Dict
+from typing import Dict
 
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
-from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
@@ -20,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class FileSelectionDTO(BaseModel):
+    question: str
     files: Dict[str, str]
-    build_logs: List[BuildLogEntryDTO]
+    feedbacks: str
 
     def __str__(self):
         return (
@@ -53,7 +53,7 @@ class FileSelectorPipeline(Pipeline):
         # Create the prompt
         prompt = PromptTemplate(
             template=prompt_str,
-            input_variables=["file_names", "build_logs"],
+            input_variables=["file_names", "feedbacks"],
             partial_variables={"format_instructions": parser.get_format_instructions()},
         )
         logger.debug(parser.get_format_instructions())
@@ -66,17 +66,17 @@ class FileSelectorPipeline(Pipeline):
             :param query: The query
             :return: Selected file content
         """
-        logger.debug("Running file selector pipeline...")
+        print("Running file selector pipeline...")
         file_names = list(dto.files.keys())
-        build_logs = dto.build_logs
-        response = self.pipeline.invoke(
+        feedbacks = dto.feedbacks
+        print(", ".join(file_names))
+        response: SelectedFile = self.pipeline.invoke(
             {
-                "file_names": file_names,
-                "build_logs": build_logs,
-            }
+                "question": dto.question,
+                "file_names": ", ".join(file_names),
+                "feedbacks": feedbacks,
+            },
         )
-        return (
-            f"{response.selected_file}:\n{dto.files[response.selected_file]}"
-            if response.selected_file
-            else ""
-        )
+        print(response)
+
+        return f"{response.selected_file}: {dto.files[response.selected_file]} "

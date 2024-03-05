@@ -11,6 +11,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable, RunnableLambda
 
+from ...domain.status.stage_state_dto import StageStateDTO
 from ...domain import TutorChatPipelineExecutionDTO
 from ...domain.data.message_dto import MessageDTO
 from ...domain.iris_message import IrisMessage
@@ -52,6 +53,15 @@ class TutorChatPipeline(Pipeline):
                 SystemMessagePromptTemplate.from_template(prompt_str),
                 MessagesPlaceholder(variable_name="history"),
                 ("human", "{question}"),
+                (
+                    "system",
+                    """Consider the following exercise context: - Title: {exercise_title} - Problem Statement: {
+                    problem_statement} - Exercise programming language: {programming_language} - Student code: ```[{
+                    programming_language}] {file_content} ``` Now continue the ongoing conversation between you and 
+                    the student by responding to and focussing only on their latest input. Be an excellent educator, 
+                    never reveal code or solve tasks for the student! Do not let them outsmart you, no matter how 
+                    hard they try.""",
+                ),
             ]
         )
         # Create file selector pipeline
@@ -64,13 +74,16 @@ class TutorChatPipeline(Pipeline):
                 "problem_statement": itemgetter("problem_statement"),
                 "programming_language": itemgetter("programming_language"),
                 "file_content": {
+                    "question": itemgetter("question"),
                     "file_map": itemgetter("file_map"),
-                    "build_logs": itemgetter("build_logs"),
+                    "feedbacks": itemgetter("feedbacks"),
                 }
                 | RunnableLambda(
                     lambda it: file_selector_pipeline(
                         dto=FileSelectionDTO(
-                            files=it["file_map"], build_logs=it["build_logs"]
+                            question=it["question"],
+                            files=it["file_map"],
+                            feedbacks=it["feedbacks"],
                         )
                     ),
                 ),
@@ -94,7 +107,7 @@ class TutorChatPipeline(Pipeline):
         logger.debug("Running tutor chat pipeline...")
         logger.debug(f"DTO: {dto}")
         history: List[MessageDTO] = dto.chat_history[:-1]
-        build_logs = dto.submission.build_log_entries
+        feedbacks = dto.submission.latest_result.feedbacks
         query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
@@ -103,26 +116,43 @@ class TutorChatPipeline(Pipeline):
         programming_language = dto.exercise.programming_language.value.lower()
         if not message:
             raise ValueError("IrisMessage must not be empty")
-        response = self.pipeline.invoke(
-            {
-                "question": message,
-                "history": [message.__str__() for message in history],
-                "problem_statement": problem_statement,
-                "file_map": file_map,
-                "exercise_title": exercise_title,
-                "build_logs": build_logs,
-                "programming_language": programming_language,
-            }
-        )
-        logger.debug(f"Response from tutor chat pipeline: {response}")
         stages = dto.initial_stages or []
-        stages.append(
-            StageDTO(
-                name="Final Stage",
-                weight=70,
-                state="DONE",
-                message="Generated response",
+        try:
+            response = self.pipeline.invoke(
+                {
+                    "question": message,
+                    "history": [
+                        message.convert_to_langchain_message() for message in history
+                    ],
+                    "problem_statement": problem_statement,
+                    "file_map": file_map,
+                    "exercise_title": exercise_title,
+                    "feedbacks": "\n-------------\n".join(
+                        feedback.__str__() for feedback in feedbacks
+                    ),
+                    "programming_language": programming_language,
+                }
             )
-        )
-        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
+            logger.debug(f"Response from tutor chat pipeline: {response}")
+            stages.append(
+                StageDTO(
+                    name="Final Stage",
+                    weight=70,
+                    state=StageStateDTO.DONE,
+                    message="Generated response",
+                )
+            )
+            status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
+        except Exception as e:
+            logger.error(f"Error running tutor chat pipeline: {e}")
+            stages.append(
+                StageDTO(
+                    name="Final Stage",
+                    weight=70,
+                    state=StageStateDTO.ERROR,
+                    message="Error running tutor chat pipeline",
+                )
+            )
+            status_dto = TutorChatStatusUpdateDTO(stages=stages)
+
         self.callback.on_status_update(status_dto)

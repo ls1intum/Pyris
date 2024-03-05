@@ -1,11 +1,10 @@
-Select a file from the files list below that is mentioned in the build logs. If no file is in the list is mentioned in the build logs answer with empty string.
+User question: {question}
 
-Here are the paths of all files:
-{file_names}
+Here are the all files: {file_names}
 
-Build logs:
-{build_logs}
+Feedbacks:
+{feedbacks}
+
+Select the most relevant files from the file list for providing context based on the feedbacks and the user question.
 
 {format_instructions}
-
-Now give answer:
