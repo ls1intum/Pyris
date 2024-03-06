@@ -3,12 +3,11 @@ import os
 from typing import Dict, Optional, List
 
 from langchain.output_parsers import PydanticOutputParser
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
-from ...llm import BasicRequestHandler
+from ...llm import BasicRequestHandler, CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
 from ...pipeline.chat.output_models.output_models.selected_file_model import (
@@ -43,7 +42,10 @@ class FileSelectorPipeline(Pipeline):
     def __init__(self, callback: Optional[StatusCallback] = None):
         super().__init__(implementation_id="file_selector_pipeline_reference_impl")
         request_handler = BasicRequestHandler("gpt35")
-        self.llm = IrisLangchainChatModel(request_handler)
+        completion_args = CompletionArguments(temperature=0, max_tokens=500)
+        self.llm = IrisLangchainChatModel(
+            request_handler=request_handler, completion_args=completion_args
+        )
         self.callback = callback
         # Load prompt from file
         dirname = os.path.dirname(__file__)
@@ -81,10 +83,10 @@ class FileSelectorPipeline(Pipeline):
             prompt = self.default_prompt
 
         file_list = "\n".join(repository.keys())
-        response: SelectedFiles = (prompt | self.pipeline).invoke(
+        response = (prompt | self.pipeline).invoke(
             {
                 "files": file_list,
-                "format_instructions": self.output_parser.get_format_instructions(),
             }
         )
+        print(response)
         return response.selected_files

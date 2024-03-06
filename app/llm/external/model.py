@@ -1,4 +1,6 @@
 from abc import ABCMeta, abstractmethod
+from typing import Optional
+
 from pydantic import BaseModel
 
 from ...domain import IrisMessage
@@ -12,7 +14,7 @@ class LanguageModel(BaseModel, metaclass=ABCMeta):
     id: str
     name: str
     description: str
-    capabilities: CapabilityList
+    capabilities: Optional[CapabilityList] = None
 
 
 class CompletionModel(LanguageModel, metaclass=ABCMeta):

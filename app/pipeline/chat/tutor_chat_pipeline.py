@@ -6,6 +6,7 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    AIMessagePromptTemplate,
 )
 from langchain_core.runnables import Runnable
 
@@ -15,6 +16,7 @@ from ..prompts.iris_tutor_chat_prompts import (
     iris_initial_system_prompt,
     chat_history_system_prompt,
     final_system_prompt,
+    guide_system_prompt,
 )
 from ...domain.status.stage_state_dto import StageStateDTO
 from ...domain import TutorChatPipelineExecutionDTO
@@ -24,7 +26,7 @@ from ...domain.status.stage_dto import StageDTO
 from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
 from ...web.status.status_update import TutorChatStatusCallback
 from .file_selector_pipeline import FileSelectorPipeline
-from ...llm import BasicRequestHandler
+from ...llm import BasicRequestHandler, CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
@@ -45,7 +47,10 @@ class TutorChatPipeline(Pipeline):
         super().__init__(implementation_id="tutor_chat_pipeline")
         # Set the langchain chat model
         request_handler = BasicRequestHandler("gpt35")
-        self.llm = IrisLangchainChatModel(request_handler)
+        completion_args = CompletionArguments(temperature=0.2, max_tokens=2000)
+        self.llm = IrisLangchainChatModel(
+            request_handler=request_handler, completion_args=completion_args
+        )
         self.callback = callback
 
         # Create the pipelines
@@ -101,23 +106,30 @@ class TutorChatPipeline(Pipeline):
                 repository=repository,
                 prompt=file_selection_prompt,
             )
+        if submission:
+            self._add_build_logs_to_prompt(build_logs, build_failed)
+
+        self._add_feedbacks_to_prompt(feedbacks)
+
         self._add_exercise_context_to_prompt(
             submission,
             selected_files,
         )
 
-        self._add_feedbacks_to_prompt(feedbacks)
-        if submission:
-            self._add_build_logs_to_prompt(build_logs, build_failed)
-
         self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
-        response = (self.prompt | self.pipeline).invoke(
-            {
-                "exercise_title": exercise_title,
-                "problem_statement": problem_statement,
-                "programming_language": programming_language,
-            }
+        prompt_val = self.prompt.format_messages(
+            exercise_title=exercise_title,
+            problem_statement=problem_statement,
+            programming_language=programming_language,
         )
+        self.prompt = ChatPromptTemplate.from_messages(prompt_val)
+        response_draft = (self.prompt | self.pipeline).invoke({})
+        self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
+        print(f"Prompt: {self.prompt.format_prompt().to_string()}")
+        self.prompt += SystemMessagePromptTemplate.from_template(guide_system_prompt)
+        response = (self.prompt | self.pipeline).invoke({})
+        print(f"Response draft: {response_draft}")
+        print(f"Response: {response}")
         logger.debug(f"Response from tutor chat pipeline: {response}")
         stages.append(
             StageDTO(
@@ -188,7 +200,7 @@ class TutorChatPipeline(Pipeline):
         if feedbacks is not None and len(feedbacks) > 0:
             prompt = (
                 "These are the feedbacks for the student's repository:\n%s"
-            ) % "\n".join(str(log) for log in feedbacks)
+            ) % "\n---------\n".join(str(log) for log in feedbacks)
             self.prompt += SystemMessagePromptTemplate.from_template(prompt)
 
     def _add_build_logs_to_prompt(
@@ -208,11 +220,11 @@ class TutorChatPipeline(Pipeline):
             "Based on the chat history, you can now request access to more contextual information. This is the "
             "student's submitted code repository and the corresponding build information. You can reference a file by "
             "its path to view it."
-            "Here are the paths of all files in the assignment repository:\n{files}\n"
-            "Is a file referenced by the student or does it have to be checked before answering? "
-            "It's important to avoid giving unnecessary information, only name a file if it's really necessary. "
-            'For general queries, that do not need any specific context, set selected_files attribute to "[]".\n'
-            "If you decide a file is important, add that file to the list."
-            "{format_instructions}"
+            "Given are the paths of all files in the assignment repository:\n{files}\n"
+            "Is a file referenced by the student or does it have to be checked before answering?"
+            "Without any comment, return the result in the following JSON format, it's important to avoid giving "
+            "unnecessary information, only name a file if it's really necessary for answering the student's question "
+            "and is listed above, otherwise leave the array empty."
+            '{{"selected_files": [<file1>, <file2>, ...]}}'
         )
         return file_selection_prompt
