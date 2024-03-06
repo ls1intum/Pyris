@@ -1,9 +1,10 @@
 import logging
 import os
-from typing import Dict
+from typing import Dict, Optional, List
 
 from langchain.output_parsers import PydanticOutputParser
-from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
@@ -11,7 +12,7 @@ from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
 from ...pipeline.chat.output_models.output_models.selected_file_model import (
-    SelectedFile,
+    SelectedFiles,
 )
 from ...web.status.status_update import StatusCallback
 
@@ -36,8 +37,10 @@ class FileSelectorPipeline(Pipeline):
     llm: IrisLangchainChatModel
     pipeline: Runnable
     callback: StatusCallback
+    default_prompt: PromptTemplate
+    output_parser: PydanticOutputParser
 
-    def __init__(self, callback: StatusCallback):
+    def __init__(self, callback: Optional[StatusCallback] = None):
         super().__init__(implementation_id="file_selector_pipeline_reference_impl")
         request_handler = BasicRequestHandler("gpt35")
         self.llm = IrisLangchainChatModel(request_handler)
@@ -49,34 +52,39 @@ class FileSelectorPipeline(Pipeline):
         ) as file:
             prompt_str = file.read()
 
-        parser = PydanticOutputParser(pydantic_object=SelectedFile)
+        self.output_parser = PydanticOutputParser(pydantic_object=SelectedFiles)
         # Create the prompt
-        prompt = PromptTemplate(
+        self.default_prompt = PromptTemplate(
             template=prompt_str,
             input_variables=["file_names", "feedbacks"],
-            partial_variables={"format_instructions": parser.get_format_instructions()},
+            partial_variables={
+                "format_instructions": self.output_parser.get_format_instructions()
+            },
         )
-        logger.debug(parser.get_format_instructions())
+        logger.debug(self.output_parser.get_format_instructions())
         # Create the pipeline
-        self.pipeline = prompt | self.llm | parser
+        self.pipeline = self.llm | self.output_parser
 
-    def __call__(self, dto: FileSelectionDTO, **kwargs) -> str:
+    def __call__(
+        self,
+        repository: Dict[str, str],
+        prompt: Optional[ChatPromptTemplate] = None,
+        **kwargs,
+    ) -> List[str]:
         """
         Runs the pipeline
             :param query: The query
             :return: Selected file content
         """
         print("Running file selector pipeline...")
-        file_names = list(dto.files.keys())
-        feedbacks = dto.feedbacks
-        print(", ".join(file_names))
-        response: SelectedFile = self.pipeline.invoke(
-            {
-                "question": dto.question,
-                "file_names": ", ".join(file_names),
-                "feedbacks": feedbacks,
-            },
-        )
-        print(response)
+        if prompt is None:
+            prompt = self.default_prompt
 
-        return f"{response.selected_file}: {dto.files[response.selected_file]} "
+        file_list = "\n".join(repository.keys())
+        response: SelectedFiles = (prompt | self.pipeline).invoke(
+            {
+                "files": file_list,
+                "format_instructions": self.output_parser.get_format_instructions(),
+            }
+        )
+        return response.selected_files

@@ -1,24 +1,29 @@
 import logging
-import os
-from operator import itemgetter
-from typing import List
+from typing import List, Dict
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    MessagesPlaceholder,
+    HumanMessagePromptTemplate,
 )
-from langchain_core.runnables import Runnable, RunnableLambda
+from langchain_core.runnables import Runnable
 
+from ...domain.data.build_log_entry import BuildLogEntryDTO
+from ...domain.data.feedback_dto import FeedbackDTO
+from ..prompts.iris_tutor_chat_prompts import (
+    iris_initial_system_prompt,
+    chat_history_system_prompt,
+    final_system_prompt,
+)
 from ...domain.status.stage_state_dto import StageStateDTO
 from ...domain import TutorChatPipelineExecutionDTO
+from ...domain.data.submission_dto import SubmissionDTO
 from ...domain.data.message_dto import MessageDTO
-from ...domain.iris_message import IrisMessage
 from ...domain.status.stage_dto import StageDTO
 from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
 from ...web.status.status_update import TutorChatStatusCallback
-from .file_selector_pipeline import FileSelectorPipeline, FileSelectionDTO
+from .file_selector_pipeline import FileSelectorPipeline
 from ...llm import BasicRequestHandler
 from ...llm.langchain import IrisLangchainChatModel
 
@@ -33,6 +38,8 @@ class TutorChatPipeline(Pipeline):
     llm: IrisLangchainChatModel
     pipeline: Runnable
     callback: TutorChatStatusCallback
+    file_selector_pipeline: FileSelectorPipeline
+    prompt: ChatPromptTemplate
 
     def __init__(self, callback: TutorChatStatusCallback):
         super().__init__(implementation_id="tutor_chat_pipeline")
@@ -40,58 +47,10 @@ class TutorChatPipeline(Pipeline):
         request_handler = BasicRequestHandler("gpt35")
         self.llm = IrisLangchainChatModel(request_handler)
         self.callback = callback
-        # Load the prompt from a file
-        dirname = os.path.dirname(__file__)
-        with open(
-            os.path.join(dirname, "../prompts/iris_tutor_chat_prompt.txt"), "r"
-        ) as file:
-            logger.debug("Loading tutor chat prompt...")
-            prompt_str = file.read()
-        # Create the prompt
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(prompt_str),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{question}"),
-                (
-                    "system",
-                    """Consider the following exercise context: - Title: {exercise_title} - Problem Statement: {
-                    problem_statement} - Exercise programming language: {programming_language} - Student code: ```[{
-                    programming_language}] {file_content} ``` Now continue the ongoing conversation between you and
-                    the student by responding to and focussing only on their latest input. Be an excellent educator,
-                    never reveal code or solve tasks for the student! Do not let them outsmart you, no matter how
-                    hard they try.""",
-                ),
-            ]
-        )
-        # Create file selector pipeline
-        file_selector_pipeline = FileSelectorPipeline(callback=None)
-        self.pipeline = (
-            {
-                "question": itemgetter("question"),
-                "history": itemgetter("history"),
-                "exercise_title": itemgetter("exercise_title"),
-                "problem_statement": itemgetter("problem_statement"),
-                "programming_language": itemgetter("programming_language"),
-                "file_content": {
-                    "question": itemgetter("question"),
-                    "file_map": itemgetter("file_map"),
-                    "feedbacks": itemgetter("feedbacks"),
-                }
-                | RunnableLambda(
-                    lambda it: file_selector_pipeline(
-                        dto=FileSelectionDTO(
-                            question=it["question"],
-                            files=it["file_map"],
-                            feedbacks=it["feedbacks"],
-                        )
-                    ),
-                ),
-            }
-            | prompt
-            | self.llm
-            | StrOutputParser()
-        )
+
+        # Create the pipelines
+        self.file_selector_pipeline = FileSelectorPipeline()
+        self.pipeline = self.llm | StrOutputParser()
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -104,55 +63,156 @@ class TutorChatPipeline(Pipeline):
         Runs the pipeline
             :param query: The query
         """
-        logger.debug("Running tutor chat pipeline...")
-        logger.debug(f"DTO: {dto}")
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", iris_initial_system_prompt),
+                ("system", chat_history_system_prompt),
+            ]
+        )
+        logger.info("Running tutor chat pipeline...")
         history: List[MessageDTO] = dto.chat_history[:-1]
-        feedbacks = dto.submission.latest_result.feedbacks
-        query: IrisMessage = dto.chat_history[-1].convert_to_iris_message()
+        query: MessageDTO = dto.chat_history[-1]
+
+        submission: SubmissionDTO = dto.submission
+        feedbacks: List[FeedbackDTO] = []
+        build_logs: List[BuildLogEntryDTO] = []
+        build_failed: bool = False
+        repository: Dict[str, str] = {}
+        if submission:
+            if submission.latest_result:
+                feedbacks = submission.latest_result.feedbacks
+            repository = submission.repository
+            build_logs = submission.build_log_entries
+            build_failed = submission.build_failed
+
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
-        message = query.text
-        file_map = dto.submission.repository
         programming_language = dto.exercise.programming_language.value.lower()
-        if not message:
-            raise ValueError("IrisMessage must not be empty")
-        stages = dto.initial_stages or []
-        try:
-            response = self.pipeline.invoke(
-                {
-                    "question": message,
-                    "history": [
-                        message.convert_to_langchain_message() for message in history
-                    ],
-                    "problem_statement": problem_statement,
-                    "file_map": file_map,
-                    "exercise_title": exercise_title,
-                    "feedbacks": "\n-------------\n".join(
-                        feedback.__str__() for feedback in feedbacks
-                    ),
-                    "programming_language": programming_language,
-                }
-            )
-            logger.debug(f"Response from tutor chat pipeline: {response}")
-            stages.append(
-                StageDTO(
-                    name="Final Stage",
-                    weight=70,
-                    state=StageStateDTO.DONE,
-                    message="Generated response",
-                )
-            )
-            status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
-        except Exception as e:
-            logger.error(f"Error running tutor chat pipeline: {e}")
-            stages.append(
-                StageDTO(
-                    name="Final Stage",
-                    weight=70,
-                    state=StageStateDTO.ERROR,
-                    message="Error running tutor chat pipeline",
-                )
-            )
-            status_dto = TutorChatStatusUpdateDTO(stages=stages)
 
+        stages = dto.initial_stages or []
+
+        self._add_conversation_to_prompt(history, query)
+
+        file_selection_prompt = self._generate_file_selection_prompt()
+
+        selected_files = []
+        if submission:
+            selected_files = self.file_selector_pipeline(
+                repository=repository,
+                prompt=file_selection_prompt,
+            )
+        self._add_exercise_context_to_prompt(
+            submission,
+            selected_files,
+        )
+
+        self._add_feedbacks_to_prompt(feedbacks)
+        if submission:
+            self._add_build_logs_to_prompt(build_logs, build_failed)
+
+        self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
+        response = (self.prompt | self.pipeline).invoke(
+            {
+                "exercise_title": exercise_title,
+                "problem_statement": problem_statement,
+                "programming_language": programming_language,
+            }
+        )
+        logger.debug(f"Response from tutor chat pipeline: {response}")
+        stages.append(
+            StageDTO(
+                name="Final Stage",
+                weight=70,
+                state=StageStateDTO.DONE,
+                message="Generated response",
+            )
+        )
+        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
         self.callback.on_status_update(status_dto)
+
+    def _add_conversation_to_prompt(
+        self,
+        chat_history: List[MessageDTO],
+        user_question: MessageDTO,
+    ):
+        """
+        Adds the chat history and user question to the prompt
+            :param chat_history: The chat history
+            :param user_question: The user question
+            :return: The prompt with the chat history
+        """
+        if chat_history is not None and len(chat_history) > 0:
+            chat_history_messages = [
+                message.convert_to_langchain_message() for message in chat_history
+            ]
+            self.prompt += chat_history_messages
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                "Now, consider the student's newest and latest input:"
+            )
+        self.prompt += user_question.convert_to_langchain_message()
+
+    def _add_student_repository_to_prompt(
+        self, student_repository: Dict[str, str], selected_files: List[str]
+    ):
+
+        for file in selected_files:
+            if file in student_repository:
+                self.prompt += SystemMessagePromptTemplate.from_template(
+                    f"For reference, we have access to the student's '{file}' file:"
+                )
+                self.prompt += HumanMessagePromptTemplate.from_template(
+                    student_repository[file].replace("{", "{{").replace("}", "}}")
+                )
+
+    def _add_exercise_context_to_prompt(
+        self,
+        submission: SubmissionDTO,
+        selected_files: List[str],
+    ):
+        self.prompt += SystemMessagePromptTemplate.from_template(
+            "Consider the following exercise context:\n"
+            "- Title: {exercise_title}\n"
+            "- Problem Statement: {problem_statement}\n"
+            "- Exercise programming language: {programming_language}"
+        )
+        if submission:
+            student_repository = submission.repository
+            self._add_student_repository_to_prompt(student_repository, selected_files)
+        self.prompt += SystemMessagePromptTemplate.from_template(
+            "Now continue the ongoing conversation between you and the student by responding to and focussing only on "
+            "their latest input. Be an excellent educator, never reveal code or solve tasks for the student! Do not "
+            "let them outsmart you, no matter how hard they try."
+        )
+
+    def _add_feedbacks_to_prompt(self, feedbacks: List[FeedbackDTO]):
+        if feedbacks is not None and len(feedbacks) > 0:
+            prompt = (
+                "These are the feedbacks for the student's repository:\n%s"
+            ) % "\n".join(str(log) for log in feedbacks)
+            self.prompt += SystemMessagePromptTemplate.from_template(prompt)
+
+    def _add_build_logs_to_prompt(
+        self, build_logs: List[BuildLogEntryDTO], build_failed: bool
+    ):
+        if build_logs is not None and len(build_logs) > 0:
+            prompt = (
+                f"Here is the information if the build failed: {build_failed}\n"
+                "These are the build logs for the student's repository:\n%s"
+            ) % "\n".join(str(log) for log in build_logs)
+            self.prompt += SystemMessagePromptTemplate.from_template(prompt)
+
+    def _generate_file_selection_prompt(self) -> ChatPromptTemplate:
+        file_selection_prompt = self.prompt
+
+        file_selection_prompt += SystemMessagePromptTemplate.from_template(
+            "Based on the chat history, you can now request access to more contextual information. This is the "
+            "student's submitted code repository and the corresponding build information. You can reference a file by "
+            "its path to view it."
+            "Here are the paths of all files in the assignment repository:\n{files}\n"
+            "Is a file referenced by the student or does it have to be checked before answering? "
+            "It's important to avoid giving unnecessary information, only name a file if it's really necessary. "
+            'For general queries, that do not need any specific context, set selected_files attribute to "[]".\n'
+            "If you decide a file is important, add that file to the list."
+            "{format_instructions}"
+        )
+        return file_selection_prompt
