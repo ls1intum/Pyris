@@ -1,6 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional
-
 from pydantic import BaseModel
 
 from ...domain import IrisMessage
