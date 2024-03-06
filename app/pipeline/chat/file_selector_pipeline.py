@@ -78,7 +78,7 @@ class FileSelectorPipeline(Pipeline):
             :param query: The query
             :return: Selected file content
         """
-        print("Running file selector pipeline...")
+        logger.info("Running file selector pipeline...")
         if prompt is None:
             prompt = self.default_prompt
 
@@ -88,5 +88,4 @@ class FileSelectorPipeline(Pipeline):
                 "files": file_list,
             }
         )
-        print(response)
         return response.selected_files

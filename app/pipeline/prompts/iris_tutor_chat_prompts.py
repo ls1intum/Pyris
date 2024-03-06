@@ -87,6 +87,8 @@ or a mix of both.
 - The response must not perform any work the student is supposed to do. 
 - DO NOT UNDER ANY CIRCUMSTANCES repeat any previous messages in the chat history. 
 Your messages must ALWAYS BE NEW AND ORIGINAL
+- It's also important that the rewritten response still follows the general guidelines for the conversation with the 
+student and a conversational style.
 
 Here are examples of response drafts that already adheres to the rules and does not need to be rewritten: 
 

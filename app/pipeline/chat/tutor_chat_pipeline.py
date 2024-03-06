@@ -109,8 +109,6 @@ class TutorChatPipeline(Pipeline):
         if submission:
             self._add_build_logs_to_prompt(build_logs, build_failed)
 
-        self._add_feedbacks_to_prompt(feedbacks)
-
         self._add_exercise_context_to_prompt(
             submission,
             selected_files,
@@ -125,11 +123,8 @@ class TutorChatPipeline(Pipeline):
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         response_draft = (self.prompt | self.pipeline).invoke({})
         self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
-        print(f"Prompt: {self.prompt.format_prompt().to_string()}")
         self.prompt += SystemMessagePromptTemplate.from_template(guide_system_prompt)
         response = (self.prompt | self.pipeline).invoke({})
-        print(f"Response draft: {response_draft}")
-        print(f"Response: {response}")
         logger.debug(f"Response from tutor chat pipeline: {response}")
         stages.append(
             StageDTO(
