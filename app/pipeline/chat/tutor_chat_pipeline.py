@@ -79,13 +79,10 @@ class TutorChatPipeline(Pipeline):
         query: MessageDTO = dto.chat_history[-1]
 
         submission: SubmissionDTO = dto.submission
-        feedbacks: List[FeedbackDTO] = []
         build_logs: List[BuildLogEntryDTO] = []
         build_failed: bool = False
         repository: Dict[str, str] = {}
         if submission:
-            if submission.latest_result:
-                feedbacks = submission.latest_result.feedbacks
             repository = submission.repository
             build_logs = submission.build_log_entries
             build_failed = submission.build_failed
