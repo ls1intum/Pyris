@@ -66,8 +66,10 @@ class TutorChatPipeline(Pipeline):
     def __call__(self, dto: TutorChatPipelineExecutionDTO, **kwargs):
         """
         Runs the pipeline
-            :param query: The query
+            :param dto: The pipeline execution data transfer object
+            :param kwargs: The keyword arguments
         """
+        # Set up the initial prompt
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", iris_initial_system_prompt),
@@ -93,24 +95,59 @@ class TutorChatPipeline(Pipeline):
 
         stages = dto.initial_stages or []
 
+        # Add the chat history and user question to the prompt
         self._add_conversation_to_prompt(history, query)
 
+        # Create the file selection prompt based on the current prompt
         file_selection_prompt = self._generate_file_selection_prompt()
+        stages.append(
+            StageDTO(
+                name="File lookup",
+                weight=10,
+                state=StageStateDTO.IN_PROGRESS,
+                message="Looking up files in the repository...",
+            )
+        )
+        self._send_status_update(stages)
 
         selected_files = []
+        # Run the file selector pipeline
         if submission:
             selected_files = self.file_selector_pipeline(
                 repository=repository,
                 prompt=file_selection_prompt,
             )
+
+        stages.append(
+            StageDTO(
+                name="File lookup",
+                weight=10,
+                state=StageStateDTO.DONE,
+                message="Looked up files in the repository.",
+            )
+        )
+        self._send_status_update(stages)
+
         if submission:
             self._add_build_logs_to_prompt(build_logs, build_failed)
 
+        # Add the exercise context to the prompt
         self._add_exercise_context_to_prompt(
             submission,
             selected_files,
         )
 
+        stages.append(
+            StageDTO(
+                name="Response generation",
+                weight=10,
+                state=StageStateDTO.IN_PROGRESS,
+                message="Generating response...",
+            )
+        )
+        self._send_status_update(stages)
+
+        # Add the final message to the prompt and run the pipeline
         self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
         prompt_val = self.prompt.format_messages(
             exercise_title=exercise_title,
@@ -122,16 +159,20 @@ class TutorChatPipeline(Pipeline):
         self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
         self.prompt += SystemMessagePromptTemplate.from_template(guide_system_prompt)
         response = (self.prompt | self.pipeline).invoke({})
-        logger.debug(f"Response from tutor chat pipeline: {response}")
+        logger.info(f"Response from tutor chat pipeline: {response}")
         stages.append(
             StageDTO(
-                name="Final Stage",
-                weight=70,
+                name="Response generation",
+                weight=10,
                 state=StageStateDTO.DONE,
                 message="Generated response",
             )
         )
-        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=response)
+        self._send_status_update(stages, response)
+
+    def _send_status_update(self, stages, result=None):
+        """Sends a status update to the callback"""
+        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=result)
         self.callback.on_status_update(status_dto)
 
     def _add_conversation_to_prompt(
@@ -158,7 +199,10 @@ class TutorChatPipeline(Pipeline):
     def _add_student_repository_to_prompt(
         self, student_repository: Dict[str, str], selected_files: List[str]
     ):
-
+        """Adds the student repository to the prompt
+        :param student_repository: The student repository
+        :param selected_files: The selected files
+        """
         for file in selected_files:
             if file in student_repository:
                 self.prompt += SystemMessagePromptTemplate.from_template(
@@ -173,6 +217,10 @@ class TutorChatPipeline(Pipeline):
         submission: SubmissionDTO,
         selected_files: List[str],
     ):
+        """Adds the exercise context to the prompt
+        :param submission: The submission
+        :param selected_files: The selected files
+        """
         self.prompt += SystemMessagePromptTemplate.from_template(
             "Consider the following exercise context:\n"
             "- Title: {exercise_title}\n"
@@ -189,6 +237,9 @@ class TutorChatPipeline(Pipeline):
         )
 
     def _add_feedbacks_to_prompt(self, feedbacks: List[FeedbackDTO]):
+        """Adds the feedbacks to the prompt
+        :param feedbacks: The feedbacks
+        """
         if feedbacks is not None and len(feedbacks) > 0:
             prompt = (
                 "These are the feedbacks for the student's repository:\n%s"
@@ -198,6 +249,10 @@ class TutorChatPipeline(Pipeline):
     def _add_build_logs_to_prompt(
         self, build_logs: List[BuildLogEntryDTO], build_failed: bool
     ):
+        """Adds the build logs to the prompt
+        :param build_logs: The build logs
+        :param build_failed: Whether the build failed
+        """
         if build_logs is not None and len(build_logs) > 0:
             prompt = (
                 f"Here is the information if the build failed: {build_failed}\n"
@@ -206,6 +261,7 @@ class TutorChatPipeline(Pipeline):
             self.prompt += SystemMessagePromptTemplate.from_template(prompt)
 
     def _generate_file_selection_prompt(self) -> ChatPromptTemplate:
+        """Generates the file selection prompt"""
         file_selection_prompt = self.prompt
 
         file_selection_prompt += SystemMessagePromptTemplate.from_template(
