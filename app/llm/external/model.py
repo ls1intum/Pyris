@@ -14,7 +14,7 @@ class LanguageModel(BaseModel, metaclass=ABCMeta):
     id: str
     name: str
     description: str
-    capabilities: Optional[CapabilityList] = None
+    capabilities: CapabilityList
 
 
 class CompletionModel(LanguageModel, metaclass=ABCMeta):
