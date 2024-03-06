@@ -3,5 +3,5 @@ from pydantic import BaseModel, Field
 
 class UserDTO(BaseModel):
     id: int
-    first_name: str = Field(alias="firstName")
-    last_name: str = Field(alias="lastName")
+    first_name: str | None = Field(alias="firstName", default=None)
+    last_name: str | None = Field(alias="lastName", default=None)

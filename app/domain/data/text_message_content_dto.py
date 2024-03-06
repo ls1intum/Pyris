@@ -2,4 +2,4 @@ from pydantic import BaseModel, Field
 
 
 class TextMessageContentDTO(BaseModel):
-    text_content: str = Field(alias="textContent")
+    text_content: str | None = Field(alias="textContent", default=None)

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class FeedbackDTO(BaseModel):
-    text: str
+    text: str | None = None
     test_case_name: str = Field(alias="testCaseName")
     credits: float
 

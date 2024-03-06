@@ -16,9 +16,9 @@ class IrisMessageSender(str, Enum):
 
 
 class MessageDTO(BaseModel):
-    sent_at: datetime = Field(alias="sentAt")
+    sent_at: datetime | None = Field(alias="sentAt", default=None)
     sender: Literal[IrisMessageSender.USER, IrisMessageSender.LLM]
-    contents: List[MessageContentDTO]
+    contents: List[MessageContentDTO] = []
 
     def __str__(self):
         match self.sender:

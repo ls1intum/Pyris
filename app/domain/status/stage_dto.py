@@ -6,7 +6,7 @@ from app.domain.status.stage_state_dto import StageStateDTO
 
 
 class StageDTO(BaseModel):
-    name: str
+    name: str | None = None
     weight: int
     state: Literal[
         StageStateDTO.NOT_STARTED,
@@ -15,4 +15,4 @@ class StageDTO(BaseModel):
         StageStateDTO.SKIPPED,
         StageStateDTO.ERROR,
     ]
-    message: str
+    message: str | None = None

@@ -11,8 +11,8 @@ from ...domain.data.submission_dto import SubmissionDTO
 
 
 class TutorChatPipelineExecutionDTO(PipelineExecutionDTO):
-    submission: SubmissionDTO
+    submission: SubmissionDTO | None = None
     exercise: ProgrammingExerciseDTO
     course: CourseDTO
-    chat_history: List[MessageDTO] = Field(alias="chatHistory")
-    user: UserDTO
+    chat_history: List[MessageDTO] = Field(alias="chatHistory", default=[])
+    user: UserDTO | None = None

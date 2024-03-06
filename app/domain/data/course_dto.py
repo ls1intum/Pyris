@@ -3,5 +3,5 @@ from pydantic import BaseModel
 
 class CourseDTO(BaseModel):
     id: int
-    name: str
+    name: str | None = None
     description: str | None = None

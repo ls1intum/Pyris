@@ -26,5 +26,5 @@ class ProgrammingExerciseDTO(BaseModel):
     solution_repository: Dict[str, str] = Field(alias="solutionRepository")
     test_repository: Dict[str, str] = Field(alias="testRepository")
     problem_statement: str = Field(alias="problemStatement")
-    start_date: datetime | None = Field(alias="startDate")
-    end_date: datetime | None = Field(alias="endDate")
+    start_date: datetime | None = Field(alias="startDate", default=None)
+    end_date: datetime | None = Field(alias="endDate", default=None)

@@ -9,4 +9,4 @@ from ...domain.data.feedback_dto import FeedbackDTO
 class ResultDTO(BaseModel):
     completion_date: datetime = Field(alias="completionDate")
     successful: bool
-    feedbacks: List[FeedbackDTO]
+    feedbacks: List[FeedbackDTO] = []

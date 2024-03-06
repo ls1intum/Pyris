@@ -11,7 +11,7 @@ class IrisMessageRole(str, Enum):
 
 
 class IrisMessage(BaseModel):
-    text: str
+    text: str = ""
     role: Literal[
         IrisMessageRole.USER, IrisMessageRole.ASSISTANT, IrisMessageRole.SYSTEM
     ]

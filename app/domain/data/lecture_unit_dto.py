@@ -6,6 +6,6 @@ from pydantic import BaseModel, Field
 class LectureUnitDTO(BaseModel):
     id: int
     lecture_id: int = Field(alias="lectureId")
-    release_date: datetime = Field(alias="releaseDate")
-    name: str
+    release_date: datetime | None = Field(alias="releaseDate", default=None)
+    name: str | None = None
     attachment_version: int = Field(alias="attachmentVersion")

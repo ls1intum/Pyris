@@ -3,4 +3,4 @@ from typing import Any
 
 
 class JsonMessageContentDTO(BaseModel):
-    json_content: Json[Any] = Field(alias="jsonContent")
+    json_content: Json[Any] | None = Field(alias="jsonContent", default=None)
