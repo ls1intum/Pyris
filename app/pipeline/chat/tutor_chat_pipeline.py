@@ -112,21 +112,32 @@ class TutorChatPipeline(Pipeline):
 
         selected_files = []
         # Run the file selector pipeline
-        if submission:
-            selected_files = self.file_selector_pipeline(
-                repository=repository,
-                prompt=file_selection_prompt,
-            )
+        try:
+            if submission:
+                selected_files = self.file_selector_pipeline(
+                    repository=repository,
+                    prompt=file_selection_prompt,
+                )
 
-        stages.append(
-            StageDTO(
-                name="File lookup",
-                weight=10,
-                state=StageStateDTO.DONE,
-                message="Looked up files in the repository.",
+            stages.append(
+                StageDTO(
+                    name="File lookup",
+                    weight=10,
+                    state=StageStateDTO.DONE,
+                    message="Looked up files in the repository.",
+                )
             )
-        )
-        self._send_status_update(stages)
+            self._send_status_update(stages)
+        except Exception as e:
+            stages.append(
+                StageDTO(
+                    name="File lookup",
+                    weight=10,
+                    state=StageStateDTO.SKIPPED,
+                    message=f"Failed to look up files in the repository: {e}",
+                )
+            )
+            self._send_status_update(stages)
 
         if submission:
             self._add_build_logs_to_prompt(build_logs, build_failed)
@@ -155,20 +166,33 @@ class TutorChatPipeline(Pipeline):
             programming_language=programming_language,
         )
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
-        response_draft = (self.prompt | self.pipeline).invoke({})
-        self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
-        self.prompt += SystemMessagePromptTemplate.from_template(guide_system_prompt)
-        response = (self.prompt | self.pipeline).invoke({})
-        logger.info(f"Response from tutor chat pipeline: {response}")
-        stages.append(
-            StageDTO(
-                name="Response generation",
-                weight=10,
-                state=StageStateDTO.DONE,
-                message="Generated response",
+        try:
+            response_draft = (self.prompt | self.pipeline).invoke({})
+            self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                guide_system_prompt
             )
-        )
-        self._send_status_update(stages, response)
+            response = (self.prompt | self.pipeline).invoke({})
+            logger.info(f"Response from tutor chat pipeline: {response}")
+            stages.append(
+                StageDTO(
+                    name="Response generation",
+                    weight=10,
+                    state=StageStateDTO.DONE,
+                    message="Generated response",
+                )
+            )
+            self._send_status_update(stages, response)
+        except Exception as e:
+            stages.append(
+                StageDTO(
+                    name="Response generation",
+                    weight=10,
+                    state=StageStateDTO.ERROR,
+                    message=f"Failed to generate response: {e}",
+                )
+            )
+            self._send_status_update(stages)
 
     def _send_status_update(self, stages, result=None):
         """Sends a status update to the callback"""
