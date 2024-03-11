@@ -1,26 +1,5 @@
-from datetime import datetime
-
 from langchain_core.messages import BaseMessage
-
-from ..domain.data.message_content_dto import MessageContentDTO
 from ..domain.iris_message import IrisMessage, IrisMessageRole
-from ..domain.data.message_dto import MessageDTO, IrisMessageSender
-
-
-def convert_iris_message_to_message_dto(iris_message: IrisMessage) -> MessageDTO:
-    match iris_message.role:
-        case "user":
-            sender = IrisMessageSender.USER
-        case "assistant":
-            sender = IrisMessageSender.LLM
-        case _:
-            raise ValueError(f"Unknown message role: {iris_message.role}")
-
-    return MessageDTO(
-        sent_at=datetime.now(),
-        sender=sender,
-        contents=[MessageContentDTO(textContent=iris_message.text)],
-    )
 
 
 def convert_iris_message_to_langchain_message(iris_message: IrisMessage) -> BaseMessage:
