@@ -98,19 +98,20 @@ class TutorChatPipeline(Pipeline):
         file_selection_prompt = self._generate_file_selection_prompt()
         selected_files = []
         # Run the file selector pipeline
-        try:
-            if submission:
+        if submission:
+            try:
                 selected_files = self.file_selector_pipeline(
                     repository=repository,
                     prompt=file_selection_prompt,
                 )
-            self.callback.done("Looked up files in the repository")
-        except Exception as e:
-            self.callback.error(f"Failed to look up files in the repository: {e}")
+                self.callback.done("Looked up files in the repository")
+            except Exception as e:
+                self.callback.error(f"Failed to look up files in the repository: {e}")
+                return
 
-        if submission:
             self._add_build_logs_to_prompt(build_logs, build_failed)
-
+        else:
+            self.callback.skip("No submission found")
         # Add the exercise context to the prompt
         self._add_exercise_context_to_prompt(
             submission,

@@ -123,7 +123,10 @@ class TutorChatStatusCallback(StatusCallback):
         self.stage.state = StageStateEnum.ERROR
         self.stage.message = message
         # Set all subsequent stages to SKIPPED if an error occurs
-        for stage in self.status.stages[(self.current_stage_index + 1):]:
+        rest_of_index = (
+            self.current_stage_index + 1
+        )  # Black and flake8 are conflicting with each other if this expression gets used in list comprehension
+        for stage in self.status.stages[rest_of_index:]:
             stage.state = StageStateEnum.SKIPPED
             stage.message = "Skipped due to previous error"
 
@@ -131,12 +134,13 @@ class TutorChatStatusCallback(StatusCallback):
         self.stage = self.status.stages[-1]
         self.on_status_update()
 
-    def skip(self):
+    def skip(self, message: Optional[str] = None):
         """
         Transition the current stage to SKIPPED and update the status.
         If there is a next stage, set the current stage to the next stage.
         """
         self.stage.state = StageStateEnum.SKIPPED
+        self.stage.message = message
         next_stage = self.get_next_stage()
         if next_stage is not None:
             self.stage = next_stage
