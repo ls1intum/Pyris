@@ -1,18 +1,12 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from app.domain.status.stage_state_dto import StageStateDTO
+from app.domain.status.stage_state_dto import StageStateEnum
 
 
 class StageDTO(BaseModel):
-    name: str | None = None
+    name: Optional[str] = None
     weight: int
-    state: Literal[
-        StageStateDTO.NOT_STARTED,
-        StageStateDTO.IN_PROGRESS,
-        StageStateDTO.DONE,
-        StageStateDTO.SKIPPED,
-        StageStateDTO.ERROR,
-    ]
-    message: str | None = None
+    state: StageStateEnum
+    message: Optional[str] = None

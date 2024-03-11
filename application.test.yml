@@ -1,3 +1,2 @@
-pyris:
-  api_keys:
-    - token: "secret"
+api_keys:
+  - token: "secret"

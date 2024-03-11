@@ -39,7 +39,7 @@ class PipelineNotFoundException(HTTPException):
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
-                "type": "not_found",
+                "type": "pipeline_not_found",
                 "errorMessage": "Pipeline not found",
             },
         )

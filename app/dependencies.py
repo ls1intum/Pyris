@@ -19,7 +19,7 @@ def _get_api_key(request: Request) -> str:
 
 class TokenValidator:
     async def __call__(self, api_key: str = Depends(_get_api_key)) -> APIKeyConfig:
-        for key in settings.pyris.api_keys:
+        for key in settings.api_keys:
             if key.token == api_key:
                 return key
         raise PermissionDeniedException

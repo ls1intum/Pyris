@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -26,5 +26,5 @@ class ProgrammingExerciseDTO(BaseModel):
     solution_repository: Dict[str, str] = Field(alias="solutionRepository")
     test_repository: Dict[str, str] = Field(alias="testRepository")
     problem_statement: str = Field(alias="problemStatement")
-    start_date: datetime | None = Field(alias="startDate", default=None)
-    end_date: datetime | None = Field(alias="endDate", default=None)
+    start_date: Optional[datetime] = Field(alias="startDate", default=None)
+    end_date: Optional[datetime] = Field(alias="endDate", default=None)

@@ -1,8 +1,10 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class FeedbackDTO(BaseModel):
-    text: str | None = None
+    text: Optional[str] = None
     test_case_name: str = Field(alias="testCaseName")
     credits: float
 

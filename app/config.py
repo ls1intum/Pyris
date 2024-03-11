@@ -9,10 +9,7 @@ class APIKeyConfig(BaseModel):
 
 
 class Settings(BaseModel):
-    class PyrisSettings(BaseModel):
-        api_keys: list[APIKeyConfig]
-
-    pyris: PyrisSettings
+    api_keys: list[APIKeyConfig]
 
     @classmethod
     def get_settings(cls):

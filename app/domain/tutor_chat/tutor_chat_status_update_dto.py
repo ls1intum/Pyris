@@ -1,5 +1,7 @@
+from typing import Optional
+
 from ...domain.status.status_update_dto import StatusUpdateDTO
 
 
 class TutorChatStatusUpdateDTO(StatusUpdateDTO):
-    result: str | None = None
+    result: Optional[str] = None

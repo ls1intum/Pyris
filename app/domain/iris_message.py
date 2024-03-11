@@ -12,9 +12,7 @@ class IrisMessageRole(str, Enum):
 
 class IrisMessage(BaseModel):
     text: str = ""
-    role: Literal[
-        IrisMessageRole.USER, IrisMessageRole.ASSISTANT, IrisMessageRole.SYSTEM
-    ]
+    role: IrisMessageRole
 
     def __str__(self):
         return f"{self.role.lower()}: {self.text}"

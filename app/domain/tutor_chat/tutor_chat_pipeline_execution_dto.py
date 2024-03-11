@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
@@ -11,8 +11,8 @@ from ...domain.data.submission_dto import SubmissionDTO
 
 
 class TutorChatPipelineExecutionDTO(PipelineExecutionDTO):
-    submission: SubmissionDTO | None = None
+    submission: Optional[SubmissionDTO] = None
     exercise: ProgrammingExerciseDTO
     course: CourseDTO
     chat_history: List[MessageDTO] = Field(alias="chatHistory", default=[])
-    user: UserDTO | None = None
+    user: Optional[UserDTO] = None

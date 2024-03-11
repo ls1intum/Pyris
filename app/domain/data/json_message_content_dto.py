@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, Json
-from typing import Any
+from typing import Any, Optional
 
 
 class JsonMessageContentDTO(BaseModel):
-    json_content: Json[Any] | None = Field(alias="jsonContent", default=None)
+    json_content: Optional[Json[Any]] = Field(alias="jsonContent", default=None)

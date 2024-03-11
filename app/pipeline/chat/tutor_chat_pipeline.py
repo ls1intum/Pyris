@@ -18,7 +18,7 @@ from ..prompts.iris_tutor_chat_prompts import (
     final_system_prompt,
     guide_system_prompt,
 )
-from ...domain.status.stage_state_dto import StageStateDTO
+from ...domain.status.stage_state_dto import StageStateEnum
 from ...domain import TutorChatPipelineExecutionDTO
 from ...domain.data.submission_dto import SubmissionDTO
 from ...domain.data.message_dto import MessageDTO
@@ -104,7 +104,7 @@ class TutorChatPipeline(Pipeline):
             StageDTO(
                 name="File lookup",
                 weight=10,
-                state=StageStateDTO.IN_PROGRESS,
+                state=StageStateEnum.IN_PROGRESS,
                 message="Looking up files in the repository...",
             )
         )
@@ -123,7 +123,7 @@ class TutorChatPipeline(Pipeline):
                 StageDTO(
                     name="File lookup",
                     weight=10,
-                    state=StageStateDTO.DONE,
+                    state=StageStateEnum.DONE,
                     message="Looked up files in the repository.",
                 )
             )
@@ -133,7 +133,7 @@ class TutorChatPipeline(Pipeline):
                 StageDTO(
                     name="File lookup",
                     weight=10,
-                    state=StageStateDTO.SKIPPED,
+                    state=StageStateEnum.SKIPPED,
                     message=f"Failed to look up files in the repository: {e}",
                 )
             )
@@ -152,7 +152,7 @@ class TutorChatPipeline(Pipeline):
             StageDTO(
                 name="Response generation",
                 weight=10,
-                state=StageStateDTO.IN_PROGRESS,
+                state=StageStateEnum.IN_PROGRESS,
                 message="Generating response...",
             )
         )
@@ -178,7 +178,7 @@ class TutorChatPipeline(Pipeline):
                 StageDTO(
                     name="Response generation",
                     weight=10,
-                    state=StageStateDTO.DONE,
+                    state=StageStateEnum.DONE,
                     message="Generated response",
                 )
             )
@@ -188,7 +188,7 @@ class TutorChatPipeline(Pipeline):
                 StageDTO(
                     name="Response generation",
                     weight=10,
-                    state=StageStateDTO.ERROR,
+                    state=StageStateEnum.ERROR,
                     message=f"Failed to generate response: {e}",
                 )
             )
