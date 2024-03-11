@@ -19,6 +19,7 @@ def run_tutor_chat_pipeline_worker(dto):
         callback = TutorChatStatusCallback(
             run_id=dto.settings.authentication_token,
             base_url=dto.settings.artemis_base_url,
+            initial_stages=dto.initial_stages,
         )
         pipeline = TutorChatPipeline(callback=callback)
         pipeline(dto=dto)

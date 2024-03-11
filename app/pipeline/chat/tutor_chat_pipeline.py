@@ -18,12 +18,9 @@ from ..prompts.iris_tutor_chat_prompts import (
     final_system_prompt,
     guide_system_prompt,
 )
-from ...domain.status.stage_state_dto import StageStateEnum
 from ...domain import TutorChatPipelineExecutionDTO
 from ...domain.data.submission_dto import SubmissionDTO
 from ...domain.data.message_dto import MessageDTO
-from ...domain.status.stage_dto import StageDTO
-from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
 from ...web.status.status_update import TutorChatStatusCallback
 from .file_selector_pipeline import FileSelectorPipeline
 from ...llm import BasicRequestHandler, CompletionArguments
@@ -93,23 +90,12 @@ class TutorChatPipeline(Pipeline):
         exercise_title: str = dto.exercise.name
         programming_language = dto.exercise.programming_language.value.lower()
 
-        stages = dto.initial_stages or []
-
         # Add the chat history and user question to the prompt
         self._add_conversation_to_prompt(history, query)
 
+        self.callback.in_progress("Looking up files in the repository...")
         # Create the file selection prompt based on the current prompt
         file_selection_prompt = self._generate_file_selection_prompt()
-        stages.append(
-            StageDTO(
-                name="File lookup",
-                weight=10,
-                state=StageStateEnum.IN_PROGRESS,
-                message="Looking up files in the repository...",
-            )
-        )
-        self._send_status_update(stages)
-
         selected_files = []
         # Run the file selector pipeline
         try:
@@ -118,26 +104,9 @@ class TutorChatPipeline(Pipeline):
                     repository=repository,
                     prompt=file_selection_prompt,
                 )
-
-            stages.append(
-                StageDTO(
-                    name="File lookup",
-                    weight=10,
-                    state=StageStateEnum.DONE,
-                    message="Looked up files in the repository.",
-                )
-            )
-            self._send_status_update(stages)
+            self.callback.done("Looked up files in the repository")
         except Exception as e:
-            stages.append(
-                StageDTO(
-                    name="File lookup",
-                    weight=10,
-                    state=StageStateEnum.SKIPPED,
-                    message=f"Failed to look up files in the repository: {e}",
-                )
-            )
-            self._send_status_update(stages)
+            self.callback.error(f"Failed to look up files in the repository: {e}")
 
         if submission:
             self._add_build_logs_to_prompt(build_logs, build_failed)
@@ -148,15 +117,7 @@ class TutorChatPipeline(Pipeline):
             selected_files,
         )
 
-        stages.append(
-            StageDTO(
-                name="Response generation",
-                weight=10,
-                state=StageStateEnum.IN_PROGRESS,
-                message="Generating response...",
-            )
-        )
-        self._send_status_update(stages)
+        self.callback.in_progress("Generating response...")
 
         # Add the final message to the prompt and run the pipeline
         self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
@@ -174,30 +135,9 @@ class TutorChatPipeline(Pipeline):
             )
             response = (self.prompt | self.pipeline).invoke({})
             logger.info(f"Response from tutor chat pipeline: {response}")
-            stages.append(
-                StageDTO(
-                    name="Response generation",
-                    weight=10,
-                    state=StageStateEnum.DONE,
-                    message="Generated response",
-                )
-            )
-            self._send_status_update(stages, response)
+            self.callback.done("Generated response", final_result=response)
         except Exception as e:
-            stages.append(
-                StageDTO(
-                    name="Response generation",
-                    weight=10,
-                    state=StageStateEnum.ERROR,
-                    message=f"Failed to generate response: {e}",
-                )
-            )
-            self._send_status_update(stages)
-
-    def _send_status_update(self, stages, result=None):
-        """Sends a status update to the callback"""
-        status_dto = TutorChatStatusUpdateDTO(stages=stages, result=result)
-        self.callback.on_status_update(status_dto)
+            self.callback.error(f"Failed to generate response: {e}")
 
     def _add_conversation_to_prompt(
         self,
