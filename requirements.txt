@@ -1,4 +1,4 @@
-black==24.2.0
+black==24.3.0
 fastapi==0.110.0
 flake8==7.0.0
 langchain==0.1.11
