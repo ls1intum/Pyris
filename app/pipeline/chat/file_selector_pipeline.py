@@ -8,7 +8,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
 from llm import CapabilityRequestHandler, RequirementList
-from ...llm import BasicRequestHandler, CompletionArguments
+from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
 from ...pipeline.chat.output_models.output_models.selected_file_model import (

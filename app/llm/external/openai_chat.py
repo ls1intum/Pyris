@@ -7,7 +7,7 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 from common.message_converters import map_role_to_str, map_str_to_role
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
-from ...domain import PyrisMessage, IrisMessageRole
+from ...domain import PyrisMessage
 from ...llm import CompletionArguments
 from ...llm.external.model import ChatModel
 
