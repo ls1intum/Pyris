@@ -10,6 +10,8 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable
 
+from common import convert_iris_message_to_langchain_message
+from domain import PyrisMessage
 from llm import CapabilityRequestHandler, RequirementList
 from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...domain.data.feedback_dto import FeedbackDTO
@@ -21,10 +23,9 @@ from ..prompts.iris_tutor_chat_prompts import (
 )
 from ...domain import TutorChatPipelineExecutionDTO
 from ...domain.data.submission_dto import SubmissionDTO
-from ...domain.data.message_dto import MessageDTO
 from ...web.status.status_update import TutorChatStatusCallback
 from .file_selector_pipeline import FileSelectorPipeline
-from ...llm import BasicRequestHandler, CompletionArguments
+from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
@@ -87,8 +88,8 @@ class TutorChatPipeline(Pipeline):
             ]
         )
         logger.info("Running tutor chat pipeline...")
-        history: List[MessageDTO] = dto.chat_history[:-1]
-        query: MessageDTO = dto.chat_history[-1]
+        history: List[PyrisMessage] = dto.chat_history[:-1]
+        query: PyrisMessage = dto.chat_history[-1]
 
         submission: SubmissionDTO = dto.submission
         build_logs: List[BuildLogEntryDTO] = []
@@ -101,7 +102,7 @@ class TutorChatPipeline(Pipeline):
 
         problem_statement: str = dto.exercise.problem_statement
         exercise_title: str = dto.exercise.name
-        programming_language = dto.exercise.programming_language.value.lower()
+        programming_language = dto.exercise.programming_language.lower()
 
         # Add the chat history and user question to the prompt
         self._add_conversation_to_prompt(history, query)
@@ -151,12 +152,13 @@ class TutorChatPipeline(Pipeline):
             logger.info(f"Response from tutor chat pipeline: {response}")
             self.callback.done("Generated response", final_result=response)
         except Exception as e:
+            print(e)
             self.callback.error(f"Failed to generate response: {e}")
 
     def _add_conversation_to_prompt(
         self,
-        chat_history: List[MessageDTO],
-        user_question: MessageDTO,
+        chat_history: List[PyrisMessage],
+        user_question: PyrisMessage,
     ):
         """
         Adds the chat history and user question to the prompt
@@ -166,13 +168,14 @@ class TutorChatPipeline(Pipeline):
         """
         if chat_history is not None and len(chat_history) > 0:
             chat_history_messages = [
-                message.convert_to_langchain_message() for message in chat_history
+                convert_iris_message_to_langchain_message(message)
+                for message in chat_history
             ]
             self.prompt += chat_history_messages
             self.prompt += SystemMessagePromptTemplate.from_template(
                 "Now, consider the student's newest and latest input:"
             )
-        self.prompt += user_question.convert_to_langchain_message()
+        self.prompt += convert_iris_message_to_langchain_message(user_question)
 
     def _add_student_repository_to_prompt(
         self, student_repository: Dict[str, str], selected_files: List[str]
