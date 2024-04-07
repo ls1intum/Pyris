@@ -7,6 +7,7 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
+from llm import CapabilityRequestHandler, RequirementList
 from ...llm import BasicRequestHandler, CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
@@ -41,7 +42,19 @@ class FileSelectorPipeline(Pipeline):
 
     def __init__(self, callback: Optional[StatusCallback] = None):
         super().__init__(implementation_id="file_selector_pipeline_reference_impl")
-        request_handler = BasicRequestHandler("gpt35")
+        request_handler = CapabilityRequestHandler(
+            requirements=RequirementList(
+                input_cost=1,
+                output_cost=1,
+                gpt_version_equivalent=3.5,
+                context_length=4096,
+                vendor="OpenAI",
+                privacy_compliance=False,
+                self_hosted=False,
+                image_recognition=False,
+                json_mode=False,
+            )
+        )
         completion_args = CompletionArguments(temperature=0, max_tokens=500)
         self.llm = IrisLangchainChatModel(
             request_handler=request_handler, completion_args=completion_args

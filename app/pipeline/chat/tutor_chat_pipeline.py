@@ -10,6 +10,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable
 
+from llm import CapabilityRequestHandler, RequirementList
 from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...domain.data.feedback_dto import FeedbackDTO
 from ..prompts.iris_tutor_chat_prompts import (
@@ -43,7 +44,19 @@ class TutorChatPipeline(Pipeline):
     def __init__(self, callback: TutorChatStatusCallback):
         super().__init__(implementation_id="tutor_chat_pipeline")
         # Set the langchain chat model
-        request_handler = BasicRequestHandler("gpt35")
+        request_handler = CapabilityRequestHandler(
+            requirements=RequirementList(
+                input_cost=1,
+                output_cost=1,
+                gpt_version_equivalent=3.5,
+                context_length=4096,
+                vendor="OpenAI",
+                privacy_compliance=False,
+                self_hosted=False,
+                image_recognition=False,
+                json_mode=False,
+            )
+        )
         completion_args = CompletionArguments(temperature=0.2, max_tokens=2000)
         self.llm = IrisLangchainChatModel(
             request_handler=request_handler, completion_args=completion_args
