@@ -45,6 +45,7 @@ class OpenAIChatModel(ChatModel):
             messages=convert_to_open_ai_messages(messages),
             temperature=arguments.temperature,
             max_tokens=arguments.max_tokens,
+            n=arguments.n,
             stop=arguments.stop,
         )
         return convert_to_iris_message(response.choices[0].message)
