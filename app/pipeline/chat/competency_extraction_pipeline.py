@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, List
+from typing import Optional
 
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers import StrOutputParser

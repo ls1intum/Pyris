@@ -64,7 +64,7 @@ def run_tutor_chat_pipeline(variant: str, dto: TutorChatPipelineExecutionDTO):
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_tutor_chat_pipeline(
+def run_competency_extraction_pipeline(
     variant: str, dto: CompetencyExtractionPipelineExecutionDTO
 ):
     thread = Thread(target=run_competency_extraction_pipeline_worker, args=(dto,))

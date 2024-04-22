@@ -1,7 +1,6 @@
 from typing import List, Optional, Any
 
 import requests
-from abc import ABC, abstractmethod
 
 from ...domain.status.stage_state_dto import StageStateEnum
 from ...domain.status.stage_dto import StageDTO

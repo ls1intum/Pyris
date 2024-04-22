@@ -38,10 +38,10 @@ competency_extraction_initial_system_prompt = """
     - You are able to understand complex recursive implementations
     - You are able to implement solutions of medium difficulty yourself.
     taxonomy: ANALYZE
-    
+
     Generated competencies so far:
     {competencies}
-    
+
     Here are the provided course description and available taxonomy options you are allowed to use:
 
 """
