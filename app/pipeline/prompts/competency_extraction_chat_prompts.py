@@ -12,12 +12,14 @@ competency_extraction_initial_system_prompt = """
     The subject of the competency in at most 4 words.
 
     - description:
-    A detailed description of the competency in 3 to 6 bullet points.
+    A description of the competency includes 3 to 5 bullet points.
+    A description in total should not be longer than 50 words.
     Each bullet point is a short sentence, at most 15 words.
     Each bullet point illustrates a specific skill or concept of the competency.
 
     - taxonomy:
     The classification of the competency based on bloom's taxonomy.
+    Taxonomy is determined based on the description of the competency.
     Blooms taxonomy contains these classifications: "REMEMBER", "UNDERSTAND", "APPLY", "ANALYZE", "EVALUATE", "CREATE".
 
     All competencies must meet the following requirements:
@@ -36,6 +38,10 @@ competency_extraction_initial_system_prompt = """
     - You are able to understand complex recursive implementations
     - You are able to implement solutions of medium difficulty yourself.
     taxonomy: ANALYZE
+    
+    Generated competencies so far:
+    {competencies}
+    
+    Here are the provided course description and available taxonomy options you are allowed to use:
 
-    Here is the provided course description and available taxonomy options you are allowed to use:
 """

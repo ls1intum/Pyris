@@ -1,18 +1,18 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 
 import requests
 from abc import ABC, abstractmethod
 
 from ...domain.status.stage_state_dto import StageStateEnum
 from ...domain.status.stage_dto import StageDTO
-from ...domain.tutor_chat.tutor_chat_status_update_dto import TutorChatStatusUpdateDTO
+from ...domain.tutor_chat.tutor_chat_status_update_dto import ChatStatusUpdateDTO
 from ...domain.status.status_update_dto import StatusUpdateDTO
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class StatusCallback(ABC):
+class StatusCallback:
     url: str
     run_id: str
     status: StatusUpdateDTO
@@ -32,30 +32,6 @@ class StatusCallback(ABC):
         self.status = status
         self.stage = stage
         self.current_stage_index = current_stage_index
-
-    @abstractmethod
-    def on_status_update(self):
-        pass
-
-
-class TutorChatStatusCallback(StatusCallback):
-    def __init__(
-        self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None
-    ):
-        url = f"{base_url}/api/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
-        current_stage_index = 1
-        stages = initial_stages or []
-        stages += [
-            StageDTO(weight=30, state=StageStateEnum.NOT_STARTED, name="File Lookup"),
-            StageDTO(
-                weight=70,
-                state=StageStateEnum.NOT_STARTED,
-                name="Response Generation",
-            ),
-        ]
-        status = TutorChatStatusUpdateDTO(stages=stages)
-        stage = stages[current_stage_index]
-        super().__init__(url, run_id, status, stage, current_stage_index)
 
     def on_status_update(self):
         """Send a status update to the Artemis API."""
@@ -92,7 +68,7 @@ class TutorChatStatusCallback(StatusCallback):
         else:
             raise ValueError("Invalid state transition")
 
-    def done(self, message: Optional[str] = None, final_result: Optional[str] = None):
+    def done(self, message: Optional[str] = None, final_result: Any = None):
         """
         Transition the current stage to DONE and update the status.
         If there is a next stage, set the current
@@ -140,3 +116,47 @@ class TutorChatStatusCallback(StatusCallback):
         if next_stage is not None:
             self.stage = next_stage
             self.on_status_update()
+
+
+class TutorChatStatusCallback(StatusCallback):
+    def __init__(
+        self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
+        current_stage_index = 1 if initial_stages else 0
+        stages = initial_stages or []
+        stages += [
+            StageDTO(weight=30, state=StageStateEnum.NOT_STARTED, name="File Lookup"),
+            StageDTO(
+                weight=70,
+                state=StageStateEnum.NOT_STARTED,
+                name="Response Generation",
+            ),
+        ]
+        status = ChatStatusUpdateDTO(stages=stages)
+        stage = stages[current_stage_index]
+        super().__init__(url, run_id, status, stage, current_stage_index)
+
+
+class CompetencyExtractionStatusCallback(StatusCallback):
+    def __init__(
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO] = None,
+        num_iterations=10,
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/competency-extraction/runs/{run_id}/status"
+        current_stage_index = 1 if initial_stages else 0
+        stages = initial_stages or []
+        stages += [
+            StageDTO(
+                weight=10,
+                state=StageStateEnum.NOT_STARTED,
+                name=f"Competency {i + 1}",
+            )
+            for i in range(num_iterations)
+        ]
+        status = ChatStatusUpdateDTO(stages=stages)
+        stage = stages[current_stage_index]
+        super().__init__(url, run_id, status, stage, current_stage_index)

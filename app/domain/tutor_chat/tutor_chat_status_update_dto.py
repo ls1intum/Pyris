@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Optional, Any
 
 from ...domain.status.status_update_dto import StatusUpdateDTO
 
 
-class TutorChatStatusUpdateDTO(StatusUpdateDTO):
-    result: Optional[str] = None
+class ChatStatusUpdateDTO(StatusUpdateDTO):
+    result: Optional[Any] = None

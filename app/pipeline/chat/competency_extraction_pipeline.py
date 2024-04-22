@@ -1,8 +1,8 @@
 import logging
-import os
 from typing import Dict, Optional, List
 
 from langchain.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
@@ -26,9 +26,10 @@ logger = logging.getLogger(__name__)
 class Competency(BaseModel):
     subject: str = Field(
         description="Subject of the competency that contains at most 4 words",
-        max_length=15,
     )
-    description: str = Field(description="Description of the competency")
+    description: str = Field(
+        description="Description of the competency as plain string. DO NOT RETURN A LIST OF STRINGS."
+    )
     taxonomy: CompetencyTaxonomy = Field(
         description="Selected taxonomy based on bloom's taxonomy"
     )
@@ -76,29 +77,29 @@ class CompetencyExtractionPipeline(Pipeline):
             )
         )
         self.num_iterations = num_iterations
-        completion_args = CompletionArguments(temperature=0.2, max_tokens=500)
+        completion_args = CompletionArguments(temperature=0.4)
         self.llm = IrisLangchainChatModel(
             request_handler=request_handler, completion_args=completion_args
         )
         self.callback = callback
         self.output_parser = PydanticOutputParser(pydantic_object=Competency)
 
-        logger.debug(self.output_parser.get_format_instructions())
         # Create the pipeline
-        self.pipeline = self.llm | self.output_parser
+        self.pipeline = self.llm | StrOutputParser()
 
     def __call__(
         self,
         dto: CompetencyExtractionPipelineExecutionDTO,
         prompt: Optional[ChatPromptTemplate] = None,
         **kwargs,
-    ) -> List[Competency]:
+    ):
 
         generated_competencies = []
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", competency_extraction_initial_system_prompt),
+                ("system", "Generated competencies so far"),
                 (
                     "human",
                     """
@@ -106,19 +107,43 @@ class CompetencyExtractionPipeline(Pipeline):
                     Taxonomy options: {taxonomies}
                     """,
                 ),
+                (
+                    "system",
+                    "Now generate a single new competency the course description.",
+                ),
             ]
         )
         course_description = dto.course_description
+        if not course_description:
+            self.callback.error("Course description is required")
         taxonomies = ", ".join(dto.taxonomy_options)
+        if len(taxonomies) == 0:
+            self.callback.error("Taxonomy options are required")
 
         for i in range(self.num_iterations):
             # Run the pipeline
-            competency = (prompt | self.pipeline).invoke(
-                {
-                    "course_description": course_description,
-                    "taxonomies": taxonomies,
-                }
-            )
-            generated_competencies.append(competency)
-
-        return generated_competencies
+            try:
+                self.callback.in_progress(
+                    f"Generating competency {i+1}/{self.num_iterations}"
+                )
+                competency = (self.prompt | self.pipeline).invoke(
+                    {
+                        "course_description": course_description,
+                        "taxonomies": taxonomies,
+                        "competencies": "\n\n".join(generated_competencies),
+                    }
+                )
+                generated_competencies.append(competency)
+                if i == self.num_iterations - 1:
+                    self.callback.done(
+                        "Finalizing competency extraction",
+                        final_result=generated_competencies,
+                    )
+                else:
+                    self.callback.done(
+                        f"Generated competency {i+1}/{self.num_iterations}: {competency}"
+                    )
+            except Exception as e:
+                print(f"Error generating competency: {e}")
+                self.callback.error(f"Error generating competency: {e}")
+                return
