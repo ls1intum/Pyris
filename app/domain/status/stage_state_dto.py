@@ -7,3 +7,4 @@ class StageStateEnum(str, Enum):
     DONE = "DONE"
     SKIPPED = "SKIPPED"
     ERROR = "ERROR"
+    EARLY_STOP = "EARLY_STOP"

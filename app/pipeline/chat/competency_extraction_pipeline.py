@@ -109,7 +109,10 @@ class CompetencyExtractionPipeline(Pipeline):
                 ),
                 (
                     "system",
-                    "Now generate a single new competency the course description.",
+                    """
+                    Now generate a single new competency the course description.
+                    Alternatively, respond with the special response !done! if there are no more competencies.
+                    """,
                 ),
             ]
         )
@@ -133,16 +136,23 @@ class CompetencyExtractionPipeline(Pipeline):
                         "competencies": "\n\n".join(generated_competencies),
                     }
                 )
-                generated_competencies.append(competency)
-                if i == self.num_iterations - 1:
-                    self.callback.done(
+                if competency == "!done!":
+                    self.callback.early_stop(
                         "Finalizing competency extraction",
                         final_result=generated_competencies,
                     )
+                    return
                 else:
-                    self.callback.done(
-                        f"Generated competency {i+1}/{self.num_iterations}: {competency}"
-                    )
+                    generated_competencies.append(competency)
+                    if i == self.num_iterations - 1:
+                        self.callback.done(
+                            "Finalizing competency extraction",
+                            final_result=generated_competencies,
+                        )
+                    else:
+                        self.callback.done(
+                            f"Generated competency {i+1}/{self.num_iterations}: {competency}"
+                        )
             except Exception as e:
                 print(f"Error generating competency: {e}")
                 self.callback.error(f"Error generating competency: {e}")

@@ -85,6 +85,29 @@ class StatusCallback:
         else:
             raise ValueError("Invalid state transition")
 
+    def early_stop(self, message: Optional[str] = None, final_result: Any = None):
+        """
+        Transition the current stage to EARLY_STOP and update the status with the final result.
+        Skip all subsequent stages if there are any.
+        """
+        self.stage.state = StageStateEnum.EARLY_STOP
+        self.stage.message = message
+        self.status.result = final_result
+
+        self._skip_stages(skip_message="Skipped due to early stop")
+
+    def _skip_stages(self, skip_message: Optional[str] = "Skipped"):
+        # Set all subsequent stages to SKIPPED
+        rest_of_index = (
+            self.current_stage_index + 1
+        )  # Black and flake8 are conflicting with each other if this expression gets used in list comprehension
+        for stage in self.status.stages[rest_of_index:]:
+            stage.state = StageStateEnum.SKIPPED
+            stage.message = skip_message
+        # Update the status after setting the stages to SKIPPED
+        self.stage = self.status.stages[-1]
+        self.on_status_update()
+
     def error(self, message: str):
         """
         Transition the current stage to ERROR and update the status.
@@ -93,16 +116,7 @@ class StatusCallback:
         self.stage.state = StageStateEnum.ERROR
         self.stage.message = message
         # Set all subsequent stages to SKIPPED if an error occurs
-        rest_of_index = (
-            self.current_stage_index + 1
-        )  # Black and flake8 are conflicting with each other if this expression gets used in list comprehension
-        for stage in self.status.stages[rest_of_index:]:
-            stage.state = StageStateEnum.SKIPPED
-            stage.message = "Skipped due to previous error"
-
-        # Update the status after setting the stages to SKIPPED
-        self.stage = self.status.stages[-1]
-        self.on_status_update()
+        self._skip_stages(skip_message="Skipped due to error")
 
     def skip(self, message: Optional[str] = None):
         """
