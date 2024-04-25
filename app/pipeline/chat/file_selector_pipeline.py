@@ -7,7 +7,7 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
-from llm import CapabilityRequestHandler, RequirementList
+from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline

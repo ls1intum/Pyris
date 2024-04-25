@@ -3,8 +3,8 @@ from typing import Literal, Any
 
 from ollama import Client, Message
 
-from common.message_converters import map_role_to_str, map_str_to_role
-from domain.data.text_message_content_dto import TextMessageContentDTO
+from ...common.message_converters import map_role_to_str, map_str_to_role
+from ...domain.data.text_message_content_dto import TextMessageContentDTO
 from ...domain import PyrisMessage
 from ...llm import CompletionArguments
 from ...llm.external.model import ChatModel, CompletionModel, EmbeddingModel

@@ -10,9 +10,9 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable
 
-from common import convert_iris_message_to_langchain_message
-from domain import PyrisMessage
-from llm import CapabilityRequestHandler, RequirementList
+from ...common import convert_iris_message_to_langchain_message
+from ...domain import PyrisMessage
+from ...llm import CapabilityRequestHandler, RequirementList
 from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...domain.data.feedback_dto import FeedbackDTO
 from ..prompts.iris_tutor_chat_prompts import (
