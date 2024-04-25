@@ -48,7 +48,7 @@ class TutorChatPipeline(Pipeline):
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
                 gpt_version_equivalent=3.5,
-                context_length=4096,
+                context_length=16385,
                 privacy_compliance=True,
             )
         )
