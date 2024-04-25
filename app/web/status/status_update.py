@@ -43,7 +43,7 @@ class TutorChatStatusCallback(StatusCallback):
         self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None
     ):
         url = f"{base_url}/api/public/pyris/pipelines/tutor-chat/runs/{run_id}/status"
-        current_stage_index = len(initial_stages) - 1 if initial_stages else 0
+        current_stage_index = len(initial_stages) if initial_stages else 0
         stages = initial_stages or []
         stages += [
             StageDTO(weight=30, state=StageStateEnum.NOT_STARTED, name="File Lookup"),
