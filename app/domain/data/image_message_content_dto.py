@@ -13,3 +13,4 @@ class ImageMessageContentDTO(BaseModel):
                 "base64": ["base64EncodedString==", "anotherBase64EncodedString=="],
             }
         }
+        populate_by_name = True

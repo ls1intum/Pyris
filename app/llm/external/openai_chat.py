@@ -22,32 +22,38 @@ def convert_to_open_ai_messages(
     """
     openai_messages = []
     for message in messages:
-        match message.contents[0]:
-            case ImageMessageContentDTO():
-                content = [{"type": "text", "text": message.contents[0].prompt}]
-                for image_base64 in message.contents[0].base64:
-                    content.append(
+        openai_content = []
+        for content in message.contents:
+            match content:
+                case ImageMessageContentDTO():
+                    for image_base64 in content.base64:
+                        openai_content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}",
+                                    "detail": "high",
+                                },
+                            }
+                        )
+                case TextMessageContentDTO():
+                    openai_content.append(
+                        {"type": "text", "text": content.text_content}
+                    )
+                case JsonMessageContentDTO():
+                    openai_content.append(
                         {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}",
-                                "detail": "high",
-                            },
+                            "type": "json_object",
+                            "json_object": content.json_content,
                         }
                     )
-            case TextMessageContentDTO():
-                content = [{"type": "text", "text": message.contents[0].text_content}]
-            case JsonMessageContentDTO():
-                content = [
-                    {
-                        "type": "json_object",
-                        "json_object": message.contents[0].json_content,
-                    }
-                ]
-            case _:
-                content = [{"type": "text", "text": ""}]
+                case _:
+                    pass
 
-        openai_message = {"role": map_role_to_str(message.sender), "content": content}
+        openai_message = {
+            "role": map_role_to_str(message.sender),
+            "content": openai_content,
+        }
         openai_messages.append(openai_message)
     return openai_messages
 
