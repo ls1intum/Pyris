@@ -3,7 +3,8 @@ from typing import Literal, Any
 
 from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
+from openai.types.chat import ChatCompletionMessage
+from pydantic import Json
 
 from ...common.message_converters import map_str_to_role, map_role_to_str
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
@@ -16,7 +17,17 @@ from ...llm.external.model import ChatModel
 
 def convert_to_open_ai_messages(
     messages: list[PyrisMessage],
-) -> list[ChatCompletionMessageParam]:
+) -> list[
+    dict[
+        str,
+        Literal["user", "assistant", "system"]
+        | list[
+            dict[str, str | dict[str, str]]
+            | dict[str, str]
+            | dict[str, str | Json | Any]
+        ],
+    ]
+]:
     """
     Convert a list of PyrisMessage to a list of ChatCompletionMessageParam
     """
@@ -26,16 +37,15 @@ def convert_to_open_ai_messages(
         for content in message.contents:
             match content:
                 case ImageMessageContentDTO():
-                    for image_base64 in content.base64:
-                        openai_content.append(
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}",
-                                    "detail": "high",
-                                },
-                            }
-                        )
+                    openai_content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{content.base64}",
+                                "detail": "high",
+                            },
+                        }
+                    )
                 case TextMessageContentDTO():
                     openai_content.append(
                         {"type": "text", "text": content.text_content}

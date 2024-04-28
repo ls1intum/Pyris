@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
 
 class ImageMessageContentDTO(BaseModel):
-    base64: List[str]
+    base64: str
     prompt: Optional[str]

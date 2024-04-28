@@ -35,8 +35,7 @@ def convert_to_ollama_messages(messages: list[PyrisMessage]) -> list[Message]:
         for content in message.contents:
             match content:
                 case ImageMessageContentDTO():
-                    for image in content.base64:
-                        images.append(image)
+                    images.append(content.base64)
                 case TextMessageContentDTO():
                     if len(text_content) > 0:
                         text_content += "\n"
@@ -89,7 +88,7 @@ class OllamaModel(
         image: Optional[ImageMessageContentDTO] = None,
     ) -> str:
         response = self._client.generate(
-            model=self.model, prompt=prompt, images=image.base64 if image else None
+            model=self.model, prompt=prompt, images=[image.base64] if image else None
         )
         return response["response"]
 
