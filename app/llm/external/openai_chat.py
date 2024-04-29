@@ -3,8 +3,7 @@ from typing import Literal, Any
 
 from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
-from openai.types.chat import ChatCompletionMessage
-from pydantic import Json
+from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 
 from ...common.message_converters import map_str_to_role, map_role_to_str
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
@@ -17,17 +16,7 @@ from ...llm.external.model import ChatModel
 
 def convert_to_open_ai_messages(
     messages: list[PyrisMessage],
-) -> list[
-    dict[
-        str,
-        Literal["user", "assistant", "system"]
-        | list[
-            dict[str, str | dict[str, str]]
-            | dict[str, str]
-            | dict[str, str | Json | Any]
-        ],
-    ]
-]:
+) -> list[ChatCompletionMessageParam]:
     """
     Convert a list of PyrisMessage to a list of ChatCompletionMessageParam
     """
