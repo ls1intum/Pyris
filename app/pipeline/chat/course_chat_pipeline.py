@@ -1,21 +1,24 @@
+import json
 import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
+from langchain.agents import create_structured_chat_agent, AgentExecutor
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
+    AIMessagePromptTemplate, MessagesPlaceholder,
 )
 from langchain_core.runnables import Runnable
+from langchain_core.tools import tool
 
 from ...common import convert_iris_message_to_langchain_message
 from ...domain import PyrisMessage
+from ...domain.data.exercise_dto import ExerciseDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_course_chat_prompts import (
     iris_initial_system_prompt,
-    course_system_prompt,
     chat_history_system_prompt,
     final_system_prompt,
     guide_system_prompt,
@@ -50,7 +53,7 @@ class CourseChatPipeline(Pipeline):
                 json_mode=True,
             )
         )
-        completion_args = CompletionArguments(temperature=0.2, max_tokens=2000)
+        completion_args = CompletionArguments(temperature=0.1, max_tokens=2000)
         self.llm = IrisLangchainChatModel(
             request_handler=request_handler, completion_args=completion_args
         )
@@ -71,14 +74,10 @@ class CourseChatPipeline(Pipeline):
             :param dto: The pipeline execution data transfer object
             :param kwargs: The keyword arguments
         """
-        # Set up the initial prompt
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", iris_initial_system_prompt),
-                ("system", chat_history_system_prompt),
-                ("system", course_system_prompt),
-            ]
-        )
+
+        self.callback.in_progress()
+
+
         logger.info("Running course chat pipeline...")
         history: List[PyrisMessage] = dto.base.chat_history[:-1]
         query: PyrisMessage = dto.base.chat_history[-1]
@@ -88,22 +87,65 @@ class CourseChatPipeline(Pipeline):
         start_date: str = datetime_to_string(dto.course.start_time)
         end_date: str = datetime_to_string(dto.course.end_time)
 
-        # Add the conversation to the prompt
-        self._add_conversation_to_prompt(history, query)
+        textprompt = ""+iris_initial_system_prompt
+        if (history is not None and len(history) > 0):
+            textprompt += chat_history_system_prompt
 
-        self.callback.in_progress()
+
+
+          # Set up the initial prompt
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", textprompt),
+            ]
+        )
+
+
+        print(dto.metrics)
+
+
+        # Add the conversation to the prompt
+        chat_history_messages = [
+            convert_iris_message_to_langchain_message(message)
+            for message in history
+        ]
+        self.prompt += ChatPromptTemplate.from_messages(chat_history_messages)
+        self.prompt += ChatPromptTemplate.from_messages([
+            ("system", final_system_prompt),
+            ("human", query.contents[0].text_content)
+        ])
+
+        def get_student_metrics(exercise_id: int) -> Union[dict, str]:
+            metrics = dto.metrics.exercise_metrics
+            if metrics and exercise_id in metrics.score:
+                return {
+                    "global_average_score": metrics.average_score[exercise_id],
+                    "score_of_student": metrics.score[exercise_id],
+                    "global_average_latest_submission": metrics.average_latest_submission[exercise_id],
+                    "latest_submission_of_student": metrics.latest_submission[exercise_id],
+                }
+            else:
+                return "No data available! This indicates that the student has not submitted this exercise yet."
+
+        exercise_txt = str([{
+            "details": ex,
+            "metrics": get_student_metrics(ex.id)
+        } for ex in dto.course.exercises])
+
         # Add the final message to the prompt and run the pipeline
-        self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
         prompt_val = self.prompt.format_messages(
             course_name=name,
             course_description=description,
             programming_language=programming_language,
             course_start_date=start_date,
             course_end_date=end_date,
+            exercises=exercise_txt,
         )
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response_draft = (self.prompt | self.pipeline).invoke({})
+            self.callback.done(None, final_result=response_draft)
+            return
             print("THE RESPONSE DRAFT IS: ", response_draft)
             self.prompt += AIMessagePromptTemplate.from_template(f"{response_draft}")
             self.prompt += SystemMessagePromptTemplate.from_template(
@@ -114,6 +156,7 @@ class CourseChatPipeline(Pipeline):
             self.callback.done(None, final_result=response)
         except Exception as e:
             self.callback.error(f"Failed to generate response: {e}")
+
 
     def _add_conversation_to_prompt(
         self,
@@ -127,11 +170,8 @@ class CourseChatPipeline(Pipeline):
             :return: The prompt with the chat history
         """
         if chat_history is not None and len(chat_history) > 0:
-            chat_history_messages = [
-                convert_iris_message_to_langchain_message(message)
-                for message in chat_history
-            ]
-            self.prompt += chat_history_messages
+
+ #           self.prompt += chat_history_messages
             self.prompt += SystemMessagePromptTemplate.from_template(
                 "Now, consider the student's newest and latest input:"
             )

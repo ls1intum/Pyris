@@ -40,3 +40,7 @@ class ExerciseDTO(BaseModel):
     due_date: Optional[datetime] = Field(alias="dueDate")
     inclusion_mode: Optional[IncludedInOverallScore] = Field(alias="inclusionMode")
     presentation_score_enabled: Optional[bool] = Field(alias="presentationScoreEnabled")
+
+    def __str__(self):
+        return str(self.dict())
+
