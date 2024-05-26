@@ -32,6 +32,7 @@ from ..pipeline.prompts.lecture_retrieval_prompts import (
     rewrite_student_query_prompt_with_exercise_context,
     write_hypothetical_answer_with_exercise_context_prompt,
 )
+import concurrent.futures
 
 
 def merge_retrieved_chunks(
@@ -52,7 +53,7 @@ def merge_retrieved_chunks(
     return [properties for uuid, properties in merged_chunks.items()]
 
 
-def _add_conversation_to_prompt(
+def _add_last_four_messages_to_prompt(
     prompt,
     chat_history: List[PyrisMessage],
 ):
@@ -63,11 +64,14 @@ def _add_conversation_to_prompt(
         :return: The prompt with the chat history
     """
     if chat_history is not None and len(chat_history) > 0:
+        num_messages_to_take = min(len(chat_history), 4)
+        last_messages = chat_history[-num_messages_to_take:]
         chat_history_messages = [
             convert_iris_message_to_langchain_message(message)
-            for message in chat_history
+            for message in last_messages
         ]
         prompt += chat_history_messages
+    return prompt
 
 
 class LectureRetrieval(Pipeline):
@@ -113,37 +117,18 @@ class LectureRetrieval(Pipeline):
             .objects[0]
             .properties.get(LectureSchema.COURSE_LANGUAGE.value)
         )
-        if problem_statement:
-            rewritten_query = self.rewrite_student_query_with_exercise_context(
-                chat_history,
-                student_query,
-                course_language,
-                course_name,
-                exercise_title,
-                problem_statement,
-            )
-            hypothetical_answer_query = (
-                self.rewrite_elaborated_query_with_exercise_context(
-                    chat_history,
-                    rewritten_query,
-                    course_language,
-                    course_name,
-                    exercise_title,
-                    problem_statement,
-                )
-            )
-        else:
-            rewritten_query = self.rewrite_student_query(
-                chat_history, student_query, course_language, course_name
-            )
+        course_language = "english"
 
-            hypothetical_answer_query = self.rewrite_elaborated_query(
-                chat_history, rewritten_query, course_language, course_name
-            )
-
-        response = self.search_in_db(rewritten_query, 0.5, result_limit, course_id)
-        response_hyde = self.search_in_db(
-            hypothetical_answer_query, 0.5, result_limit, course_id
+        # Call the function to run the tasks
+        response, response_hyde = self.run_parallel_rewrite_tasks(
+            chat_history=chat_history,
+            student_query=student_query,
+            result_limit=result_limit,
+            course_language=course_language,
+            course_name=course_name,
+            course_id=course_id,
+            problem_statement=problem_statement,
+            exercise_title=exercise_title,
         )
 
         basic_retrieved_lecture_chunks: list[dict[str, dict]] = [
@@ -179,7 +164,7 @@ class LectureRetrieval(Pipeline):
                 ("system", retriever_chat_history_system_prompt),
             ]
         )
-        _add_conversation_to_prompt(prompt, chat_history)
+        prompt = _add_last_four_messages_to_prompt(prompt, chat_history)
         prompt += SystemMessagePromptTemplate.from_template(
             rewrite_student_query_prompt
         )
@@ -214,7 +199,7 @@ class LectureRetrieval(Pipeline):
                 ("system", retriever_chat_history_system_prompt),
             ]
         )
-        _add_conversation_to_prompt(prompt, chat_history)
+        prompt = _add_last_four_messages_to_prompt(prompt, chat_history)
         prompt += SystemMessagePromptTemplate.from_template(
             rewrite_student_query_prompt_with_exercise_context
         )
@@ -250,7 +235,7 @@ class LectureRetrieval(Pipeline):
                 ("system", retriever_chat_history_system_prompt),
             ]
         )
-        _add_conversation_to_prompt(prompt, chat_history)
+        prompt = _add_last_four_messages_to_prompt(prompt, chat_history)
         prompt += SystemMessagePromptTemplate.from_template(
             write_hypothetical_answer_prompt
         )
@@ -286,7 +271,7 @@ class LectureRetrieval(Pipeline):
                 ("system", retriever_chat_history_system_prompt),
             ]
         )
-        _add_conversation_to_prompt(prompt, chat_history)
+        prompt = _add_last_four_messages_to_prompt(prompt, chat_history)
         prompt += SystemMessagePromptTemplate.from_template(
             write_hypothetical_answer_with_exercise_context_prompt
         )
@@ -314,7 +299,7 @@ class LectureRetrieval(Pipeline):
         return self.collection.query.hybrid(
             query=query,
             filters=(
-                Filter.by_property(LectureSchema.LECTURE_ID.value).equal(course_id)
+                Filter.by_property(LectureSchema.COURSE_ID.value).equal(course_id)
                 if course_id
                 else None
             ),
@@ -329,3 +314,79 @@ class LectureRetrieval(Pipeline):
             ],
             limit=result_limit,
         )
+
+    def run_parallel_rewrite_tasks(
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        result_limit: int,
+        course_language: str,
+        course_name: str = None,
+        course_id: int = None,
+        problem_statement: str = None,
+        exercise_title: str = None,
+    ):
+        """
+        Run the rewrite tasks in parallel.
+        """
+        if problem_statement:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Schedule the rewrite tasks to run in parallel
+                rewritten_query_future = executor.submit(
+                    self.rewrite_student_query_with_exercise_context,
+                    chat_history,
+                    student_query,
+                    course_language,
+                    course_name,
+                    exercise_title,
+                    problem_statement,
+                )
+                hypothetical_answer_query_future = executor.submit(
+                    self.rewrite_elaborated_query_with_exercise_context,
+                    chat_history,
+                    student_query,
+                    course_language,
+                    course_name,
+                    exercise_title,
+                    problem_statement,
+                )
+
+                # Get the results once both tasks are complete
+                rewritten_query = rewritten_query_future.result()
+                hypothetical_answer_query = hypothetical_answer_query_future.result()
+        else:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Schedule the rewrite tasks to run in parallel
+                rewritten_query_future = executor.submit(
+                    self.rewrite_student_query,
+                    chat_history,
+                    student_query,
+                    course_language,
+                    course_name,
+                )
+                hypothetical_answer_query_future = executor.submit(
+                    self.rewrite_elaborated_query,
+                    chat_history,
+                    student_query,
+                    course_language,
+                    course_name,
+                )
+
+                # Get the results once both tasks are complete
+                rewritten_query = rewritten_query_future.result()
+                hypothetical_answer_query = hypothetical_answer_query_future.result()
+
+            # Execute the database search tasks
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            response_future = executor.submit(
+                self.search_in_db, rewritten_query, 1, result_limit, course_id
+            )
+            response_hyde_future = executor.submit(
+                self.search_in_db, hypothetical_answer_query, 1, result_limit, course_id
+            )
+
+            # Get the results once both tasks are complete
+            response = response_future.result()
+            response_hyde = response_hyde_future.result()
+
+        return response, response_hyde
