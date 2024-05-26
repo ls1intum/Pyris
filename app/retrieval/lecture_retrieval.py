@@ -117,7 +117,6 @@ class LectureRetrieval(Pipeline):
             .objects[0]
             .properties.get(LectureSchema.COURSE_LANGUAGE.value)
         )
-        course_language = "english"
 
         # Call the function to run the tasks
         response, response_hyde = self.run_parallel_rewrite_tasks(
