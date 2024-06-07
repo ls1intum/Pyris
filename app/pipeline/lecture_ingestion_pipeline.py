@@ -32,7 +32,6 @@ from typing import TypedDict, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-
 batch_update_lock = threading.Lock()
 
 
@@ -175,7 +174,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             doc.load_page(min(5, doc.page_count - 1)).get_text()
         )
         data = []
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=102)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1024, chunk_overlap=102
+        )
         for page_num in range(doc.page_count):
             page = doc.load_page(page_num)
             page_text = text_splitter.create_documents([page.get_text()])
@@ -250,7 +251,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             image_interpretation=image_interpretation,
         )
         prompt = ChatPromptTemplate.from_messages(prompt_val)
-        return clean((prompt | self.pipeline).invoke({}), bullets=True, extra_whitespace=True)
+        return clean(
+            (prompt | self.pipeline).invoke({}), bullets=True, extra_whitespace=True
+        )
 
     def get_course_language(self, page_content: str) -> str:
         """
@@ -276,7 +279,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         try:
             for lecture_unit in self.dto.lecture_units:
                 if self.delete_lecture_unit(
-                    lecture_unit.lecture_id, lecture_unit.lecture_unit_id, lecture_unit.base_url
+                    lecture_unit.lecture_id,
+                    lecture_unit.lecture_unit_id,
+                    lecture_unit.base_url,
                 ):
                     logger.info("Lecture deleted successfully")
                 else:
@@ -297,9 +302,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
                 & Filter.by_property(LectureSchema.LECTURE_UNIT_ID.value).equal(
                     lecture_unit_id
                 )
-                & Filter.by_property(LectureSchema.BASE_URL.value).equal(
-                    base_url
-                )
+                & Filter.by_property(LectureSchema.BASE_URL.value).equal(base_url)
             )
             return True
         except Exception as e:

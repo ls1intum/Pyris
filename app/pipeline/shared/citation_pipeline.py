@@ -52,9 +52,8 @@ class CitationPipeline(Pipeline):
         formatted_string = ""
         for i, paragraph in enumerate(paragraphs):
             para = paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value, "")
-            title = (
-                "Lecture Title:"
-                + paragraph.get(LectureSchema.LECTURE_NAME.value, "")
+            title = "Lecture Title:" + paragraph.get(
+                LectureSchema.LECTURE_NAME.value, ""
             )
             page_number = paragraph.get(LectureSchema.PAGE_NUMBER.value, "")
             formatted_string += (

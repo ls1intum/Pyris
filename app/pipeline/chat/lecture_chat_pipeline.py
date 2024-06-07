@@ -102,7 +102,7 @@ class LectureChatPipeline(Pipeline):
             result_limit=10,
             course_name=dto.course.name,
             course_id=dto.course.id,
-            base_url=dto.settings.artemis_base_url
+            base_url=dto.settings.artemis_base_url,
         )
 
         self._add_relevant_chunks_to_prompt(retrieved_lecture_chunks)

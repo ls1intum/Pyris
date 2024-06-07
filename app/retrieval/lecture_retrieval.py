@@ -309,13 +309,19 @@ class LectureRetrieval(Pipeline):
         # Check if course_id is provided
         if course_id:
             # Create a filter for course_id
-            filter_weaviate = Filter.by_property(LectureSchema.COURSE_ID.value).equal(course_id)
+            filter_weaviate = Filter.by_property(LectureSchema.COURSE_ID.value).equal(
+                course_id
+            )
 
             # Extend the filter based on the presence of base_url
             if base_url:
-                filter_weaviate &= Filter.by_property(LectureSchema.BASE_URL.value).equal(base_url)
+                filter_weaviate &= Filter.by_property(
+                    LectureSchema.BASE_URL.value
+                ).equal(base_url)
             else:
-                filter_weaviate = Filter.by_property(LectureSchema.BASE_URL.value).equal(base_url)
+                filter_weaviate = Filter.by_property(
+                    LectureSchema.BASE_URL.value
+                ).equal(base_url)
 
         return_value = self.collection.query.hybrid(
             query=query,
@@ -326,10 +332,10 @@ class LectureRetrieval(Pipeline):
                 LectureSchema.COURSE_NAME.value,
                 LectureSchema.LECTURE_NAME.value,
                 LectureSchema.PAGE_NUMBER.value,
-                LectureSchema.COURSE_ID.value
+                LectureSchema.COURSE_ID.value,
             ],
             limit=result_limit,
-            filters=filter_weaviate
+            filters=filter_weaviate,
         )
         return return_value
 
@@ -372,7 +378,9 @@ class LectureRetrieval(Pipeline):
 
                 # Get the results once both tasks are complete
                 rewritten_query: str = rewritten_query_future.result()
-                hypothetical_answer_query: str = hypothetical_answer_query_future.result()
+                hypothetical_answer_query: str = (
+                    hypothetical_answer_query_future.result()
+                )
         else:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # Schedule the rewrite tasks to run in parallel
@@ -403,7 +411,7 @@ class LectureRetrieval(Pipeline):
                 hybrid_factor=0.7,
                 result_limit=result_limit,
                 course_id=course_id,
-                base_url=base_url
+                base_url=base_url,
             )
             response_hyde_future = executor.submit(
                 self.search_in_db,
@@ -411,7 +419,7 @@ class LectureRetrieval(Pipeline):
                 hybrid_factor=0.9,
                 result_limit=result_limit,
                 course_id=course_id,
-                base_url=base_url
+                base_url=base_url,
             )
 
             # Get the results once both tasks are complete
