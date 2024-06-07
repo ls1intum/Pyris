@@ -54,7 +54,6 @@ class CitationPipeline(Pipeline):
             para = paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value, "")
             title = (
                 "Lecture Title:"
-                + paragraph.get(LectureSchema.COURSE_NAME.value, "")
                 + paragraph.get(LectureSchema.LECTURE_NAME.value, "")
             )
             page_number = paragraph.get(LectureSchema.PAGE_NUMBER.value, "")
