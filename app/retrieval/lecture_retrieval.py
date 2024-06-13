@@ -36,7 +36,7 @@ import concurrent.futures
 
 
 def merge_retrieved_chunks(
-    basic_retrieved_lecture_chunks, hyde_retrieved_lecture_chunks
+        basic_retrieved_lecture_chunks, hyde_retrieved_lecture_chunks
 ) -> List[dict]:
     """
     Merge the retrieved chunks from the basic and hyde retrieval methods. This function ensures that for any
@@ -54,8 +54,8 @@ def merge_retrieved_chunks(
 
 
 def _add_last_four_messages_to_prompt(
-    prompt,
-    chat_history: List[PyrisMessage],
+        prompt,
+        chat_history: List[PyrisMessage],
 ):
     """
     Adds the chat history and user question to the prompt
@@ -98,14 +98,15 @@ class LectureRetrieval(Pipeline):
         self.reranker_pipeline = RerankerPipeline()
 
     def __call__(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        result_limit: int,
-        course_name: str = None,
-        course_id: int = None,
-        problem_statement: str = None,
-        exercise_title: str = None,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            result_limit: int,
+            course_name: str = None,
+            course_id: int = None,
+            base_url: str = None,
+            problem_statement: str = None,
+            exercise_title: str = None,
     ) -> List[dict]:
         """
         Retrieve lecture data from the database.
@@ -126,6 +127,7 @@ class LectureRetrieval(Pipeline):
             course_language=course_language,
             course_name=course_name,
             course_id=course_id,
+            base_url=base_url,
             problem_statement=problem_statement,
             exercise_title=exercise_title,
         )
@@ -141,18 +143,48 @@ class LectureRetrieval(Pipeline):
         merged_chunks = merge_retrieved_chunks(
             basic_retrieved_lecture_chunks, hyde_retrieved_lecture_chunks
         )
+        if len(merged_chunks) != 0:
+            selected_chunks_index = self.reranker_pipeline(
+                paragraphs=merged_chunks, query=student_query, chat_history=chat_history
+            )
+            return [merged_chunks[int(i)] for i in selected_chunks_index]
+        return []
 
-        selected_chunks_index = self.reranker_pipeline(
-            paragraphs=merged_chunks, query=student_query, chat_history=chat_history
-        )
-        return [merged_chunks[int(i)] for i in selected_chunks_index]
+    def basic_lecture_retrieval(self,
+                                chat_history: list[PyrisMessage],
+                                student_query: str,
+                                result_limit: int,
+                                course_name: str = None,
+                                course_id: int = None,
+                                base_url: str = None,
+                                ) -> list[dict[str, dict]]:
+        """
+        Basic retrieval for pipelines thaat need performance and fast answers.
+        """
+        rewritten_query = self.rewrite_student_query(
+            chat_history,
+            student_query,
+            "course_language",
+            course_name)
+        response = self.search_in_db(
+            query=rewritten_query,
+            hybrid_factor=0.9,
+            result_limit=result_limit,
+            course_id=course_id,
+            base_url=base_url)
+
+        basic_retrieved_lecture_chunks: list[dict[str, dict]] = [
+            {"id": obj.uuid.int, "properties": obj.properties}
+            for obj in response.objects
+        ]
+        return basic_retrieved_lecture_chunks
 
     def rewrite_student_query(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        course_language: str,
-        course_name: str,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            course_language: str,
+            course_name: str,
     ) -> str:
         """
         Rewrite the student query.
@@ -181,13 +213,13 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_student_query_with_exercise_context(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        course_language: str,
-        course_name: str,
-        exercise_name: str,
-        problem_statement: str,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            course_language: str,
+            course_name: str,
+            exercise_name: str,
+            problem_statement: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -218,11 +250,11 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_elaborated_query(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        course_language: str,
-        course_name: str,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            course_language: str,
+            course_name: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -252,13 +284,13 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_elaborated_query_with_exercise_context(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        course_language: str,
-        course_name: str,
-        exercise_name: str,
-        problem_statement: str,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            course_language: str,
+            course_name: str,
+            exercise_name: str,
+            problem_statement: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -290,40 +322,63 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def search_in_db(
-        self, query: str, hybrid_factor: float, result_limit: int, course_id: int = None
+            self,
+            query: str,
+            hybrid_factor: float,
+            result_limit: int,
+            course_id: int = None,
+            base_url: str = None,
     ):
         """
-        Search the query in the database and return the results.
+        Search the database for the given query.
         """
-        return self.collection.query.hybrid(
+        # Initialize filter to None by default
+        filter_weaviate = None
+
+        # Check if course_id is provided
+        if course_id:
+            # Create a filter for course_id
+            filter_weaviate = Filter.by_property(LectureSchema.COURSE_ID.value).equal(
+                course_id
+            )
+
+            # Extend the filter based on the presence of base_url
+            if base_url:
+                filter_weaviate &= Filter.by_property(
+                    LectureSchema.BASE_URL.value
+                ).equal(base_url)
+            else:
+                filter_weaviate = Filter.by_property(
+                    LectureSchema.BASE_URL.value
+                ).equal(base_url)
+
+        return_value = self.collection.query.hybrid(
             query=query,
-            filters=(
-                Filter.by_property(LectureSchema.COURSE_ID.value).equal(course_id)
-                if course_id
-                else None
-            ),
             alpha=hybrid_factor,
             vector=self.llm_embedding.embed(query),
             return_properties=[
                 LectureSchema.PAGE_TEXT_CONTENT.value,
-                LectureSchema.PAGE_IMAGE_DESCRIPTION.value,
                 LectureSchema.COURSE_NAME.value,
                 LectureSchema.LECTURE_NAME.value,
                 LectureSchema.PAGE_NUMBER.value,
+                LectureSchema.COURSE_ID.value,
             ],
             limit=result_limit,
+            filters=filter_weaviate,
         )
+        return return_value
 
     def run_parallel_rewrite_tasks(
-        self,
-        chat_history: list[PyrisMessage],
-        student_query: str,
-        result_limit: int,
-        course_language: str,
-        course_name: str = None,
-        course_id: int = None,
-        problem_statement: str = None,
-        exercise_title: str = None,
+            self,
+            chat_history: list[PyrisMessage],
+            student_query: str,
+            result_limit: int,
+            course_language: str,
+            course_name: str = None,
+            course_id: int = None,
+            base_url: str = None,
+            problem_statement: str = None,
+            exercise_title: str = None,
     ):
         """
         Run the rewrite tasks in parallel.
@@ -351,8 +406,10 @@ class LectureRetrieval(Pipeline):
                 )
 
                 # Get the results once both tasks are complete
-                rewritten_query = rewritten_query_future.result()
-                hypothetical_answer_query = hypothetical_answer_query_future.result()
+                rewritten_query: str = rewritten_query_future.result()
+                hypothetical_answer_query: str = (
+                    hypothetical_answer_query_future.result()
+                )
         else:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # Schedule the rewrite tasks to run in parallel
@@ -378,10 +435,20 @@ class LectureRetrieval(Pipeline):
             # Execute the database search tasks
         with concurrent.futures.ThreadPoolExecutor() as executor:
             response_future = executor.submit(
-                self.search_in_db, rewritten_query, 1, result_limit, course_id
+                self.search_in_db,
+                query=rewritten_query,
+                hybrid_factor=0.7,
+                result_limit=result_limit,
+                course_id=course_id,
+                base_url=base_url,
             )
             response_hyde_future = executor.submit(
-                self.search_in_db, hypothetical_answer_query, 1, result_limit, course_id
+                self.search_in_db,
+                query=hypothetical_answer_query,
+                hybrid_factor=0.9,
+                result_limit=result_limit,
+                course_id=course_id,
+                base_url=base_url,
             )
 
             # Get the results once both tasks are complete
