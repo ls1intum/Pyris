@@ -98,6 +98,7 @@ class LectureChatPipeline(Pipeline):
             student_query=query.contents[0].text_content,
             result_limit=10,
             course_name=dto.course.name,
+            course_id=dto.course.id,
         )
 
         self._add_relevant_chunks_to_prompt(retrieved_lecture_chunks)

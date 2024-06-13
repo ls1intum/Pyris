@@ -214,6 +214,7 @@ class TutorChatPipeline(Pipeline):
             student_query=query.contents[0].text_content,
             result_limit=10,
             course_name=dto.course.name,
+            course_id=dto.course.id,
             problem_statement=problem_statement,
             exercise_title=exercise_title,
         )

@@ -36,7 +36,7 @@ import concurrent.futures
 
 
 def merge_retrieved_chunks(
-        basic_retrieved_lecture_chunks, hyde_retrieved_lecture_chunks
+    basic_retrieved_lecture_chunks, hyde_retrieved_lecture_chunks
 ) -> List[dict]:
     """
     Merge the retrieved chunks from the basic and hyde retrieval methods. This function ensures that for any
@@ -54,8 +54,8 @@ def merge_retrieved_chunks(
 
 
 def _add_last_four_messages_to_prompt(
-        prompt,
-        chat_history: List[PyrisMessage],
+    prompt,
+    chat_history: List[PyrisMessage],
 ):
     """
     Adds the chat history and user question to the prompt
@@ -98,15 +98,15 @@ class LectureRetrieval(Pipeline):
         self.reranker_pipeline = RerankerPipeline()
 
     def __call__(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            result_limit: int,
-            course_name: str = None,
-            course_id: int = None,
-            base_url: str = None,
-            problem_statement: str = None,
-            exercise_title: str = None,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        result_limit: int,
+        course_name: str = None,
+        course_id: int = None,
+        base_url: str = None,
+        problem_statement: str = None,
+        exercise_title: str = None,
     ) -> List[dict]:
         """
         Retrieve lecture data from the database.
@@ -150,28 +150,28 @@ class LectureRetrieval(Pipeline):
             return [merged_chunks[int(i)] for i in selected_chunks_index]
         return []
 
-    def basic_lecture_retrieval(self,
-                                chat_history: list[PyrisMessage],
-                                student_query: str,
-                                result_limit: int,
-                                course_name: str = None,
-                                course_id: int = None,
-                                base_url: str = None,
-                                ) -> list[dict[str, dict]]:
+    def basic_lecture_retrieval(
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        result_limit: int,
+        course_name: str = None,
+        course_id: int = None,
+        base_url: str = None,
+    ) -> list[dict[str, dict]]:
         """
         Basic retrieval for pipelines thaat need performance and fast answers.
         """
         rewritten_query = self.rewrite_student_query(
-            chat_history,
-            student_query,
-            "course_language",
-            course_name)
+            chat_history, student_query, "course_language", course_name
+        )
         response = self.search_in_db(
             query=rewritten_query,
             hybrid_factor=0.9,
             result_limit=result_limit,
             course_id=course_id,
-            base_url=base_url)
+            base_url=base_url,
+        )
 
         basic_retrieved_lecture_chunks: list[dict[str, dict]] = [
             {"id": obj.uuid.int, "properties": obj.properties}
@@ -180,11 +180,11 @@ class LectureRetrieval(Pipeline):
         return basic_retrieved_lecture_chunks
 
     def rewrite_student_query(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            course_language: str,
-            course_name: str,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        course_language: str,
+        course_name: str,
     ) -> str:
         """
         Rewrite the student query.
@@ -213,13 +213,13 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_student_query_with_exercise_context(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            course_language: str,
-            course_name: str,
-            exercise_name: str,
-            problem_statement: str,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        course_language: str,
+        course_name: str,
+        exercise_name: str,
+        problem_statement: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -250,11 +250,11 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_elaborated_query(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            course_language: str,
-            course_name: str,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        course_language: str,
+        course_name: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -284,13 +284,13 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def rewrite_elaborated_query_with_exercise_context(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            course_language: str,
-            course_name: str,
-            exercise_name: str,
-            problem_statement: str,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        course_language: str,
+        course_name: str,
+        exercise_name: str,
+        problem_statement: str,
     ) -> str:
         """
         Rewrite the student query to generate fitting lecture content and embed it.
@@ -322,12 +322,12 @@ class LectureRetrieval(Pipeline):
             raise e
 
     def search_in_db(
-            self,
-            query: str,
-            hybrid_factor: float,
-            result_limit: int,
-            course_id: int = None,
-            base_url: str = None,
+        self,
+        query: str,
+        hybrid_factor: float,
+        result_limit: int,
+        course_id: int = None,
+        base_url: str = None,
     ):
         """
         Search the database for the given query.
@@ -369,16 +369,16 @@ class LectureRetrieval(Pipeline):
         return return_value
 
     def run_parallel_rewrite_tasks(
-            self,
-            chat_history: list[PyrisMessage],
-            student_query: str,
-            result_limit: int,
-            course_language: str,
-            course_name: str = None,
-            course_id: int = None,
-            base_url: str = None,
-            problem_statement: str = None,
-            exercise_title: str = None,
+        self,
+        chat_history: list[PyrisMessage],
+        student_query: str,
+        result_limit: int,
+        course_language: str,
+        course_name: str = None,
+        course_id: int = None,
+        base_url: str = None,
+        problem_statement: str = None,
+        exercise_title: str = None,
     ):
         """
         Run the rewrite tasks in parallel.
