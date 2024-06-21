@@ -229,10 +229,11 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         image_interpretation_prompt = TextMessageContentDTO(
             text_content=f"This page is part of the {name_of_lecture} university lecture,"
             f" I am the professor that created these slides and"
-            f" I am asking you to interpret this slide in an academic way, "
+            f" Please interpret this slide in an academic way, "
             f"respond only with the explanation in {course_language}."
             f"For more context here is the content of the previous slide:\n "
-            f" {last_page_content}"
+            f" {last_page_content} \n\n"
+            f"Only repond with the slide explanation and interpretation in {course_language}, do not add anything else to your response."
         )
         image = ImageMessageContentDTO(base64=img_base64)
         iris_message = PyrisMessage(
