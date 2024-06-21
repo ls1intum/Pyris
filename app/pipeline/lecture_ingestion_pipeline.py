@@ -195,7 +195,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             page_text = page.get_text()
             if page.get_images(full=False):
                 # more pixels thus more details and better quality
-                matrix = fitz.Matrix(20.0, 20.0)
+                matrix = fitz.Matrix(5, 5)
                 pix = page.get_pixmap(matrix=matrix)
                 img_bytes = pix.tobytes("jpg")
                 img_base64 = base64.b64encode(img_bytes).decode("utf-8")
