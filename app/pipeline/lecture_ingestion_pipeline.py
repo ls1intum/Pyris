@@ -97,9 +97,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         self.collection = init_lecture_schema(client)
         self.dto = dto
         self.llm_vision = BasicRequestHandler("azure-gpt-4-omni")
-        self.llm_chat = BasicRequestHandler(
-            "azure-gpt-35-turbo"
-        )
+        self.llm_chat = BasicRequestHandler("azure-gpt-35-turbo")
         self.llm_embedding = BasicRequestHandler("embedding-small")
         self.callback = callback
         request_handler = CapabilityRequestHandler(
@@ -230,11 +228,11 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         """
         image_interpretation_prompt = TextMessageContentDTO(
             text_content=f"This page is part of the {name_of_lecture} university lecture,"
-                         f" I am the professor that created these slides and"
-                         f" I am asking you to interpret this slide in an academic way, "
-                         f"respond only with the explanation in {course_language}."
-                         f"For more context here is the content of the previous slide:\n "
-                         f" {last_page_content}"
+            f" I am the professor that created these slides and"
+            f" I am asking you to interpret this slide in an academic way, "
+            f"respond only with the explanation in {course_language}."
+            f"For more context here is the content of the previous slide:\n "
+            f" {last_page_content}"
         )
         image = ImageMessageContentDTO(base64=img_base64)
         iris_message = PyrisMessage(
