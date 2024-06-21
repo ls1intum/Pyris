@@ -96,10 +96,10 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         super().__init__()
         self.collection = init_lecture_schema(client)
         self.dto = dto
-        self.llm_vision = BasicRequestHandler("azure-gpt-4-vision")
+        self.llm_vision = BasicRequestHandler("azure-gpt-4-omni")
         self.llm_chat = BasicRequestHandler(
             "azure-gpt-35-turbo"
-        )  # TODO change use langain model
+        )
         self.llm_embedding = BasicRequestHandler("embedding-small")
         self.callback = callback
         request_handler = CapabilityRequestHandler(
@@ -190,6 +190,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=512, chunk_overlap=102
         )
+        old_page_text = ""
         for page_num in range(doc.page_count):
             page = doc.load_page(page_num)
             page_text = page.get_text()
@@ -201,7 +202,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
                 img_base64 = base64.b64encode(img_bytes).decode("utf-8")
                 image_interpretation = self.interpret_image(
                     img_base64,
-                    page_text,
+                    old_page_text,
                     lecture_unit_dto.lecture_name,
                     course_language,
                 )
@@ -214,6 +215,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
                     page_num, page_splits, lecture_unit_dto, course_language, base_url
                 )
             )
+            old_page_text = page_text
         return data
 
     def interpret_image(
@@ -227,11 +229,12 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         Interpret the image passed
         """
         image_interpretation_prompt = TextMessageContentDTO(
-            text_content=f"This page is part of the {name_of_lecture} university lecture, "
-            f" explain what is on the slide in an academic way, "
-            f"respond only with the explanation in {course_language}."
-            f"For more context here is the content of the previous slide: "
-            f" {last_page_content}"
+            text_content=f"This page is part of the {name_of_lecture} university lecture,"
+                         f" I am the professor that created these slides and"
+                         f" I am asking you to interpret this slide in an academic way, "
+                         f"respond only with the explanation in {course_language}."
+                         f"For more context here is the content of the previous slide:\n "
+                         f" {last_page_content}"
         )
         image = ImageMessageContentDTO(base64=img_base64)
         iris_message = PyrisMessage(
@@ -239,7 +242,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         )
         try:
             response = self.llm_vision.chat(
-                [iris_message], CompletionArguments(temperature=0, max_tokens=400)
+                [iris_message], CompletionArguments(temperature=0, max_tokens=512)
             )
         except Exception as e:
             logger.error(f"Error interpreting image: {e}")
