@@ -233,8 +233,8 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             f"respond only with the explanation in {course_language}."
             f"For more context here is the content of the previous slide:\n "
             f" {last_page_content} \n\n"
-            f"Only repond with the slide explanation and interpretation in {course_language},"
-            f" do not add anything else to your response."
+            f"Only repond with the slide explanation and interpretation in {course_language}, "
+            f"do not add anything else to your response.Your explanation should not exceed 350 words."
         )
         image = ImageMessageContentDTO(base64=img_base64)
         iris_message = PyrisMessage(
