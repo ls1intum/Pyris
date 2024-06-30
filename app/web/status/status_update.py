@@ -116,6 +116,8 @@ class StatusCallback(ABC):
             raise ValueError(
                 "Invalid state transition to done. current state is ", self.stage.state
             )
+        # Reset the result after sending a final response
+        self.status.result = None
 
     def error(self, message: str):
         """
