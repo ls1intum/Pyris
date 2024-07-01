@@ -435,14 +435,16 @@ class CourseChatPipeline(Pipeline):
                     exc_info=e,
                 )
                 traceback.print_exc()
-                self.callback.error("Generating interaction suggestions failed.")
+                self.callback.error(
+                    "Generating interaction suggestions failed.", exception=e
+                )
         except Exception as e:
             logger.error(
                 "An error occurred while running the course chat pipeline", exc_info=e
             )
             traceback.print_exc()
             self.callback.error(
-                "An error occurred while running the course chat pipeline."
+                "An error occurred while running the course chat pipeline.", exception=e
             )
 
     def should_allow_lecture_tool(self, course_id: int) -> bool:
