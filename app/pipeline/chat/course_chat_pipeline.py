@@ -31,6 +31,7 @@ from ..prompts.iris_course_chat_prompts import (
     tell_no_chat_history_prompt,
     tell_format_reminder_prompt,
     tell_begin_agent_jol_prompt,
+    tell_begin_agent_submission_successful_prompt,
 )
 from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_iris_initial_system_prompt,
@@ -39,6 +40,7 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_no_chat_history_prompt,
     elicit_format_reminder_prompt,
     elicit_begin_agent_jol_prompt,
+    elicit_begin_agent_submission_successful_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
 from ...retrieval.lecture_retrieval import LectureRetrieval
@@ -140,7 +142,7 @@ class CourseChatPipeline(Pipeline):
             current_time = datetime.now(tz=pytz.UTC)
             exercises = []
             for exercise in dto.course.exercises:
-                exercise_dict = exercise.dict()
+                exercise_dict = exercise.model_dump()
                 exercise_dict["due_date_over"] = (
                     exercise.due_date < current_time if exercise.due_date else None
                 )
@@ -300,6 +302,9 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = tell_no_chat_history_prompt
             format_reminder_prompt = tell_format_reminder_prompt
             begin_agent_jol_prompt = tell_begin_agent_jol_prompt
+            begin_agent_submission_successful_prompt = (
+                tell_begin_agent_submission_successful_prompt
+            )
         else:
             iris_initial_system_prompt = elicit_iris_initial_system_prompt
             begin_agent_prompt = elicit_begin_agent_prompt
@@ -307,6 +312,9 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = elicit_no_chat_history_prompt
             format_reminder_prompt = elicit_format_reminder_prompt
             begin_agent_jol_prompt = elicit_begin_agent_jol_prompt
+            begin_agent_submission_successful_prompt = (
+                elicit_begin_agent_submission_successful_prompt
+            )
 
         try:
             logger.info("Running course chat pipeline...")
@@ -342,6 +350,43 @@ class CourseChatPipeline(Pipeline):
                         }
                     ),
                     "competency": comp.json(),
+                }
+            elif self.variant == "submission_successful":
+                comp = next(
+                    (
+                        c
+                        for c in dto.course.competencies
+                        if dto.finished_exercise.id in c.exercise_list
+                    ),
+                    None,
+                )
+                agent_prompt = begin_agent_submission_successful_prompt
+                params = {
+                    "exercise": json.dumps(
+                        {
+                            "id": dto.finished_exercise.id,
+                            "course_id": dto.course.id,
+                            "title": dto.finished_exercise.title,
+                            "type": dto.finished_exercise.type,
+                            "mode": dto.finished_exercise.mode,
+                            "max_points": dto.finished_exercise.max_points,
+                            "bonus_points": dto.finished_exercise.bonus_points,
+                            "difficulty_level": dto.finished_exercise.difficulty_level,
+                            "due_date": datetime_to_string(
+                                dto.finished_exercise.due_date
+                            ),
+                            "submissions": [
+                                {
+                                    "timestamp": datetime_to_string(
+                                        submission.timestamp
+                                    ),
+                                    "score": submission.score,
+                                }
+                                for submission in dto.finished_exercise.submissions
+                            ],
+                        }
+                    ),
+                    "competency": comp.model_dump() if comp else "<Unknown competency>",
                 }
             else:
                 agent_prompt = (
