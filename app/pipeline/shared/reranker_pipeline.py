@@ -29,7 +29,7 @@ class RerankerPipeline(Pipeline):
         super().__init__(implementation_id="reranker_pipeline")
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
-                gpt_version_equivalent=3.5,
+                gpt_version_equivalent=4,
                 context_length=16385,
             )
         )
