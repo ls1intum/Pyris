@@ -20,6 +20,7 @@ class LectureSchema(Enum):
     LECTURE_NAME = "lecture_name"
     LECTURE_UNIT_ID = "lecture_unit_id"
     LECTURE_UNIT_NAME = "lecture_unit_name"
+    LECTURE_UNIT_LINK = "lecture_unit_link"
     PAGE_TEXT_CONTENT = "page_text_content"
     PAGE_NUMBER = "page_number"
     BASE_URL = "base_url"
@@ -77,6 +78,12 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
                 name=LectureSchema.LECTURE_UNIT_NAME.value,
                 description="The name of the lecture unit",
                 data_type=DataType.TEXT,
+            ),
+            Property(
+                name=LectureSchema.LECTURE_UNIT_LINK.value,
+                description="The link to the Lecture Unit",
+                data_type=DataType.TEXT,
+                index_searchable=False,
             ),
             Property(
                 name=LectureSchema.PAGE_TEXT_CONTENT.value,
