@@ -51,10 +51,10 @@ class CitationPipeline(Pipeline):
         """
         formatted_string = ""
         for i, paragraph in enumerate(paragraphs):
-            lct = "Lecture: {}, Page: {}\nContent:\n---{}---\n\n".format(
+            lct = "Lecture: {}, Page: {}, Link: {}, \nContent:\n---{}---\n\n".format(
                 paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
-                paragraph.get(LectureSchema.LECTURE_UNIT_LINK.value),
                 paragraph.get(LectureSchema.PAGE_NUMBER.value),
+                paragraph.get(LectureSchema.LECTURE_UNIT_LINK.value),
                 paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
             )
             formatted_string += lct
