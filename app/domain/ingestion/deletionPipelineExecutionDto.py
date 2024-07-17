@@ -7,9 +7,9 @@ from app.domain.data.lecture_unit_dto import LectureUnitDTO
 from app.domain.status.stage_dto import StageDTO
 
 
-class IngestionPipelineExecutionDto(PipelineExecutionDTO):
-    lecture_unit: LectureUnitDTO = Field(
-        ..., alias="pyrisLectureUnit"
+class LecturesDeletionExecutionDto(PipelineExecutionDTO):
+    lecture_units: List[LectureUnitDTO] = Field(
+        ..., alias="pyrisLectureUnits"
     )
     settings: Optional[PipelineExecutionSettingsDTO]
     initial_stages: Optional[List[StageDTO]] = Field(

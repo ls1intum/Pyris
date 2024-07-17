@@ -14,6 +14,7 @@ from weaviate.collections.classes.filters import Filter
 
 from .code_feedback_pipeline import CodeFeedbackPipeline
 from .interaction_suggestion_pipeline import InteractionSuggestionPipeline
+from .lecture_chat_pipeline import LectureChatPipeline
 from ..pipeline import Pipeline
 from ..prompts.iris_exercise_chat_prompts import (
     iris_initial_system_prompt,
@@ -28,6 +29,9 @@ from ...domain import ExerciseChatPipelineExecutionDTO
 from ...domain import PyrisMessage
 from ...domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
+)
+from ...domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
+    LectureChatPipelineExecutionDTO,
 )
 from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...domain.data.feedback_dto import FeedbackDTO
@@ -78,6 +82,7 @@ class ExerciseChatPipeline(Pipeline):
         self.code_feedback_pipeline = CodeFeedbackPipeline()
         self.pipeline = self.llm | StrOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.lecture_chat_pipeline = LectureChatPipeline()
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -124,10 +129,12 @@ class ExerciseChatPipeline(Pipeline):
                     exc_info=e,
                 )
                 traceback.print_exc()
-                self.callback.error("Generating interaction suggestions failed.")
+                self.callback.error(
+                    "Generating interaction suggestions failed.", exception=e
+                )
         except Exception as e:
             traceback.print_exc()
-            self.callback.error(f"Failed to generate response: {e}")
+            self.callback.error(f"Failed to generate response: {e}", exception=e)
 
     def _run_exercise_chat_pipeline(
         self,
@@ -139,138 +146,26 @@ class ExerciseChatPipeline(Pipeline):
         :param dto:  execution data transfer object
         :param kwargs: The keyword arguments
         """
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", iris_initial_system_prompt),
-            ]
+        self.exercise_chat_response = self.lecture_chat_pipeline(
+            LectureChatPipelineExecutionDTO(
+                course=dto.course,
+                chat_history=dto.chat_history,
+                user=dto.user,
+                settings=dto.settings,
+                initial_stages=dto.initial_stages,
+            )
         )
-        logger.info("Running exercise chat pipeline...")
-        history: List[PyrisMessage] = dto.chat_history[:-1]
-        query: PyrisMessage = dto.chat_history[-1]
-
-        submission: ProgrammingSubmissionDTO = dto.submission
-        build_logs: List[BuildLogEntryDTO] = []
-        build_failed: bool = False
-        repository: Dict[str, str] = {}
-        if submission:
-            repository = submission.repository
-            build_logs = submission.build_log_entries
-            build_failed = submission.build_failed
-
-        problem_statement: str = dto.exercise.problem_statement
-        exercise_title: str = dto.exercise.name
-        programming_language = dto.exercise.programming_language.lower()
 
         self.callback.in_progress()
 
-        rt = get_current_run_tree()
-        with ThreadPoolExecutor() as executor:
-            # Run the file selector pipeline
-            if submission:
-                future_feedback = executor.submit(
-                    self.code_feedback_pipeline,
-                    chat_history=history,
-                    question=query,
-                    repository=repository,
-                    problem_statement=problem_statement,
-                    build_failed=build_failed,
-                    build_logs=build_logs,
-                    feedbacks=(
-                        submission.latest_result.feedbacks
-                        if submission and submission.latest_result
-                        else []
-                    ),
-                    langsmith_extra={"parent": rt},
-                )
-
-            if should_execute_lecture_pipeline:
-                future_lecture = executor.submit(
-                    self.retriever.basic_lecture_retrieval,
-                    chat_history=history,
-                    student_query=query.contents[0].text_content,
-                    result_limit=3,
-                    course_name=dto.course.name,
-                    course_id=dto.course.id,
-                    base_url=dto.settings.artemis_base_url,
-                    langsmith_extra={"parent": rt},
-                )
-
-            if submission:
-                try:
-                    feedback = future_feedback.result()
-                    self.prompt += SystemMessagePromptTemplate.from_template(
-                        "Another AI has checked the code of the student and has found the following issues. "
-                        "Use this information to help the student. "
-                        "Do not leak that it is coming from a different AI "
-                        "(the student should think it's your own idea)! "
-                        "\n" + feedback + "\n"
-                        "Remember: This is not coming from the student. This is not a message from the student. "
-                        "Is is an automated analysis of the student's code. "
-                        "NEVER claim that the student said this, e.g with 'You mentioned...'"
-                    )
-                except Exception as e:
-                    self.callback.error(
-                        f"Failed to look up files in the repository: {e}"
-                    )
-                    return
-
-            # Add the feedbacks to the prompt
-            if should_execute_lecture_pipeline:
-                try:
-                    self.retrieved_lecture_chunks = future_lecture.result()
-                    if len(self.retrieved_lecture_chunks) > 0:
-                        self._add_relevant_chunks_to_prompt(
-                            self.retrieved_lecture_chunks
-                        )
-                except Exception as e:
-                    self.callback.error(f"Failed to retrieve lecture chunks: {e}")
-                    return
-
         self.callback.done()
 
-        self._add_exercise_context_to_prompt(
-            submission,
-        )
-        # Add the chat history and user question to the prompt
-        self._add_conversation_to_prompt(history, query)
-
-        # Add the final message to the prompt and run the pipeline
-        self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
-        prompt_val = self.prompt.format_messages(
-            exercise_title=exercise_title,
-            problem_statement=problem_statement,
-            programming_language=programming_language,
-        )
-        self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
-            response_draft = (
-                (self.prompt | self.pipeline)
-                .with_config({"run_name": "Response Drafting"})
-                .invoke({})
-            )
             self.callback.done()
-            self.prompt = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(guide_system_prompt),
-                ]
-            )
-            prompt_val = self.prompt.format_messages(response=response_draft)
-            self.prompt = ChatPromptTemplate.from_messages(prompt_val)
+            return self.exercise_chat_response
 
-            guide_response = (
-                (self.prompt | self.pipeline)
-                .with_config({"run_name": "Response Refining"})
-                .invoke({})
-            )
-
-            if "!ok!" in guide_response:
-                print("Response is ok and not rewritten!!!")
-                self.exercise_chat_response = response_draft
-            else:
-                print("Response is rewritten.")
-                self.exercise_chat_response = guide_response
         except Exception as e:
-            self.callback.error(f"Failed to create response: {e}")
+            self.callback.error(f"Failed to create response: {e}", exception=e)
             # print stack trace
             traceback.print_exc()
             return "Failed to generate response"
@@ -342,7 +237,9 @@ class ExerciseChatPipeline(Pipeline):
             )
             txt += lct
 
-        self.prompt += SystemMessagePromptTemplate.from_template(txt)
+        self.prompt += SystemMessagePromptTemplate.from_template(
+            txt.replace("{", "{{").replace("}", "}}")
+        )
 
     def should_execute_lecture_pipeline(self, course_id: int) -> bool:
         """

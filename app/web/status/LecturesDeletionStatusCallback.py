@@ -9,13 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class IngestionStatusCallback(StatusCallback):
+class LecturesDeletionStatusCallback(StatusCallback):
     """
     Callback class for updating the status of a Tutor Chat pipeline run.
     """
 
     def __init__(
-        self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None, lecture_unit_id: int = None
+        self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None
     ):
         url = f"{base_url}/api/public/pyris/webhooks/ingestion/runs/{run_id}/status"
 
@@ -23,19 +23,9 @@ class IngestionStatusCallback(StatusCallback):
         stages = initial_stages or []
         stages += [
             StageDTO(
-                weight=10, state=StageStateEnum.NOT_STARTED, name="Old slides removal"
-            ),
-            StageDTO(
-                weight=60,
-                state=StageStateEnum.NOT_STARTED,
-                name="Slides Interpretation",
-            ),
-            StageDTO(
-                weight=30,
-                state=StageStateEnum.NOT_STARTED,
-                name="Slides ingestion",
+                weight=100, state=StageStateEnum.NOT_STARTED, name="Slides removal"
             ),
         ]
-        status = IngestionStatusUpdateDTO(stages=stages, id=lecture_unit_id)
+        status = IngestionStatusUpdateDTO(stages=stages)
         stage = stages[current_stage_index]
         super().__init__(url, run_id, status, stage, current_stage_index)
