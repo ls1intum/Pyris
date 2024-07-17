@@ -3,6 +3,8 @@ import os
 import tempfile
 import threading
 from asyncio.log import logger
+from typing import Optional
+
 import fitz
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -90,7 +92,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
     def __init__(
         self,
         client: WeaviateClient,
-        dto: IngestionPipelineExecutionDto,
+        dto: Optional[IngestionPipelineExecutionDto],
         callback: IngestionStatusCallback,
     ):
         super().__init__()
@@ -116,33 +118,27 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
     def __call__(self) -> bool:
         try:
             self.callback.in_progress("Deleting old slides from database...")
-            self.delete_old_lectures()
+            self.delete_lecture_unit(self.dto.lecture_unit.course_id, self.dto.lecture_unit.lecture_id,
+                                     self.dto.lecture_unit.lecture_unit_id, self.dto.settings.artemis_base_url)
             self.callback.done("Old slides removed")
-            # Here we check if the operation is for updating or for deleting,
-            # we only check the first file because all the files will have the same operation
-            if not self.dto.lecture_units[0].to_update:
-                self.callback.skip("Lecture Chunking and interpretation Skipped")
-                self.callback.skip("No new slides to update")
-                return True
             self.callback.in_progress("Chunking and interpreting lecture...")
             chunks = []
-            for i, lecture_unit in enumerate(self.dto.lecture_units):
-                pdf_path = save_pdf(lecture_unit.pdf_file_base64)
-                chunks.extend(
-                    self.chunk_data(
+            pdf_path = save_pdf(self.dto.lecture_unit.pdf_file_base64)
+            chunks.extend(
+                self.chunk_data(
                         lecture_pdf=pdf_path,
-                        lecture_unit_dto=lecture_unit,
+                        lecture_unit_dto=self.dto.lecture_unit,
                         base_url=self.dto.settings.artemis_base_url,
-                    )
                 )
-                cleanup_temporary_file(pdf_path)
+            )
+            cleanup_temporary_file(pdf_path)
             self.callback.done("Lecture Chunking and interpretation Finished")
             self.callback.in_progress("Ingesting lecture chunks into database...")
             self.batch_update(chunks)
             self.callback.done("Lecture Ingestion Finished")
             logger.info(
                 f"Lecture ingestion pipeline finished Successfully for course "
-                f"{self.dto.lecture_units[0].course_name}"
+                f"{self.dto.lecture_unit.course_name}"
             )
             return True
         except Exception as e:
@@ -292,23 +288,25 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         )
         return response.contents[0].text_content
 
-    def delete_old_lectures(self):
+    def delete_old_lectures(self, lecture_units: list[LectureUnitDTO], artemis_base_url: str):
         """
         Delete the lecture unit from the database
         """
         try:
-            for lecture_unit in self.dto.lecture_units:
+            for lecture_unit in lecture_units:
                 if self.delete_lecture_unit(
                     lecture_unit.course_id,
                     lecture_unit.lecture_id,
                     lecture_unit.lecture_unit_id,
-                    self.dto.settings.artemis_base_url,
+                    artemis_base_url,
                 ):
                     logger.info("Lecture deleted successfully")
                 else:
                     logger.error("Failed to delete lecture")
+            self.callback.done("Old slides removed")
         except Exception as e:
             logger.error(f"Error deleting lecture unit: {e}")
+            self.callback.error("Error while removing old slides")
             return False
 
     def delete_lecture_unit(self, course_id, lecture_id, lecture_unit_id, base_url):
