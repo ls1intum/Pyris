@@ -118,17 +118,21 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
     def __call__(self) -> bool:
         try:
             self.callback.in_progress("Deleting old slides from database...")
-            self.delete_lecture_unit(self.dto.lecture_unit.course_id, self.dto.lecture_unit.lecture_id,
-                                     self.dto.lecture_unit.lecture_unit_id, self.dto.settings.artemis_base_url)
+            self.delete_lecture_unit(
+                self.dto.lecture_unit.course_id,
+                self.dto.lecture_unit.lecture_id,
+                self.dto.lecture_unit.lecture_unit_id,
+                self.dto.settings.artemis_base_url,
+            )
             self.callback.done("Old slides removed")
             self.callback.in_progress("Chunking and interpreting lecture...")
             chunks = []
             pdf_path = save_pdf(self.dto.lecture_unit.pdf_file_base64)
             chunks.extend(
                 self.chunk_data(
-                        lecture_pdf=pdf_path,
-                        lecture_unit_dto=self.dto.lecture_unit,
-                        base_url=self.dto.settings.artemis_base_url,
+                    lecture_pdf=pdf_path,
+                    lecture_unit_dto=self.dto.lecture_unit,
+                    base_url=self.dto.settings.artemis_base_url,
                 )
             )
             cleanup_temporary_file(pdf_path)
@@ -288,7 +292,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         )
         return response.contents[0].text_content
 
-    def delete_old_lectures(self, lecture_units: list[LectureUnitDTO], artemis_base_url: str):
+    def delete_old_lectures(
+        self, lecture_units: list[LectureUnitDTO], artemis_base_url: str
+    ):
         """
         Delete the lecture unit from the database
         """

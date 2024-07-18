@@ -15,7 +15,11 @@ class IngestionStatusCallback(StatusCallback):
     """
 
     def __init__(
-        self, run_id: str, base_url: str, initial_stages: List[StageDTO] = None, lecture_unit_id: int = None
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO] = None,
+        lecture_unit_id: int = None,
     ):
         url = f"{base_url}/api/public/pyris/webhooks/ingestion/runs/{run_id}/status"
 

@@ -9,7 +9,9 @@ from app.domain.ingestion.ingestion_pipeline_execution_dto import (
 )
 from ..status.IngestionStatusCallback import IngestionStatusCallback
 from ..status.LecturesDeletionStatusCallback import LecturesDeletionStatusCallback
-from ...domain.ingestion.deletionPipelineExecutionDto import LecturesDeletionExecutionDto
+from ...domain.ingestion.deletionPipelineExecutionDto import (
+    LecturesDeletionExecutionDto,
+)
 from ...pipeline.lecture_ingestion_pipeline import LectureIngestionPipeline
 from ...vector_database.database import VectorDatabase
 
@@ -55,9 +57,7 @@ def run_lecture_deletion_pipeline_worker(dto: LecturesDeletionExecutionDto):
         )
         db = VectorDatabase()
         client = db.get_client()
-        pipeline = LectureIngestionPipeline(
-            client=client, dto=None, callback=callback
-        )
+        pipeline = LectureIngestionPipeline(client=client, dto=None, callback=callback)
         pipeline.delete_old_lectures(dto.lecture_units)
     except Exception as e:
         logger.error(f"Error while deleting lectures: {e}")
