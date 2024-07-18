@@ -31,7 +31,23 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
     Initialize the schema for the lecture slides
     """
     if client.collections.exists(LectureSchema.COLLECTION_NAME.value):
-        return client.collections.get(LectureSchema.COLLECTION_NAME.value)
+        collection = client.collections.get(LectureSchema.COLLECTION_NAME.value)
+        properties = collection.config.get(simple=True).properties
+        if not any(
+            property.name == LectureSchema.LECTURE_UNIT_LINK.value
+            for property_found in properties
+        ):
+            return collection
+        else:
+            collection.config.add_property(
+                Property(
+                    name=LectureSchema.LECTURE_UNIT_LINK.value,
+                    description="The link to the Lecture Unit",
+                    data_type=DataType.TEXT,
+                    index_searchable=False,
+                )
+            )
+        return collection
     return client.collections.create(
         name=LectureSchema.COLLECTION_NAME.value,
         vectorizer_config=Configure.Vectorizer.none(),
