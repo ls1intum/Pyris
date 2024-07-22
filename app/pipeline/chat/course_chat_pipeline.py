@@ -232,7 +232,7 @@ class CourseChatPipeline(Pipeline):
             regarding their progress overall or in a specific area.
             A competency has the following attributes: name, description, taxonomy, soft due date, optional,
             and mastery threshold.
-            The response may include metrics for each competency, such as progress and confidence (0%-100%).
+            The response may include metrics for each competency, such as progress and mastery (0%-100%).
             These are system-generated.
             The judgment of learning (JOL) values indicate the self-reported confidence by the student (0-5, 5 star).
             The object describing it also indicates the system-computed confidence at the time when the student
@@ -248,7 +248,6 @@ class CourseChatPipeline(Pipeline):
                     "info": competency_metrics.competency_information.get(comp, None),
                     "exercise_ids": competency_metrics.exercises.get(comp, []),
                     "progress": competency_metrics.progress.get(comp, 0),
-                    "confidence": competency_metrics.confidence.get(comp, 0),
                     "mastery": (
                         (1 - weight) * competency_metrics.progress.get(comp, 0)
                         + weight * competency_metrics.confidence.get(comp, 0)
@@ -264,11 +263,10 @@ class CourseChatPipeline(Pipeline):
             ]
 
         @tool()
-        def lecture_content_retrieval(prompt: str) -> str:
+        def lecture_content_retrieval() -> str:
             """
             Retrieve content from indexed lecture slides.
-            The query should be a natural language question that can be answered by looking into the lecture materials.
-            This will run a RAG retrieval on the indexed lecture slides and return the most relevant paragraphs.
+            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the most relevant paragraphs.
             Use this if you think it can be useful to answer the student's question, or if the student explicitly asks
             a question about the lecture content or slides.
             Only use this once.
@@ -285,8 +283,9 @@ class CourseChatPipeline(Pipeline):
 
             result = ""
             for paragraph in self.retrieved_paragraphs:
-                lct = "Lecture: {}, Page: {}\nContent:\n---{}---\n\n".format(
+                lct = "Lecture: {}, Unit: {}, Page: {}\nContent:\n---{}---\n\n".format(
                     paragraph.get(LectureSchema.LECTURE_NAME.value),
+                    paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
                     paragraph.get(LectureSchema.PAGE_NUMBER.value),
                     paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
                 )
