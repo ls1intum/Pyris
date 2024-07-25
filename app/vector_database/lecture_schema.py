@@ -34,7 +34,7 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
         collection = client.collections.get(LectureSchema.COLLECTION_NAME.value)
         properties = collection.config.get(simple=True).properties
         if not any(
-            property.name == LectureSchema.LECTURE_UNIT_LINK.value
+            property.__name__ == LectureSchema.LECTURE_UNIT_LINK.value
             for property_found in properties
         ):
             return collection

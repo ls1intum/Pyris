@@ -7,7 +7,7 @@ Only include the citations of the paragraphs that are relevant to the answer.
 If the answer actually does not contain any information from the paragraphs, please do not include any citations and return '!NONE!'.
 But if the answer contains information from the paragraphs, ALWAYS include citations.
 
-Here is an example how to rewrite the answer with citations (note the empty line between the message and the citiations):
+Here is an example how to rewrite the answer with citations (ONLY ADD CITATION IF THE PROVIDED PARAGRAPHS ARE RELEVANT TO THE ANSWER):
 "
 Lorem ipsum dolor sit amet, consectetur adipiscing elit [1]. Ded do eiusmod tempor incididunt ut labore et dolore magna aliqua [2].
 
@@ -24,3 +24,4 @@ Paragraphs with their Lecture Names, Links and Page Numbers:
 {Paragraphs}
 
 Answer with citations (ensure empty line between the message and the citations):
+If the answer actually does not contain any information from the paragraphs, please do not include any citations and return '!NONE!'.
