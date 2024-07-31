@@ -1,4 +1,11 @@
 from enum import Enum
+from typing import Sequence, Union, Dict, Any, Type, Callable
+
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from pydantic.v1 import BaseModel
 
 from app.domain import PyrisMessage
 from app.llm.capability import RequirementList
@@ -66,3 +73,11 @@ class CapabilityRequestHandler(RequestHandler):
         # Print the selected model for the logs
         print(f"Selected {llm.description}")
         return llm
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind the tools to the models"""
+        llm = self._select_model(ChatModel)
+        return llm.bind_tools(tools)

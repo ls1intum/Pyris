@@ -10,6 +10,7 @@ from app.domain import (
     ExerciseChatPipelineExecutionDTO,
     CourseChatPipelineExecutionDTO,
 )
+from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
@@ -31,7 +32,7 @@ def run_exercise_chat_pipeline_worker(
             base_url=dto.settings.artemis_base_url,
             initial_stages=dto.initial_stages,
         )
-        pipeline = ExerciseChatPipeline(callback=callback, variant=variant)
+        pipeline = ExerciseChatAgentPipeline(callback=callback, variant=variant)
     except Exception as e:
         logger.error(f"Error preparing exercise chat pipeline: {e}")
         logger.error(traceback.format_exc())

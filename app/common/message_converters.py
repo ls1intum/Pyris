@@ -10,7 +10,7 @@ from app.domain.pyris_message import PyrisMessage, IrisMessageRole
 def convert_iris_message_to_langchain_message(
     iris_message: PyrisMessage,
 ) -> BaseMessage:
-    if len(iris_message.contents) == 0:
+    if iris_message is None or len(iris_message.contents) == 0:
         raise ValueError("IrisMessage contents must not be empty")
     message = iris_message.contents[0]
     # Check if the message is of type TextMessageContentDTO
@@ -25,6 +25,28 @@ def convert_iris_message_to_langchain_message(
             return SystemMessage(content=message.text_content)
         case _:
             raise ValueError(f"Unknown message role: {iris_message.sender}")
+
+
+def convert_iris_message_to_langchain_human_message(
+    iris_message: PyrisMessage,
+) -> HumanMessage:
+    if len(iris_message.contents) == 0:
+        raise ValueError("IrisMessage contents must not be empty")
+    message = iris_message.contents[0]
+    # Check if the message is of type TextMessageContentDTO
+    if not isinstance(message, TextMessageContentDTO):
+        raise ValueError("Message must be of type TextMessageContentDTO")
+    return HumanMessage(content=message.text_content)
+
+
+def extract_text_from_iris_message(iris_message: PyrisMessage) -> str:
+    if len(iris_message.contents) == 0:
+        raise ValueError("IrisMessage contents must not be empty")
+    message = iris_message.contents[0]
+    # Check if the message is of type TextMessageContentDTO
+    if not isinstance(message, TextMessageContentDTO):
+        raise ValueError("Message must be of type TextMessageContentDTO")
+    return message.text_content
 
 
 def convert_langchain_message_to_iris_message(

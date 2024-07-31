@@ -267,7 +267,7 @@ class CourseChatPipeline(Pipeline):
                 for comp in competency_metrics.competency_information
             ]
 
-        @tool()
+        @tool
         def lecture_content_retrieval() -> str:
             """
             Retrieve content from indexed lecture slides.

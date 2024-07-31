@@ -1,4 +1,10 @@
-from typing import Optional
+from typing import Optional, Sequence, Union, Dict, Any, Type, Callable
+
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from pydantic.v1 import BaseModel
 
 from app.domain import PyrisMessage
 from app.domain.data.image_message_content_dto import ImageMessageContentDTO
@@ -33,3 +39,10 @@ class BasicRequestHandler(RequestHandler):
     def embed(self, text: str) -> list[float]:
         llm = self.llm_manager.get_llm_by_id(self.model_id)
         return llm.embed(text)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        llm = self.llm_manager.get_llm_by_id(self.model_id)
+        return llm.bind_tools(tools)

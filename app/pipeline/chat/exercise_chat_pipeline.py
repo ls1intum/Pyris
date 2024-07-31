@@ -21,7 +21,8 @@ from ..prompts.iris_exercise_chat_prompts import (
     final_system_prompt,
     guide_system_prompt,
     no_chat_history_system_prompt,
-    submission_failed_system_prompt,
+    progress_stalled_system_prompt,
+    build_failed_system_prompt,
 )
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
@@ -244,9 +245,13 @@ class ExerciseChatPipeline(Pipeline):
         self._add_conversation_to_prompt(history, query)
 
         # Add the final message to the prompt and run the pipeline
-        if self.variant == "submission_failed":
+        if self.variant == "progress_stalled":
             self.prompt += SystemMessagePromptTemplate.from_template(
-                submission_failed_system_prompt
+                progress_stalled_system_prompt
+            )
+        elif self.variant == "build_failed":
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                build_failed_system_prompt
             )
         else:
             self.prompt += SystemMessagePromptTemplate.from_template(

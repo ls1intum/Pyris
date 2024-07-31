@@ -1,14 +1,22 @@
 import logging
 import time
 from datetime import datetime
-from typing import Literal, Any
+from typing import Literal, Any, Sequence, Union, Dict, Type, Callable
 
-from openai import OpenAI
-from openai.lib.azure import AzureOpenAI
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from langchain_core.tools import BaseTool
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
+from pydantic.v1 import BaseModel as LegacyBaseModel
 
-from ...common.message_converters import map_str_to_role, map_role_to_str
+from ...common.message_converters import (
+    map_str_to_role,
+    map_role_to_str,
+    convert_iris_message_to_langchain_message,
+)
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from ...domain import PyrisMessage
 from ...domain.data.image_message_content_dto import ImageMessageContentDTO
@@ -60,13 +68,13 @@ def convert_to_open_ai_messages(
     return openai_messages
 
 
-def convert_to_iris_message(message: ChatCompletionMessage) -> PyrisMessage:
+def convert_to_iris_message(message: str) -> PyrisMessage:
     """
     Convert a ChatCompletionMessage to a PyrisMessage
     """
     return PyrisMessage(
-        sender=map_str_to_role(message.role),
-        contents=[TextMessageContentDTO(textContent=message.content)],
+        sender=map_str_to_role("assistant"),
+        contents=[TextMessageContentDTO(textContent=message)],
         send_at=datetime.now(),
     )
 
@@ -74,35 +82,41 @@ def convert_to_iris_message(message: ChatCompletionMessage) -> PyrisMessage:
 class OpenAIChatModel(ChatModel):
     model: str
     api_key: str
-    _client: OpenAI
+    _client: ChatOpenAI | AzureChatOpenAI
 
     def chat(
         self, messages: list[PyrisMessage], arguments: CompletionArguments
     ) -> PyrisMessage:
         print("Sending messages to OpenAI", messages)
         # noinspection PyTypeChecker
-        retries = 10
+        retries = 5
         backoff_factor = 2
         initial_delay = 1
 
         for attempt in range(retries):
             try:
                 if arguments.response_format == "JSON":
-                    response = self._client.chat.completions.create(
+                    response = self._client.invoke(
                         model=self.model,
-                        messages=convert_to_open_ai_messages(messages),
+                        input=[
+                            convert_iris_message_to_langchain_message(m)
+                            for m in messages
+                        ],
                         temperature=arguments.temperature,
                         max_tokens=arguments.max_tokens,
                         response_format=ResponseFormat(type="json_object"),
                     )
                 else:
-                    response = self._client.chat.completions.create(
+                    response = self._client.invoke(
                         model=self.model,
-                        messages=convert_to_open_ai_messages(messages),
+                        input=[
+                            convert_iris_message_to_langchain_message(m)
+                            for m in messages
+                        ],
                         temperature=arguments.temperature,
                         max_tokens=arguments.max_tokens,
                     )
-                return convert_to_iris_message(response.choices[0].message)
+                return convert_to_iris_message(response.content)
             except Exception as e:
                 wait_time = initial_delay * (backoff_factor**attempt)
                 logging.warning(f"Exception on attempt {attempt + 1}: {e}")
@@ -110,30 +124,56 @@ class OpenAIChatModel(ChatModel):
                 time.sleep(wait_time)
         logging.error("Failed to interpret image after several attempts.")
 
+    def bind_tools(
+        self,
+        tools: Sequence[
+            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
+        ],
+    ):
+        return self._client.bind_tools(tools)
+
 
 class DirectOpenAIChatModel(OpenAIChatModel):
+
     type: Literal["openai_chat"]
 
     def model_post_init(self, __context: Any) -> None:
-        self._client = OpenAI(api_key=self.api_key)
+        self._client = ChatOpenAI(api_key=self.api_key)
 
     def __str__(self):
         return f"OpenAIChat('{self.model}')"
 
+    def bind_tools(
+        self,
+        tools: Sequence[
+            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
+        ],
+    ):
+        return self._client.bind_tools(tools)
+
 
 class AzureOpenAIChatModel(OpenAIChatModel):
+
     type: Literal["azure_chat"]
     endpoint: str
     azure_deployment: str
     api_version: str
 
     def model_post_init(self, __context: Any) -> None:
-        self._client = AzureOpenAI(
+        self._client = AzureChatOpenAI(
             azure_endpoint=self.endpoint,
             azure_deployment=self.azure_deployment,
             api_version=self.api_version,
             api_key=self.api_key,
         )
+
+    def bind_tools(
+        self,
+        tools: Sequence[
+            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
+        ],
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        return self._client.bind_tools(tools)
 
     def __str__(self):
         return f"AzureChat('{self.model}')"
