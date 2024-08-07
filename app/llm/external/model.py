@@ -1,10 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import Sequence, Union, Dict, Any, Type, Callable
-
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from openai.types.chat import ChatCompletionMessage
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as LegacyBaseModel
 
@@ -47,7 +44,7 @@ class ChatModel(LanguageModel, metaclass=ABCMeta):
     @abstractmethod
     def chat(
         self, messages: list[PyrisMessage], arguments: CompletionArguments
-    ) -> PyrisMessage:
+    ) -> ChatCompletionMessage:
         """Create a completion from the chat messages"""
         raise NotImplementedError(
             f"The LLM {self.__str__()} does not support chat completion"
@@ -59,7 +56,7 @@ class ChatModel(LanguageModel, metaclass=ABCMeta):
         tools: Sequence[
             Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
         ],
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ):
         """Bind tools"""
         raise NotImplementedError(
             f"The LLM {self.__str__()} does not support binding tools"

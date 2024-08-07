@@ -54,8 +54,7 @@ class StatusCallback(ABC):
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.run_id}",
                 },
-                # FIXME: Deprecated. Replace dict with model_dump
-                json=self.status.dict(by_alias=True),
+                json=self.status.model_dump(by_alias=True),
             ).raise_for_status()
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending status update: {e}")
@@ -158,7 +157,7 @@ class StatusCallback(ABC):
         self.stage.state = StageStateEnum.SKIPPED
         self.stage.message = message
         self.status.result = None
-        self.stage.suggestions = None
+        self.status.suggestions = None
         next_stage = self.get_next_stage()
         if next_stage is not None:
             self.stage = next_stage

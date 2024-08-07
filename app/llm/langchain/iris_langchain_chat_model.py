@@ -40,7 +40,8 @@ class IrisLangchainChatModel(BaseChatModel):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        return self.request_handler.bind_tools(tools)
+        self.request_handler.bind_tools(tools)
+        return self
 
     def _generate(
         self,

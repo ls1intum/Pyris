@@ -10,7 +10,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.tools import tool, StructuredTool
+from langchain_core.tools import StructuredTool
 from langsmith import traceable
 from weaviate.collections.classes.filters import Filter
 
@@ -24,13 +24,14 @@ from ..prompts.iris_exercise_chat_agent_prompts import (
     tell_no_chat_history_prompt,
     tell_format_reminder_prompt,
     guide_system_prompt,
+    tell_build_failed_system_prompt,
+    tell_progress_stalled_system_prompt,
 )
 
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
-from ...common import convert_iris_message_to_langchain_message
 from ...common.message_converters import convert_iris_message_to_langchain_human_message
-from ...domain import ExerciseChatPipelineExecutionDTO
+from ...domain import ExerciseChatPipelineExecutionDTO, IrisMessageRole
 from ...domain import PyrisMessage
 from ...domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
@@ -81,6 +82,32 @@ def generate_structured_tools_from_functions(
     :return: The list of structured tools
     """
     return [generate_structured_tool_from_function(_tool) for _tool in tools]
+
+
+def convert_chat_history_to_str(chat_history: List[PyrisMessage]) -> str:
+    """
+    Converts the chat history to a string
+    :param chat_history: The chat history
+    :return: The chat history as a string
+    """
+
+    def map_message_role(role: IrisMessageRole) -> str:
+        if role == IrisMessageRole.SYSTEM:
+            return "System"
+        elif role == IrisMessageRole.ASSISTANT:
+            return "AI Tutor"
+        elif role == IrisMessageRole.USER:
+            return "Student"
+        else:
+            return "Unknown"
+
+    return "\n\n".join(
+        [
+            f"{map_message_role(message.sender)} {"" if not message.sent_at else f"at {message.sent_at.strftime(
+                "%Y-%m-%d %H:%M:%S")}"}: {message.contents[0].text_content}"
+            for message in chat_history
+        ]
+    )
 
 
 class ExerciseChatAgentPipeline(Pipeline):
@@ -380,37 +407,51 @@ class ExerciseChatAgentPipeline(Pipeline):
             return "File not found or does not exist in the repository."
 
         iris_initial_system_prompt = tell_iris_initial_system_prompt
-        begin_agent_prompt = tell_begin_agent_prompt
         chat_history_exists_prompt = tell_chat_history_exists_prompt
         no_chat_history_prompt = tell_no_chat_history_prompt
         format_reminder_prompt = tell_format_reminder_prompt
 
         try:
             logger.info("Running exercise chat pipeline...")
-            chat_history: List[PyrisMessage] = dto.chat_history[:-1]
-            query = dto.chat_history[-1]
+            chat_history: List[PyrisMessage] = (
+                dto.chat_history[-5:-1]
+                if len(dto.chat_history) > 4
+                else dto.chat_history[:-1] if len(dto.chat_history) > 1 else []
+            )
+            query = dto.chat_history[-1] if dto.chat_history else None
 
             # Set up the initial prompt
             initial_prompt_with_date = iris_initial_system_prompt.replace(
                 "{current_date}",
                 datetime.now(tz=pytz.UTC).strftime("%Y-%m-%d %H:%M:%S"),
             )
+            # Determine the agent prompt based on the variant.
+            # A variant other than "default" might indicate that a
+            # specific event is triggered, such as a build failure or stalled progress.
+            if self.variant == "build_failed":
+                agent_prompt = tell_build_failed_system_prompt
+            elif self.variant == "progress_stalled":
+                agent_prompt = tell_progress_stalled_system_prompt
+            else:
+                agent_prompt = (
+                    tell_begin_agent_prompt
+                    if query is not None
+                    else no_chat_history_prompt
+                )
 
             problem_statement: str = dto.exercise.problem_statement
             exercise_title: str = dto.exercise.name
             programming_language = dto.exercise.programming_language.lower()
 
-            agent_prompt = (
-                begin_agent_prompt if query is not None else no_chat_history_prompt
-            )
             params = {}
 
-            if len(chat_history) > 0:
+            if (
+                len(chat_history) > 0
+                and query is not None
+                and self.variant == "default"
+            ):
                 # Add the conversation to the prompt
-                chat_history_messages = [
-                    convert_iris_message_to_langchain_message(message)
-                    for message in chat_history
-                ]
+                chat_history_messages = convert_chat_history_to_str(chat_history)
                 self.prompt = ChatPromptTemplate.from_messages(
                     [
                         SystemMessage(
@@ -425,30 +466,53 @@ class ExerciseChatAgentPipeline(Pipeline):
                             + format_reminder_prompt,
                         ),
                         HumanMessage(chat_history_exists_prompt),
-                        *chat_history_messages,
+                        HumanMessage(chat_history_messages),
                         HumanMessage("Consider the student's newest and latest input:"),
                         convert_iris_message_to_langchain_human_message(query),
                         ("placeholder", "{agent_scratchpad}"),
                     ]
                 )
             else:
-                self.prompt = ChatPromptTemplate.from_messages(
-                    [
-                        SystemMessage(
-                            initial_prompt_with_date
-                            + "\n"
-                            + add_exercise_context_to_prompt(
-                                exercise_title, problem_statement, programming_language
-                            )
-                            + agent_prompt
-                            + "\n"
-                            + format_reminder_prompt,
-                        ),
-                        HumanMessage("Consider the student's newest and latest input:"),
-                        convert_iris_message_to_langchain_human_message(query),
-                        ("placeholder", "{agent_scratchpad}"),
-                    ]
-                )
+                if query is not None and self.variant == "default":
+                    self.prompt = ChatPromptTemplate.from_messages(
+                        [
+                            SystemMessage(
+                                initial_prompt_with_date
+                                + "\n"
+                                + add_exercise_context_to_prompt(
+                                    exercise_title,
+                                    problem_statement,
+                                    programming_language,
+                                )
+                                + agent_prompt
+                                + "\n"
+                                + format_reminder_prompt,
+                            ),
+                            HumanMessage(
+                                "Consider the student's newest and latest input:"
+                            ),
+                            convert_iris_message_to_langchain_human_message(query),
+                            ("placeholder", "{agent_scratchpad}"),
+                        ]
+                    )
+                else:
+                    self.prompt = ChatPromptTemplate.from_messages(
+                        [
+                            SystemMessage(
+                                initial_prompt_with_date
+                                + "\n"
+                                + add_exercise_context_to_prompt(
+                                    exercise_title,
+                                    problem_statement,
+                                    programming_language,
+                                )
+                                + agent_prompt
+                                + "\n"
+                                + format_reminder_prompt,
+                            ),
+                            ("placeholder", "{agent_scratchpad}"),
+                        ]
+                    )
 
             tools = generate_structured_tools_from_functions(
                 [
@@ -463,13 +527,10 @@ class ExerciseChatAgentPipeline(Pipeline):
             agent = create_tool_calling_agent(
                 llm=self.llm, tools=tools, prompt=self.prompt
             )
-            agent_executor = AgentExecutor(
-                agent=agent, tools=tools, verbose=False, max_iterations=5
-            )
+            agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
             out = None
             self.callback.in_progress()
             invocation_result = agent_executor.invoke(params)
-            print(invocation_result)
             if invocation_result.get("output", None):
                 out = invocation_result["output"]
 
@@ -485,7 +546,6 @@ class ExerciseChatAgentPipeline(Pipeline):
                     {
                         "student_message": query,
                         "response_draft": out,
-                        "chat_history": "\n".join([str(m) for m in chat_history]),
                     }
                 )
                 if "!ok!" in guide_response:
