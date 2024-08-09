@@ -224,19 +224,16 @@ class CompetencyExtractionCallback(StatusCallback):
         run_id: str,
         base_url: str,
         initial_stages: List[StageDTO],
-        num_iterations,
     ):
         url = f"{base_url}/api/public/pyris/pipelines/competency-extraction/runs/{run_id}/status"
-        current_stage_index = 1 if initial_stages else 0
         stages = initial_stages or []
-        stages += [
+        stages.append(
             StageDTO(
                 weight=10,
                 state=StageStateEnum.NOT_STARTED,
-                name=f"Competency {i + 1}",
+                name="Generating Competencies",
             )
-            for i in range(num_iterations)
-        ]
+        )
         status = CompetencyExtractionStatusUpdateDTO(stages=stages)
-        stage = stages[current_stage_index]
-        super().__init__(url, run_id, status, stage, current_stage_index)
+        stage = stages[-1]
+        super().__init__(url, run_id, status, stage, len(stages) - 1)

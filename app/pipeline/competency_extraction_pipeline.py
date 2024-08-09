@@ -84,7 +84,4 @@ class CompetencyExtractionPipeline(Pipeline):
                 continue
             logger.debug(f"Generated competency: {competency}")
             generated_competencies.append(competency)
-            self.callback.done(final_result=generated_competencies)
-        # Mark all remaining competencies as skipped
-        for i in range(len(generated_competencies), len(competencies)):
-            self.callback.skip(f"Skipping competency {i + 1}")
+        self.callback.done(final_result=generated_competencies)

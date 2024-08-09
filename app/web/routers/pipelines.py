@@ -97,7 +97,6 @@ def run_competency_extraction_pipeline_worker(
             run_id=dto.execution.settings.authentication_token,
             base_url=dto.execution.settings.artemis_base_url,
             initial_stages=dto.execution.initial_stages,
-            num_iterations=dto.max_n,
         )
         pipeline = CompetencyExtractionPipeline(callback=callback)
     except Exception as e:

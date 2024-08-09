@@ -10,9 +10,10 @@ Each competency must contain the following fields:
 The title of the competency, which is a specific topic or skill. This should be a short phrase of at most 4 words.
 
 - description:
-A detailed description of the competency in 3 to 6 bullet points.
-Each bullet point is a short sentence, at most 15 words.
+A detailed description of the competency in 3 to 5 bullet points.
 Each bullet point illustrates a specific skill or concept of the competency.
+Each bullet point is a complete sentence starting with "You" and containing at most 15 words.
+Each bullet point is on a new line and starts with "- ".
 
 - taxonomy:
 The classification of the competency within Bloom's taxonomy.
@@ -26,13 +27,11 @@ All competencies must meet the following requirements:
 - is small and fine-grained. Large topics should be broken down into smaller competencies.
 - does not overlap with other competencies: each competency is unique. Expanding on a previous competency is allowed.
 
-Here is an example competency whose structure you should follow:
+Here is a template competency in JSON format:
 
 {{
-    "title": "Recursion",
-    "description": "- You understand the concept of recursion.
-    - You are able to understand complex recursive implementations.
-    - You are able to implement recursive solutions of medium difficulty independently.",
+    "title": "Competency Title",
+    "description": "- You understand this.\n- You are proficient in doing that.\n- You know how to do this.",
     "taxonomy": "ANALYZE"
 }}
 
