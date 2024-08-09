@@ -229,8 +229,8 @@ class CompetencyExtractionCallback(StatusCallback):
         self,
         run_id: str,
         base_url: str,
-        initial_stages: List[StageDTO] = None,
-        num_iterations=10,
+        initial_stages: List[StageDTO],
+        num_iterations,
     ):
         url = f"{base_url}/api/public/pyris/pipelines/competency-extraction/runs/{run_id}/status"
         current_stage_index = 1 if initial_stages else 0

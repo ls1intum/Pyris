@@ -101,7 +101,7 @@ def run_competency_extraction_pipeline_worker(
         )
         pipeline = CompetencyExtractionPipeline(callback=callback)
     except Exception as e:
-        logger.error(f"Error preparing exercise chat pipeline: {e}")
+        logger.error(f"Error preparing competency extraction pipeline: {e}")
         logger.error(traceback.format_exc())
         capture_exception(e)
         return
@@ -109,7 +109,7 @@ def run_competency_extraction_pipeline_worker(
     try:
         pipeline(dto=dto)
     except Exception as e:
-        logger.error(f"Error running exercise chat pipeline: {e}")
+        logger.error(f"Error running competency extraction pipeline: {e}")
         logger.error(traceback.format_exc())
         callback.error("Fatal error.", exception=e)
 

@@ -41,11 +41,11 @@ class CompetencyExtractionPipeline(Pipeline):
         **kwargs,
     ):
         if not dto.course_description:
-            self.callback.error("Course description is required")
+            raise ValueError("Course description is required")
         if not dto.taxonomy_options:
-            self.callback.error("Taxonomy options are required")
+            raise ValueError("Taxonomy options are required")
         if not dto.max_n:
-            self.callback.error("Non-zero max_n is required")
+            raise ValueError("Non-zero max_n is required")
 
         taxonomy_options = ", ".join(dto.taxonomy_options)
 
@@ -69,9 +69,9 @@ class CompetencyExtractionPipeline(Pipeline):
         # Find all competencies in the response
         competencies = response.split("\n\n")
         for i, competency in enumerate(competencies):
-            print(f"Processing competency {i + 1}: {competency}")
+            logger.debug(f"Processing competency {i + 1}: {competency}")
             if "{" not in competency or "}" not in competency:
-                print("Skipping competency without JSON")
+                logger.debug("Skipping competency without JSON")
                 continue
             # Get the competency JSON object
             start = competency.index("{")
@@ -79,11 +79,11 @@ class CompetencyExtractionPipeline(Pipeline):
             competency = competency[start:end]
             try:
                 competency = self.output_parser.parse(competency)
-                print(f"Generated competency: {competency}")
+                logger.debug(f"Generated competency: {competency}")
                 generated_competencies.append(competency)
                 self.callback.done(final_result=generated_competencies)
             except Exception as e:
-                print(f"Error generating competency: {e}")
+                logger.debug(f"Error generating competency: {e}")
                 self.callback.error(f"Error generating competency: {e}")
         # Mark all remaining competencies as skipped
         for i in range(len(generated_competencies), len(competencies)):

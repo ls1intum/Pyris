@@ -45,6 +45,6 @@ class Competency(BaseModel):
     @validator("taxonomy")
     def validate_selected_taxonomy(cls, field):
         """Validate the selected taxonomy."""
-        if field not in CompetencyTaxonomy.__members__.keys():
+        if field not in CompetencyTaxonomy.__members__:
             raise ValueError(f"Invalid taxonomy: {field}")
         return field
