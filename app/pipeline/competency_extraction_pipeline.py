@@ -66,8 +66,8 @@ class CompetencyExtractionPipeline(Pipeline):
 
         generated_competencies: list[Competency] = []
 
-        # Find all competencies in the response
-        competencies = response.split("\n\n")
+        # Find all competencies in the response up to the max_n
+        competencies = response.split("\n\n")[: dto.max_n]
         for i, competency in enumerate(competencies):
             logger.debug(f"Processing competency {i + 1}: {competency}")
             if "{" not in competency or "}" not in competency:
