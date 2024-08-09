@@ -38,5 +38,6 @@ Here is an example competency whose structure you should follow:
 
 Here is the provided course description: {course_description}
 
-Respond with up to {n} competencies extracted from the course description, each in JSON format, split by two newlines.
+Respond with up to {max_n} competencies extracted from the course description,
+each in JSON format, split by two newlines.
 """

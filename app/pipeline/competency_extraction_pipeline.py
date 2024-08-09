@@ -52,21 +52,17 @@ class CompetencyExtractionPipeline(Pipeline):
         prompt = system_prompt.format(
             taxonomy_list=taxonomy_options,
             course_description=dto.course_description,
-            n=dto.max_n,
+            max_n=dto.max_n,
         )
         prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
             contents=[TextMessageContentDTO(text_content=prompt)],
         )
 
-        self.callback.in_progress("Starting competency extraction")
-
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
         response = response.contents[0].text_content
-
-        print(f"Received response from OpenAI: {response}")
 
         generated_competencies: list[Competency] = []
 
