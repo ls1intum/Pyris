@@ -104,24 +104,19 @@ class StatusCallback(ABC):
         If there is a next stage, set the current
         stage to the next stage.
         """
-        if self.stage.state == StageStateEnum.IN_PROGRESS:
-            self.stage.state = StageStateEnum.DONE
-            self.stage.message = message
-            self.status.result = final_result
-            if hasattr(self.status, "suggestions"):
-                self.status.suggestions = suggestions
-            next_stage = self.get_next_stage()
-            if next_stage is not None:
-                self.stage = next_stage
-                if next_stage_message:
-                    self.stage.message = next_stage_message
-                if start_next_stage:
-                    self.stage.state = StageStateEnum.IN_PROGRESS
-            self.on_status_update()
-        else:
-            raise ValueError(
-                "Invalid state transition to done. current state is ", self.stage.state
-            )
+        self.stage.state = StageStateEnum.DONE
+        self.stage.message = message
+        self.status.result = final_result
+        if hasattr(self.status, "suggestions"):
+            self.status.suggestions = suggestions
+        next_stage = self.get_next_stage()
+        if next_stage is not None:
+            self.stage = next_stage
+            if next_stage_message:
+                self.stage.message = next_stage_message
+            if start_next_stage:
+                self.stage.state = StageStateEnum.IN_PROGRESS
+        self.on_status_update()
 
     def error(self, message: str, exception=None):
         """
@@ -131,7 +126,6 @@ class StatusCallback(ABC):
         self.stage.state = StageStateEnum.ERROR
         self.stage.message = message
         self.status.result = None
-        self.stage.suggestions = None
         # Set all subsequent stages to SKIPPED if an error occurs
         rest_of_index = (
             self.current_stage_index + 1
