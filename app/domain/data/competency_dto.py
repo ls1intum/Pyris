@@ -35,11 +35,11 @@ class Competency(BaseModel):
         description="Selected taxonomy based on bloom's taxonomy"
     )
 
-    @validator("subject")
-    def validate_subject(cls, field):
+    @validator("title")
+    def validate_title(cls, field):
         """Validate the subject of the competency."""
         if len(field.split()) > 4:
-            raise ValueError("Subject must contain no more than 4 words")
+            raise ValueError("Title must contain no more than 4 words")
         return field
 
     @validator("taxonomy")
