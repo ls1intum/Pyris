@@ -48,11 +48,20 @@ class CompetencyExtractionPipeline(Pipeline):
             raise ValueError("Non-zero max_n is required")
 
         taxonomy_options = ", ".join(dto.taxonomy_options)
+        current_competencies = "\n\n".join(
+            [c.model_dump_json(indent=4) for c in dto.current_competencies]
+        )
+        if current_competencies:
+            current_competencies = (
+                f"\nHere are the current competencies in the course:\n{current_competencies}\n"
+                f"Do not repeat these competencies.\n"
+            )
 
         prompt = system_prompt.format(
             taxonomy_list=taxonomy_options,
             course_description=dto.course_description,
             max_n=dto.max_n,
+            current_competencies=current_competencies,
         )
         prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,

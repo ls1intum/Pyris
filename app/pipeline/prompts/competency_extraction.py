@@ -10,9 +10,9 @@ Each competency must contain the following fields:
 The title of the competency, which is a specific topic or skill. This should be a short phrase of at most 4 words.
 
 - description:
-A detailed description of the competency in 3 to 5 bullet points.
+A detailed description of the competency in 2 to 5 bullet points.
 Each bullet point illustrates a specific skill or concept of the competency.
-Each bullet point is a complete sentence starting with "You" and containing at most 15 words.
+Each bullet point is a complete sentence containing at most 15 words.
 Each bullet point is on a new line and starts with "- ".
 
 - taxonomy:
@@ -27,6 +27,8 @@ All competencies must meet the following requirements:
 - is small and fine-grained. Large topics should be broken down into smaller competencies.
 - does not overlap with other competencies: each competency is unique. Expanding on a previous competency is allowed.
 
+Here is the provided course description: {course_description}
+
 Here is a template competency in JSON format:
 
 {{
@@ -35,8 +37,8 @@ Here is a template competency in JSON format:
     "taxonomy": "ANALYZE"
 }}
 
-Here is the provided course description: {course_description}
+{current_competencies}
 
-Respond with up to {max_n} competencies extracted from the course description,
+Respond with 0 to {max_n} competencies extracted from the course description,
 each in JSON format, split by two newlines.
 """
