@@ -5,7 +5,7 @@ from sentry_sdk import capture_exception, capture_message
 import requests
 from abc import ABC
 
-from domain.status.competency_extraction_status_update_dto import (
+from ...domain.status.competency_extraction_status_update_dto import (
     CompetencyExtractionStatusUpdateDTO,
 )
 from ...domain.chat.course_chat.course_chat_status_update_dto import (
