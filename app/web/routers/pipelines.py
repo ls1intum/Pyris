@@ -17,6 +17,7 @@ from app.web.status.status_update import (
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.pipeline.chat.exercise_chat_pipeline import ExerciseChatPipeline
 from app.dependencies import TokenValidator
+from app.domain import FeatureDTO
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
@@ -86,9 +87,51 @@ def run_course_chat_pipeline(variant: str, dto: CourseChatPipelineExecutionDTO):
     thread.start()
 
 
-@router.get("/{feature}")
+@router.get("/{feature}/variants")
 def get_pipeline(feature: str):
     """
-    Get the pipeline for the given feature.
+    Get the pipeline variants for the given feature.
     """
-    return Response(status_code=status.HTTP_501_NOT_IMPLEMENTED)
+    match feature:
+        case "CHAT":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default chat variant.",
+                )
+            ]
+        case "PROGRAMMING_EXERCISE_CHAT":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default programming exercise chat variant.",
+                )
+            ]
+        case "COURSE_CHAT":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default course chat variant.",
+                )
+            ]
+        case "COMPETENCY_GENERATION":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default competency generation variant.",
+                )
+            ]
+        case "LECTURE_INGESTION":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default lecture ingestion variant.",
+                )
+            ]
+        case _:
+            return Response(status_code=status.HTTP_400_BAD_REQUEST)
