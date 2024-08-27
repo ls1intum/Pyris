@@ -25,7 +25,7 @@ class CitationPipeline(Pipeline):
         super().__init__(implementation_id="citation_pipeline")
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
-                gpt_version_equivalent=3.5,
+                gpt_version_equivalent=4.25,
                 context_length=16385,
             )
         )
@@ -51,7 +51,8 @@ class CitationPipeline(Pipeline):
         """
         formatted_string = ""
         for i, paragraph in enumerate(paragraphs):
-            lct = "Lecture: {}, Page: {}, Link: {}, \nContent:\n---{}---\n\n".format(
+            lct = "Lecture: {}, Unit: {}, Page: {}, Link: {},\nContent:\n---{}---\n\n".format(
+                paragraph.get(LectureSchema.LECTURE_NAME.value),
                 paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
                 paragraph.get(LectureSchema.PAGE_NUMBER.value),
                 paragraph.get(LectureSchema.LECTURE_UNIT_LINK.value),
