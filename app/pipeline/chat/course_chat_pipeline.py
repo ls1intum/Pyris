@@ -264,11 +264,11 @@ class CourseChatPipeline(Pipeline):
             ]
 
         @tool()
-        def lecture_content_retrieval(prompt: str) -> str:
+        def lecture_content_retrieval() -> str:
             """
             Retrieve content from indexed lecture slides.
-            The query should be a natural language question that can be answered by looking into the lecture materials.
-            This will run a RAG retrieval on the indexed lecture slides and return the most relevant paragraphs.
+            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the most
+            relevant paragraphs.
             Use this if you think it can be useful to answer the student's question, or if the student explicitly asks
             a question about the lecture content or slides.
             Only use this once.
