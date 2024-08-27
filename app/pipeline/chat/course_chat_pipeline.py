@@ -280,8 +280,9 @@ class CourseChatPipeline(Pipeline):
 
             result = ""
             for paragraph in self.retrieved_paragraphs:
-                lct = "Lecture: {}, Page: {}\nContent:\n---{}---\n\n".format(
+                lct = "Lecture: {}, Unit: {}, Page: {}\nContent:\n---{}---\n\n".format(
                     paragraph.get(LectureSchema.LECTURE_NAME.value),
+                    paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
                     paragraph.get(LectureSchema.PAGE_NUMBER.value),
                     paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
                 )
