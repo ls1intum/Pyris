@@ -11,6 +11,7 @@ Currently, Pyris empowers [Iris](https://artemis.cit.tum.de/about-iris), a virtu
 ## Setup
 ### With local environment
 > **⚠️ Warning:** To change the local Weaviate vector database setup, please refer to [Weaviate Docs](https://weaviate.io/developers/weaviate/quickstart).
+
  - Check python version: `python --version` (should be 3.12)
  - Install packages: `pip install -r requirements.txt`
  - Create an `application.local.yml` file in the root directory. This file includes configurations that can be used by the application.
@@ -59,7 +60,7 @@ Currently, Pyris empowers [Iris](https://artemis.cit.tum.de/about-iris), a virtu
      APPLICATION_YML_PATH=<path-to-your-application-yml-file> LLM_CONFIG_PATH=<path-to-your-llm-config-yml> uvicorn app.main:app --reload
     ```
  - Access API docs: http://localhost:8000/docs
- - 
+
 ### Getting Started with Docker
 
 Deploying Pyris using Docker is a straightforward way to set up the application in a consistent environment. Here's how you can do it:
@@ -122,4 +123,4 @@ If you need to view logs or debug, you can check the logs of specific services u
 docker-compose -f docker-compose/pyris-dev.yml logs pyris-app
 ```
 
-This guide should help you quickly get Pyris running with Docker. The first step—building and running the containers—is all you need to get started!
+This setup should help you run the Pyris application in both development and production environments with Docker. Ensure you modify the configuration files as per your specific requirements before deploying.
