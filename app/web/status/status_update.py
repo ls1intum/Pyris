@@ -218,6 +218,28 @@ class ExerciseChatStatusCallback(StatusCallback):
         super().__init__(url, run_id, status, stage, current_stage_index)
 
 
+class TextExerciseChatCallback(StatusCallback):
+    def __init__(
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO],
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/text-exercise-chat/runs/{run_id}/status"
+        stages = initial_stages or []
+        stage = len(stages)
+        stages += [
+            StageDTO(
+                weight=40,
+                state=StageStateEnum.NOT_STARTED,
+                name="Thinking",
+            )
+        ]
+        super().__init__(
+            url, run_id, StatusUpdateDTO(stages=stages), stages[stage], stage
+        )
+
+
 class CompetencyExtractionCallback(StatusCallback):
     def __init__(
         self,
