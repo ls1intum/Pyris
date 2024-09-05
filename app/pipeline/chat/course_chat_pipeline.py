@@ -333,6 +333,7 @@ class CourseChatPipeline(Pipeline):
 
             if self.variant == "jol":
                 event_payload = CompetencyJolDTO.model_validate(dto.event_payload.event)
+                print("Event Payload:", event_payload)
                 comp = next(
                     (
                         c
@@ -345,7 +346,7 @@ class CourseChatPipeline(Pipeline):
                 params = {
                     "jol": json.dumps(
                         {
-                            "value": dto.event_payload.jol_value,
+                            "value": event_payload.jol_value,
                             "competency_mastery": get_mastery(
                                 event_payload.competency_progress,
                                 event_payload.competency_confidence,

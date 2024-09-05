@@ -315,8 +315,7 @@ class ExerciseChatAgentPipeline(Pipeline):
             1. Use when automated tests fail to understand specific issues.
             2. Analyze feedback to identify logic errors in student's code.
             3. Use test case names to pinpoint problematic areas of the implementation.
-            4. Consider credits awarded to gauge severity of issues.
-            5. Utilize text feedback to provide specific improvement suggestions.
+            4. Utilize text feedback to provide specific improvement suggestions.
 
             ## Key Points
             - Essential for detailed, test-based code evaluation.
@@ -413,12 +412,17 @@ class ExerciseChatAgentPipeline(Pipeline):
 
         try:
             logger.info("Running exercise chat pipeline...")
-            chat_history: List[PyrisMessage] = (
-                dto.chat_history[-5:-1]
-                if len(dto.chat_history) > 4
-                else dto.chat_history[:-1] if len(dto.chat_history) > 1 else []
-            )
             query = dto.chat_history[-1] if dto.chat_history else None
+            # Check if the latest message is not from the student set the query to None
+            if query and query.sender != IrisMessageRole.USER:
+                query = None
+
+            # if the query is None, get the last 5 messages from the chat history, including the latest message.
+            # otherwise exclude the latest message from the chat history.
+
+            chat_history = (
+                dto.chat_history[-5:] if query is None else dto.chat_history[-6:-1]
+            )
 
             # Set up the initial prompt
             initial_prompt_with_date = iris_initial_system_prompt.replace(
@@ -544,8 +548,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
                 guide_response = (self.prompt | self.llm | StrOutputParser()).invoke(
                     {
-                        "student_message": query,
-                        "response_draft": out,
+                        "response": out,
                     }
                 )
                 if "!ok!" in guide_response:
