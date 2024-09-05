@@ -29,8 +29,9 @@ from ..llm import (
     CapabilityRequestHandler,
     RequirementList,
 )
-from ..web.status import ingestion_status_callback
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from ..web.status import ingestion_status_callback
 
 batch_update_lock = threading.Lock()
 
@@ -93,7 +94,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         self,
         client: WeaviateClient,
         dto: Optional[IngestionPipelineExecutionDto],
-        callback: IngestionStatusCallback,
+        callback: ingestion_status_callback,
     ):
         super().__init__()
         self.collection = init_lecture_schema(client)
