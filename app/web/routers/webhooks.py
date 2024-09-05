@@ -9,8 +9,8 @@ from app.dependencies import TokenValidator
 from app.domain.ingestion.ingestion_pipeline_execution_dto import (
     IngestionPipelineExecutionDto,
 )
-from ..status.IngestionStatusCallback import IngestionStatusCallback
-from ..status.LecturesDeletionStatusCallback import LecturesDeletionStatusCallback
+from ..status.ingestion_status_callback import IngestionStatusCallback
+from ..status.lecture_deletion_status_callback import LecturesDeletionStatusCallback
 from ...domain.ingestion.deletionPipelineExecutionDto import (
     LecturesDeletionExecutionDto,
 )

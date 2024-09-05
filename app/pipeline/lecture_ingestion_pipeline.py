@@ -29,7 +29,7 @@ from ..llm import (
     CapabilityRequestHandler,
     RequirementList,
 )
-from ..web.status import IngestionStatusCallback
+from ..web.status import ingestion_status_callback
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 batch_update_lock = threading.Lock()
