@@ -11,7 +11,6 @@ from langchain_core.messages import (
     ToolCall,
 )
 
-from app.domain.data.json_message_content_dto import JsonMessageContentDTO
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from app.domain.data.tool_call_dto import ToolCallDTO, FunctionDTO
 from app.domain.data.tool_message_content_dto import ToolMessageContentDTO

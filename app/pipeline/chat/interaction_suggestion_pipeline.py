@@ -22,14 +22,11 @@ from ..prompts.iris_interaction_suggestion_prompts import (
     course_chat_begin_prompt,
     iris_course_suggestion_initial_system_prompt,
     course_chat_history_exists_prompt,
-    no_course_chat_history_prompt,
     iris_exercise_suggestion_initial_system_prompt,
     exercise_chat_history_exists_prompt,
-    no_exercise_chat_history_prompt,
     exercise_chat_begin_prompt,
     iris_default_suggestion_initial_system_prompt,
     default_chat_history_exists_prompt,
-    no_default_chat_history_prompt,
     default_chat_begin_prompt,
 )
 

@@ -1,5 +1,4 @@
 import logging
-import os
 import traceback
 from datetime import datetime
 from typing import List, Callable
@@ -12,7 +11,6 @@ from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTempla
 from langchain_core.runnables import Runnable
 from langchain_core.tools import StructuredTool
 from langsmith import traceable
-from weaviate.collections.classes.filters import Filter
 
 from .code_feedback_pipeline import CodeFeedbackPipeline
 from .interaction_suggestion_pipeline import InteractionSuggestionPipeline
@@ -41,7 +39,6 @@ from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
-from ...vector_database.lecture_schema import LectureSchema
 from ...web.status.status_update import ExerciseChatStatusCallback
 
 logger = logging.getLogger()
@@ -186,7 +183,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
 
             """
-            self.callback.in_progress(f"Reading submission details...")
+            self.callback.in_progress("Reading submission details...")
             return {
                 "submission_date": (
                     dto.submission.date
@@ -235,7 +232,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
 
             """
-            self.callback.in_progress(f"Reading exercise details...")
+            self.callback.in_progress("Reading exercise details...")
             current_time = datetime.now(tz=pytz.UTC)
             return {
                 "start_date": (
@@ -285,7 +282,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
 
             """
-            self.callback.in_progress(f"Analyzing build logs ...")
+            self.callback.in_progress("Analyzing build logs ...")
             build_failed = dto.submission.build_failed
             build_logs = dto.submission.build_log_entries
             logs = (
@@ -325,7 +322,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
 
             """
-            self.callback.in_progress(f"Analyzing feedbacks ...")
+            self.callback.in_progress("Analyzing feedbacks ...")
             feedbacks = dto.submission.latest_result.feedbacks
             feedback_list = (
                 "\n".join(
@@ -364,7 +361,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
 
             """
-            self.callback.in_progress(f"Checking repository content ...")
+            self.callback.in_progress("Checking repository content ...")
             repository = dto.submission.repository
             file_list = "\n------------\n".join(
                 ["- {}".format(file_name) for (file_name, _) in repository.items()]
@@ -391,8 +388,8 @@ class ExerciseChatAgentPipeline(Pipeline):
             4. If a file is not found, consider if it's a required file or a naming issue.
 
             ## Key Points
-            - This tool should only be used after the repository_files tool has been used to identify the files in the repository.
-            That way, you can have the correct file path to look up the file content.
+            - This tool should only be used after the repository_files tool has been used to identify
+            the files in the repository. That way, you can have the correct file path to look up the file content.
             - Essential for detailed code analysis and feedback.
             - Helps in assessing code quality, correctness, and adherence to specifications.
             - Use in conjunction with exercise details for context-aware evaluation.

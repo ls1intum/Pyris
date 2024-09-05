@@ -16,7 +16,6 @@ from app.web.status.status_update import (
     CourseChatStatusCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
-from app.pipeline.chat.exercise_chat_pipeline import ExerciseChatPipeline
 from app.dependencies import TokenValidator
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
