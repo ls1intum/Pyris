@@ -5,6 +5,9 @@ from sentry_sdk import capture_exception, capture_message
 import requests
 from abc import ABC
 
+from ...domain.status.competency_extraction_status_update_dto import (
+    CompetencyExtractionStatusUpdateDTO,
+)
 from ...domain.chat.course_chat.course_chat_status_update_dto import (
     CourseChatStatusUpdateDTO,
 )
@@ -208,3 +211,24 @@ class ExerciseChatStatusCallback(StatusCallback):
         status = ExerciseChatStatusUpdateDTO(stages=stages)
         stage = stages[current_stage_index]
         super().__init__(url, run_id, status, stage, current_stage_index)
+
+
+class CompetencyExtractionCallback(StatusCallback):
+    def __init__(
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO],
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/competency-extraction/runs/{run_id}/status"
+        stages = initial_stages or []
+        stages.append(
+            StageDTO(
+                weight=10,
+                state=StageStateEnum.NOT_STARTED,
+                name="Generating Competencies",
+            )
+        )
+        status = CompetencyExtractionStatusUpdateDTO(stages=stages)
+        stage = stages[-1]
+        super().__init__(url, run_id, status, stage, len(stages) - 1)
