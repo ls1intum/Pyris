@@ -11,5 +11,4 @@ class IngestionPipelineExecutionDto(PipelineExecutionDTO):
     settings: Optional[PipelineExecutionSettingsDTO]
     initial_stages: Optional[List[StageDTO]] = Field(
         default=None, alias="initialStages"
-
     )
