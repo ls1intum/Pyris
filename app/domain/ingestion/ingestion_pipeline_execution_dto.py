@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
-from app.domain import PipelineExecutionDTO
+from app.domain import PipelineExecutionDTO, PipelineExecutionSettingsDTO
 from app.domain.data.lecture_unit_dto import LectureUnitDTO
+from app.domain.status.stage_dto import StageDTO
 
 
 class IngestionPipelineExecutionDto(PipelineExecutionDTO):
