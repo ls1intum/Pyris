@@ -203,6 +203,7 @@ Deploying Pyris using Docker ensures a consistent environment and simplifies the
 - **Docker**: Install Docker from the [official website](https://www.docker.com/get-started).
 - **Docker Compose**: Comes bundled with Docker Desktop or install separately on Linux.
 - **Clone the Pyris Repository**: If not already done, clone the repository.
+- **Create Configuration Files**: Create the `application.local.yml` and `llm-config.local.yml` files as described in the [Local Development Setup](#local-development-setup) section.
 
   ```bash
   git clone https://github.com/ls1intum/Pyris.git Pyris
