@@ -8,7 +8,7 @@ Currently, Pyris powers [Iris](https://artemis.cit.tum.de/about-iris), a virtual
 - [Features](#features)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
-  - [Local Environment Setup](#local-environment-setup)
+  - [Local Development Setup](#local-development-setup)
   - [Docker Setup](#docker-setup)
     - [Development Environment](#development-environment)
     - [Production Environment](#production-environment)
