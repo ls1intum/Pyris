@@ -29,30 +29,49 @@ Currently, Pyris powers [Iris](https://artemis.cit.tum.de/about-iris), a virtual
 ### Prerequisites
 
 - **Python 3.12**: Ensure that Python 3.12 is installed.
+
   ```bash
   python --version
   ```
+
 - **Docker and Docker Compose**: Required for containerized deployment.
 
-### Local Environment Setup
+---
+
+### Local Development Setup
 
 > **Note:** If you need to modify the local Weaviate vector database setup, please refer to the [Weaviate Documentation](https://weaviate.io/developers/weaviate/quickstart).
 
 #### Steps
 
-1. **Install Dependencies**
+1. **Clone the Pyris Repository**
 
-   Install the required Python packages:
+   Clone the Pyris repository into a directory on your machine:
 
    ```bash
+   git clone https://github.com/ls1intum/Pyris.git Pyris
+   ```
+
+2. **Install Dependencies**
+
+   Navigate to the Pyris directory and install the required Python packages:
+
+   ```bash
+   cd Pyris
    pip install -r requirements.txt
    ```
 
-2. **Create Configuration Files**
+3. **Create Configuration Files**
 
-   - **`application.local.yml`**
+   - **Create an Application Configuration File**
 
-     Create an `application.local.yml` file in the root directory. This file includes configurations used by the application.
+     Create an `application.local.yml` file in the root directory. You can use the provided `application.example.yml` as a base.
+
+     ```bash
+     cp application.example.yml application.local.yml
+     ```
+
+     **Example `application.local.yml`:**
 
      ```yaml
      api_keys:
@@ -64,39 +83,102 @@ Currently, Pyris powers [Iris](https://artemis.cit.tum.de/about-iris), a virtual
        grpc_port: "50051"
 
      env_vars:
-       test: "test-value"
      ```
 
-   - **`llm-config.local.yml`**
+   - **Create an LLM Config File**
 
-     Create an `llm-config.local.yml` file in the root directory. This file includes a list of models with their configurations.
+     Create an `llm-config.local.yml` file in the root directory. You can use the provided `llm-config.example.yml` as a base.
+
+     ```bash
+     cp llm-config.example.yml llm-config.local.yml
+     ```
+
+     **Example OpenAI Configuration:**
 
      ```yaml
-     - id: "model-1"
-       name: "Custom Model Name"
-       description: "Description of your model"
-       type: "azure-chat"  # e.g., azure-chat, ollama
-       endpoint: "https://your-model-endpoint"
-       api_version: "v1"
-       azure_deployment: "your-azure-deployment-name"
+     - id: "oai-gpt-35-turbo"
+       name: "GPT 3.5 Turbo"
+       description: "GPT 3.5 16k"
+       type: "openai_chat"
        model: "gpt-3.5-turbo"
-       api_key: "your-api-key"
+       api_key: "<your_openai_api_key>"
        tools: []
        capabilities:
          input_cost: 0.5
          output_cost: 1.5
          gpt_version_equivalent: 3.5
          context_length: 16385
-         vendor: "Your Vendor"
-         privacy_compliance: True
-         self_hosted: False
-         image_recognition: False
-         json_mode: True
+         vendor: "OpenAI"
+         privacy_compliance: false
+         self_hosted: false
+         image_recognition: false
+         json_mode: true
      ```
 
-     > **Note:** Each model configuration includes capabilities that help the application select the best model for a specific task.
+     **Example Azure OpenAI Configuration:**
 
-3. **Run the Server**
+     ```yaml
+     - id: "azure-gpt-4-omni"
+       name: "GPT 4 Omni"
+       description: "GPT 4 Omni on Azure"
+       type: "azure_chat"
+       endpoint: "<your_azure_model_endpoint>"
+       api_version: "2024-02-15-preview"
+       azure_deployment: "gpt4o"
+       model: "gpt4o"
+       api_key: "<your_azure_api_key>"
+       tools: []
+       capabilities:
+         input_cost: 6
+         output_cost: 16
+         gpt_version_equivalent: 4.5  # Equivalent GPT version of the model
+         context_length: 128000
+         vendor: "OpenAI"
+         privacy_compliance: true
+         self_hosted: false
+         image_recognition: true
+         json_mode: true
+     ```
+
+     **Explanation of Configuration Parameters**
+
+     The configuration parameters are used by Pyris's capability system to select the appropriate model for a task.
+
+     **Parameter Descriptions:**
+
+     - `api_key`: The API key for the model.
+     - `capabilities`: The capabilities of the model.
+
+       - `context_length`: The maximum number of tokens the model can process in a single request.
+       - `gpt_version_equivalent`: The equivalent GPT version of the model in terms of overall capabilities.
+       - `image_recognition`: Whether the model supports image recognition (for multimodal models).
+       - `input_cost`: The cost of input tokens for the model.
+       - `output_cost`: The cost of output tokens for the model.
+       - `json_mode`: Whether the model supports structured JSON output mode.
+       - `privacy_compliance`: Whether the model complies with privacy regulations.
+       - `self_hosted`: Whether the model is self-hosted.
+       - `vendor`: The provider of the model (e.g., OpenAI).
+       - `speed`: The model's processing speed.
+
+     - `description`: Additional information about the model.
+     - `id`: Unique identifier for the model across all models.
+     - `model`: The official name of the model as used by the vendor.
+     - `name`: A custom, human-readable name for the model.
+     - `type`: The model type, used to select the appropriate client (e.g., `openai_chat`, `azure_chat`, `ollama`).
+     - `endpoint`: The URL to connect to the model.
+     - `api_version`: The API version to use with the model.
+     - `azure_deployment`: The deployment name of the model on Azure.
+     - `tools`: The tools supported by the model.
+
+     > **Notes on `gpt_version_equivalent`:** The `gpt_version_equivalent` field is subjective and used to compare capabilities of different models using GPT models as a reference. For example:
+     >- GPT-4 Omni equivalent: 4.5
+     >- GPT-4 Omni Mini equivalent: 4.25
+     >- GPT-4 equivalent: 4
+     >- GPT-3.5 Turbo equivalent: 3.5
+
+     > **Warning:** Most existing pipelines in Pyris require a model with a `gpt_version_equivalent` of **4.5 or higher**. It is advised to define models in the `llm-config.local.yml` file with a `gpt_version_equivalent` of 4.5 or higher.
+
+4. **Run the Server**
 
    Start the Pyris server:
 
@@ -106,9 +188,11 @@ Currently, Pyris powers [Iris](https://artemis.cit.tum.de/about-iris), a virtual
    uvicorn app.main:app --reload
    ```
 
-4. **Access API Documentation**
+5. **Access API Documentation**
 
    Open your browser and navigate to [http://localhost:8000/docs](http://localhost:8000/docs) to access the interactive API documentation.
+
+---
 
 ### Docker Setup
 
@@ -118,6 +202,12 @@ Deploying Pyris using Docker ensures a consistent environment and simplifies the
 
 - **Docker**: Install Docker from the [official website](https://www.docker.com/get-started).
 - **Docker Compose**: Comes bundled with Docker Desktop or install separately on Linux.
+- **Clone the Pyris Repository**: If not already done, clone the repository.
+
+  ```bash
+  git clone https://github.com/ls1intum/Pyris.git Pyris
+  cd Pyris
+  ```
 
 #### Docker Compose Files
 
@@ -181,6 +271,8 @@ Deploying Pyris using Docker ensures a consistent environment and simplifies the
 
    - Application URL: [http://localhost:8000](http://localhost:8000)
 
+---
+
 #### Managing the Containers
 
 - **Stop the Containers**
@@ -211,7 +303,7 @@ Deploying Pyris using Docker ensures a consistent environment and simplifies the
   docker-compose -f <compose-file> up --build
   ```
 
-## Customizing Configuration
+#### Customizing Configuration
 
 - **Environment Variables**
 
@@ -249,18 +341,3 @@ Deploying Pyris using Docker ensures a consistent environment and simplifies the
 - **Docker Resources**
 
   If services fail to start, ensure Docker has sufficient resources allocated.
-
-## Additional Notes
-
-- **Accessing Services Internally**
-
-  - Within Docker, services can communicate using service names (e.g., `pyris-app`, `weaviate`).
-
-- **SSL Certificates**
-
-  - Ensure SSL certificates are valid and properly secured.
-  - Update paths in the Docker Compose file if necessary.
-
-- **Scaling**
-
-  - For increased load, consider scaling services or using orchestration tools like Kubernetes.
