@@ -5,18 +5,21 @@ from sentry_sdk import capture_exception, capture_message
 import requests
 from abc import ABC
 
-from ...domain.status.competency_extraction_status_update_dto import (
+from app.domain.status.competency_extraction_status_update_dto import (
     CompetencyExtractionStatusUpdateDTO,
 )
-from ...domain.chat.course_chat.course_chat_status_update_dto import (
+from app.domain.chat.course_chat.course_chat_status_update_dto import (
     CourseChatStatusUpdateDTO,
 )
-from ...domain.status.stage_state_dto import StageStateEnum
-from ...domain.status.stage_dto import StageDTO
-from ...domain.chat.exercise_chat.exercise_chat_status_update_dto import (
+from app.domain.status.stage_state_dto import StageStateEnum
+from app.domain.status.stage_dto import StageDTO
+from app.domain.status.text_exercise_chat_status_update_dto import (
+    TextExerciseChatStatusUpdateDTO,
+)
+from app.domain.chat.exercise_chat.exercise_chat_status_update_dto import (
     ExerciseChatStatusUpdateDTO,
 )
-from ...domain.status.status_update_dto import StatusUpdateDTO
+from app.domain.status.status_update_dto import StatusUpdateDTO
 import logging
 
 logger = logging.getLogger(__name__)
@@ -230,13 +233,22 @@ class TextExerciseChatCallback(StatusCallback):
         stage = len(stages)
         stages += [
             StageDTO(
-                weight=40,
+                weight=20,
                 state=StageStateEnum.NOT_STARTED,
                 name="Thinking",
-            )
+            ),
+            StageDTO(
+                weight=20,
+                state=StageStateEnum.NOT_STARTED,
+                name="Responding",
+            ),
         ]
         super().__init__(
-            url, run_id, StatusUpdateDTO(stages=stages), stages[stage], stage
+            url,
+            run_id,
+            TextExerciseChatStatusUpdateDTO(stages=stages),
+            stages[stage],
+            stage,
         )
 
 
