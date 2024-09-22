@@ -5,11 +5,14 @@ from typing import Optional
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
 from domain import PyrisMessage, IrisMessageRole
-from domain.data.text_message_content_dto import TextMessageContentDTO
 from domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
-from pipeline.prompts.text_exercise_chat_prompts import system_prompt
+from pipeline.prompts.text_exercise_chat_prompts import (
+    fmt_system_prompt,
+    fmt_rejection_prompt,
+    fmt_guard_prompt,
+)
 from web.status.status_update import TextExerciseChatCallback
 
 logger = logging.getLogger(__name__)
@@ -34,26 +37,67 @@ class TextExerciseChatPipeline(Pipeline):
         if not dto.exercise:
             raise ValueError("Exercise is required")
 
-        prompt = system_prompt(
-            exercise_name=dto.exercise.name,
+        should_respond = self.guard(dto)
+        self.callback.done("Responding" if should_respond else "Rejecting")
+
+        if should_respond:
+            response = self.respond(dto)
+        else:
+            response = self.reject(dto)
+
+        self.callback.done(final_result=response)
+
+    def guard(self, dto: TextExerciseChatPipelineExecutionDTO) -> bool:
+        guard_prompt = fmt_guard_prompt(
+            exercise_name=dto.exercise.title,
+            course_name=dto.exercise.course.name,
+            course_description=dto.exercise.course.description,
+            problem_statement=dto.exercise.problem_statement,
+            user_input=dto.current_submission,
+        )
+        guard_prompt = PyrisMessage(
+            sender=IrisMessageRole.SYSTEM,
+            contents=[{"text_content": guard_prompt}],
+        )
+        response = self.request_handler.chat([guard_prompt], CompletionArguments())
+        response = response.contents[0].text_content
+        return "yes" in response.lower()
+
+    def respond(self, dto: TextExerciseChatPipelineExecutionDTO) -> str:
+        system_prompt = fmt_system_prompt(
+            exercise_name=dto.exercise.title,
             course_name=dto.exercise.course.name,
             course_description=dto.exercise.course.description,
             problem_statement=dto.exercise.problem_statement,
             start_date=str(dto.exercise.start_date),
             end_date=str(dto.exercise.end_date),
             current_date=str(datetime.now()),
-            current_answer=dto.current_answer,
+            current_submission=dto.current_submission,
         )
-        prompt = PyrisMessage(
+        system_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
-            contents=[TextMessageContentDTO(text_content=prompt)],
+            contents=[{"text_content": system_prompt}],
         )
-
-        # done building prompt
+        prompts = [system_prompt] + dto.conversation
 
         response = self.request_handler.chat(
-            [prompt], CompletionArguments(temperature=0.4)
+            prompts, CompletionArguments(temperature=0.4)
         )
-        response = response.contents[0].text_content
+        return response.contents[0].text_content
 
-        self.callback.done(response)
+    def reject(self, dto: TextExerciseChatPipelineExecutionDTO) -> str:
+        rejection_prompt = fmt_rejection_prompt(
+            exercise_name=dto.exercise.title,
+            course_name=dto.exercise.course.name,
+            course_description=dto.exercise.course.description,
+            problem_statement=dto.exercise.problem_statement,
+            user_input=dto.current_submission,
+        )
+        rejection_prompt = PyrisMessage(
+            sender=IrisMessageRole.SYSTEM,
+            contents=[{"text_content": rejection_prompt}],
+        )
+        response = self.request_handler.chat(
+            [rejection_prompt], CompletionArguments(temperature=0.4)
+        )
+        return response.contents[0].text_content

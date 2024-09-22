@@ -98,9 +98,9 @@ def run_course_chat_pipeline(variant: str, dto: CourseChatPipelineExecutionDTO):
 def run_text_exercise_chat_pipeline_worker(dto, variant):
     try:
         callback = TextExerciseChatCallback(
-            run_id=dto.settings.authentication_token,
-            base_url=dto.settings.artemis_base_url,
-            initial_stages=dto.initial_stages,
+            run_id=dto.execution.settings.authentication_token,
+            base_url=dto.execution.settings.artemis_base_url,
+            initial_stages=dto.execution.initial_stages,
         )
         match variant:
             case "default" | "text_exercise_chat_pipeline_reference_impl":
@@ -191,6 +191,14 @@ def get_pipeline(feature: str):
                     id="default",
                     name="Default Variant",
                     description="Default programming exercise chat variant.",
+                )
+            ]
+        case "TEXT_EXERCISE_CHAT":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default text exercise chat variant.",
                 )
             ]
         case "COURSE_CHAT":
