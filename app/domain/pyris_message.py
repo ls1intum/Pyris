@@ -16,6 +16,10 @@ class IrisMessageRole(str, Enum):
 class PyrisMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    num_input_tokens: int = Field(alias="numInputTokens", default=0)
+    num_output_tokens: int = Field(alias="numOutputTokens", default=0)
+    model_info: str = Field(alias="modelInfo", default="")
+
     sent_at: datetime | None = Field(alias="sentAt", default=None)
     sender: IrisMessageRole
     contents: List[MessageContentDTO] = []

@@ -7,12 +7,14 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from langsmith import traceable
 from pydantic import BaseModel
+from sipbuild.generator.parser.tokens import tokens
 
 from ...domain import PyrisMessage
 from ...domain.data.build_log_entry import BuildLogEntryDTO
 from ...domain.data.feedback_dto import FeedbackDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
+from ...llm.external.LLMTokenCount import LLMTokenCount
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
 from ...web.status.status_update import StatusCallback
@@ -40,6 +42,7 @@ class CodeFeedbackPipeline(Pipeline):
     callback: StatusCallback
     default_prompt: PromptTemplate
     output_parser: StrOutputParser
+    tokens: LLMTokenCount
 
     def __init__(self, callback: Optional[StatusCallback] = None):
         super().__init__(implementation_id="code_feedback_pipeline_reference_impl")
@@ -141,4 +144,5 @@ class CodeFeedbackPipeline(Pipeline):
                 }
             )
         )
+        self.tokens = self.llm.tokens
         return response.replace("{", "{{").replace("}", "}}")

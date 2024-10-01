@@ -5,9 +5,9 @@ from langchain_core.language_models.chat_models import (
     BaseChatModel,
 )
 from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs import ChatResult, ChatGeneration
 
+from ..external.LLMTokenCount import LLMTokenCount
 from ...common import (
     convert_iris_message_to_langchain_message,
     convert_langchain_message_to_iris_message,
@@ -20,6 +20,7 @@ class IrisLangchainChatModel(BaseChatModel):
 
     request_handler: RequestHandler
     completion_args: CompletionArguments
+    tokens: LLMTokenCount = None
 
     def __init__(
         self,
@@ -43,6 +44,9 @@ class IrisLangchainChatModel(BaseChatModel):
         iris_message = self.request_handler.chat(iris_messages, self.completion_args)
         base_message = convert_iris_message_to_langchain_message(iris_message)
         chat_generation = ChatGeneration(message=base_message)
+        self.tokens = LLMTokenCount(model_info=iris_message.model_info,
+                                         num_input_tokens=iris_message.num_input_tokens,
+                                         num_output_tokens=iris_message.num_output_tokens)
         return ChatResult(generations=[chat_generation])
 
     @property

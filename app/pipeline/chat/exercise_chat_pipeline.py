@@ -10,6 +10,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable
 from langsmith import traceable, get_current_run_tree
+from sipbuild.generator.parser.tokens import tokens
 from weaviate.collections.classes.filters import Filter
 
 from .code_feedback_pipeline import CodeFeedbackPipeline
@@ -34,6 +35,7 @@ from ...domain.data.feedback_dto import FeedbackDTO
 from ...domain.data.programming_submission_dto import ProgrammingSubmissionDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
+from ...llm.external.LLMTokenCount import LLMTokenCount
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
@@ -53,6 +55,7 @@ class ExerciseChatPipeline(Pipeline):
     suggestion_pipeline: InteractionSuggestionPipeline
     code_feedback_pipeline: CodeFeedbackPipeline
     prompt: ChatPromptTemplate
+    tokens: List[LLMTokenCount]
 
     def __init__(self, callback: ExerciseChatStatusCallback):
         super().__init__(implementation_id="exercise_chat_pipeline")
@@ -78,6 +81,7 @@ class ExerciseChatPipeline(Pipeline):
         self.code_feedback_pipeline = CodeFeedbackPipeline()
         self.pipeline = self.llm | StrOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -98,7 +102,7 @@ class ExerciseChatPipeline(Pipeline):
             )
             self._run_exercise_chat_pipeline(dto, should_execute_lecture_pipeline),
             self.callback.done(
-                "Generated response", final_result=self.exercise_chat_response
+                "Generated response", final_result=self.exercise_chat_response, tokens=self.tokens
             )
 
             try:
@@ -112,7 +116,7 @@ class ExerciseChatPipeline(Pipeline):
                     suggestion_dto.last_message = self.exercise_chat_response
                     suggestion_dto.problem_statement = dto.exercise.problem_statement
                     suggestions = self.suggestion_pipeline(suggestion_dto)
-                    self.callback.done(final_result=None, suggestions=suggestions)
+                    self.callback.done(final_result=None, suggestions=suggestions, tokens=[self.suggestion_pipeline.tokens])
                 else:
                     # This should never happen but whatever
                     self.callback.skip(
@@ -200,6 +204,8 @@ class ExerciseChatPipeline(Pipeline):
             if submission:
                 try:
                     feedback = future_feedback.result()
+                    if self.code_feedback_pipeline.tokens is not None:
+                        self.tokens.append(self.code_feedback_pipeline.tokens)
                     self.prompt += SystemMessagePromptTemplate.from_template(
                         "Another AI has checked the code of the student and has found the following issues. "
                         "Use this information to help the student. "
@@ -220,6 +226,8 @@ class ExerciseChatPipeline(Pipeline):
             if should_execute_lecture_pipeline:
                 try:
                     self.retrieved_lecture_chunks = future_lecture.result()
+                    if self.retriever.tokens is not None:
+                        self.tokens.append(self.retriever.tokens)
                     if len(self.retrieved_lecture_chunks) > 0:
                         self._add_relevant_chunks_to_prompt(
                             self.retrieved_lecture_chunks
@@ -252,6 +260,8 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Drafting"})
                 .invoke({})
             )
+            if self.llm.tokens is not None:
+                self.tokens.append(self.llm.tokens)
             self.callback.done()
             self.prompt = ChatPromptTemplate.from_messages(
                 [
@@ -266,6 +276,8 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Refining"})
                 .invoke({})
             )
+            if self.llm.tokens is not None:
+                self.tokens.append(self.llm.tokens)
 
             if "!ok!" in guide_response:
                 print("Response is ok and not rewritten!!!")

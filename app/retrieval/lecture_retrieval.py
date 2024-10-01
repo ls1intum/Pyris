@@ -2,10 +2,12 @@ from asyncio.log import logger
 from typing import List
 
 from langsmith import traceable
+from sipbuild.generator.parser.tokens import tokens
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 
 from ..common import convert_iris_message_to_langchain_message
+from ..llm.external.LLMTokenCount import LLMTokenCount
 from ..llm.langchain import IrisLangchainChatModel
 from ..pipeline import Pipeline
 
@@ -80,6 +82,7 @@ class LectureRetrieval(Pipeline):
     """
     Class for retrieving lecture data from the database.
     """
+    tokens: LLMTokenCount
 
     def __init__(self, client: WeaviateClient, **kwargs):
         super().__init__(implementation_id="lecture_retrieval_pipeline")
@@ -236,6 +239,7 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            self.tokens = self.llm.tokens
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:

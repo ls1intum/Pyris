@@ -19,6 +19,8 @@ from ...domain.chat.exercise_chat.exercise_chat_status_update_dto import (
 from ...domain.status.status_update_dto import StatusUpdateDTO
 import logging
 
+from ...llm.external.LLMTokenCount import LLMTokenCount
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,6 +98,7 @@ class StatusCallback(ABC):
         message: Optional[str] = None,
         final_result: Optional[str] = None,
         suggestions: Optional[List[str]] = None,
+        tokens: Optional[List[LLMTokenCount]] = None,
         next_stage_message: Optional[str] = None,
         start_next_stage: bool = True,
     ):
@@ -107,6 +110,7 @@ class StatusCallback(ABC):
         self.stage.state = StageStateEnum.DONE
         self.stage.message = message
         self.status.result = final_result
+        self.status.tokens = tokens or self.status.tokens
         if hasattr(self.status, "suggestions"):
             self.status.suggestions = suggestions
         next_stage = self.get_next_stage()

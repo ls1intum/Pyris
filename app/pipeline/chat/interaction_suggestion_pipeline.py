@@ -34,6 +34,7 @@ from ..prompts.iris_interaction_suggestion_prompts import (
 )
 
 from ...llm import CompletionArguments
+from ...llm.external.LLMTokenCount import LLMTokenCount
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
@@ -52,6 +53,7 @@ class InteractionSuggestionPipeline(Pipeline):
     pipeline: Runnable
     prompt: ChatPromptTemplate
     variant: str
+    tokens: LLMTokenCount
 
     def __init__(self, variant: str = "default"):
         super().__init__(implementation_id="interaction_suggestion_pipeline")
@@ -164,6 +166,7 @@ class InteractionSuggestionPipeline(Pipeline):
             self.prompt = ChatPromptTemplate.from_messages(prompt_val)
 
             response: dict = (self.prompt | self.pipeline).invoke({})
+            self.tokens = self.llm.tokens
             return response["questions"]
         except Exception as e:
             logger.error(

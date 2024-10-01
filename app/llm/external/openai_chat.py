@@ -2,10 +2,11 @@ import logging
 import time
 import traceback
 from datetime import datetime
-from typing import Literal, Any
+from typing import Literal, Any, Optional
 
 from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
+from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject
 
@@ -61,16 +62,22 @@ def convert_to_open_ai_messages(
     return openai_messages
 
 
-def convert_to_iris_message(message: ChatCompletionMessage) -> PyrisMessage:
+def convert_to_iris_message(message: ChatCompletionMessage, usage: Optional[CompletionUsage], model: str) -> PyrisMessage:
     """
     Convert a ChatCompletionMessage to a PyrisMessage
     """
-    return PyrisMessage(
+    num_input_tokens = getattr(usage, 'prompt_tokens', -1)
+    num_output_tokens = getattr(usage, 'completion_tokens', -1)
+
+    message = PyrisMessage(
         sender=map_str_to_role(message.role),
         contents=[TextMessageContentDTO(textContent=message.content)],
         send_at=datetime.now(),
+        num_input_tokens=num_input_tokens,
+        num_output_tokens=num_output_tokens,
+        model_info=model
     )
-
+    return message
 
 class OpenAIChatModel(ChatModel):
     model: str
@@ -103,7 +110,7 @@ class OpenAIChatModel(ChatModel):
                         temperature=arguments.temperature,
                         max_tokens=arguments.max_tokens,
                     )
-                return convert_to_iris_message(response.choices[0].message)
+                return convert_to_iris_message(response.choices[0].message, response.usage, response.model)
             except Exception as e:
                 wait_time = initial_delay * (backoff_factor**attempt)
                 logging.warning(f"Exception on attempt {attempt + 1}: {e}")
