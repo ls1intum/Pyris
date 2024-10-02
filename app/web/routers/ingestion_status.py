@@ -15,10 +15,10 @@ router = APIRouter(prefix="/api/v1", tags=["ingestion_status"])
     dependencies=[Depends(TokenValidator())],
 )
 def get_lecture_unit_ingestion_state(
-    course_id: int, lecture_id: int, lecture_unit_id: int, baseUrl: str
+    course_id: int, lecture_id: int, lecture_unit_id: int, base_url: str
 ):
     db = VectorDatabase()
-    decoded_base_url = unquote(baseUrl)
+    decoded_base_url = unquote(base_url)
     result = db.lectures.query.fetch_objects(
         filters=(
             Filter.by_property(LectureSchema.BASE_URL.value).equal(decoded_base_url)
