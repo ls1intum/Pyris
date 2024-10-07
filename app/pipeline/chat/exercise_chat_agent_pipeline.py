@@ -1,6 +1,7 @@
 import logging
 import traceback
 from datetime import datetime
+from operator import attrgetter
 from typing import List, Callable
 
 import pytz
@@ -184,27 +185,28 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             """
             self.callback.in_progress("Reading submission details...")
+            if not dto.submission:
+                return {
+                    field: f"No {field.replace('_', ' ')} is provided"
+                    for field in [
+                        "submission_date",
+                        "is_practice",
+                        "build_failed",
+                        "latest_result",
+                    ]
+                }
+
+            getter = attrgetter("date", "is_practice", "build_failed", "latest_result")
+            values = getter(dto.submission)
+            keys = ["submission_date", "is_practice", "build_failed", "latest_result"]
+
             return {
-                "submission_date": (
-                    dto.submission.date
-                    if dto.submission.date
-                    else "No submission date is provided"
-                ),
-                "is_practice": (
-                    dto.submission.is_practice
-                    if dto.submission.is_practice
-                    else "No is practice information is provided"
-                ),
-                "build_failed": (
-                    dto.submission.build_failed
-                    if dto.submission.build_failed
-                    else "No build failure information is provided"
-                ),
-                "latest_result": (
-                    dto.submission.latest_result
-                    if dto.submission.latest_result
-                    else "No result information is provided"
-                ),
+                key: (
+                    str(value)
+                    if value is not None
+                    else f"No {key.replace('_', ' ')} is provided"
+                )
+                for key, value in zip(keys, values)
             }
 
         def get_additional_exercise_details() -> dict:
@@ -283,6 +285,8 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             """
             self.callback.in_progress("Analyzing build logs ...")
+            if not dto.submission:
+                return "No build logs available."
             build_failed = dto.submission.build_failed
             build_logs = dto.submission.build_log_entries
             logs = (
@@ -323,6 +327,8 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             """
             self.callback.in_progress("Analyzing feedbacks ...")
+            if not dto.submission:
+                return "No feedbacks available."
             feedbacks = dto.submission.latest_result.feedbacks
             feedback_list = (
                 "\n".join(
@@ -362,6 +368,8 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             """
             self.callback.in_progress("Checking repository content ...")
+            if not dto.submission:
+                return "No repository content available."
             repository = dto.submission.repository
             file_list = "\n------------\n".join(
                 ["- {}".format(file_name) for (file_name, _) in repository.items()]
@@ -397,6 +405,11 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             """
             self.callback.in_progress(f"Looking into file {file_path} ...")
+            if not dto.submission:
+                return (
+                    "No repository content available. File content cannot be retrieved."
+                )
+
             repository = dto.submission.repository
             if file_path in repository:
                 return "{}:\n{}\n".format(file_path, repository[file_path])

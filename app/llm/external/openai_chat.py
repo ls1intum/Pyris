@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Literal, Any, Sequence, Union, Dict, Type, Callable
+from typing import Literal, Any, Sequence, Union, Dict, Type, Callable, Optional
 
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.tools import BaseTool
@@ -10,6 +10,7 @@ from openai import OpenAI
 from openai.lib.azure import AzureOpenAI
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
+from pydantic import Field
 from pydantic.v1 import BaseModel as LegacyBaseModel
 
 from ...common.message_converters import map_str_to_role, map_role_to_str
@@ -128,9 +129,9 @@ def convert_to_iris_message(message: ChatCompletionMessage) -> PyrisMessage:
 class OpenAIChatModel(ChatModel):
     model: str
     api_key: str
-    tools: Sequence[
-        Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-    ] = []
+    tools: Optional[
+        Sequence[Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]]
+    ] = Field(default_factory=list, alias="tools")
     _client: OpenAI
 
     def chat(
