@@ -1,9 +1,15 @@
 import base64
 from datetime import datetime
-from typing import Literal, Any, Optional
+from typing import Literal, Any, Optional, Sequence, Union, Dict, Type, Callable
+
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from pydantic import Field
 
 from ollama import Client, Message
+from pydantic.v1 import BaseModel as LegacyBaseModel
 
 from ...common.message_converters import map_role_to_str, map_str_to_role
 from ...domain.data.json_message_content_dto import JsonMessageContentDTO
@@ -74,6 +80,7 @@ class OllamaModel(
     ChatModel,
     EmbeddingModel,
 ):
+
     type: Literal["ollama"]
     model: str
     host: str
@@ -115,6 +122,16 @@ class OllamaModel(
             model=self.model, prompt=text, options=self.options
         )
         return list(response)
+
+    def bind_tools(
+        self,
+        tools: Sequence[
+            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
+        ],
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        raise NotImplementedError(
+            f"The LLM {self.__str__()} does not support binding tools"
+        )
 
     def __str__(self):
         return f"Ollama('{self.model}')"

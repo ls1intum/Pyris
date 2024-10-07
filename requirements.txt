@@ -15,3 +15,7 @@ sentry-sdk[starlette,fastapi,openai]==2.13.0
 unstructured==0.15.7
 uvicorn==0.30.6
 weaviate-client==4.7.1
+langchain_openai==0.1.19
+starlette~=0.37.2
+langsmith~=0.1.75
+langgraph~=0.1.17

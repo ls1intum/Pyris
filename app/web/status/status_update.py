@@ -57,8 +57,7 @@ class StatusCallback(ABC):
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.run_id}",
                 },
-                # FIXME: Deprecated. Replace dict with model_dump
-                json=self.status.dict(by_alias=True),
+                json=self.status.model_dump(by_alias=True),
             ).raise_for_status()
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending status update: {e}")
@@ -104,19 +103,24 @@ class StatusCallback(ABC):
         If there is a next stage, set the current
         stage to the next stage.
         """
-        self.stage.state = StageStateEnum.DONE
-        self.stage.message = message
-        self.status.result = final_result
-        if hasattr(self.status, "suggestions"):
-            self.status.suggestions = suggestions
-        next_stage = self.get_next_stage()
-        if next_stage is not None:
-            self.stage = next_stage
-            if next_stage_message:
-                self.stage.message = next_stage_message
-            if start_next_stage:
-                self.stage.state = StageStateEnum.IN_PROGRESS
-        self.on_status_update()
+        if self.stage.state == StageStateEnum.IN_PROGRESS:
+            self.stage.state = StageStateEnum.DONE
+            self.stage.message = message
+            self.status.result = final_result
+            if hasattr(self.status, "suggestions"):
+                self.status.suggestions = suggestions
+            next_stage = self.get_next_stage()
+            if next_stage is not None:
+                self.stage = next_stage
+                if next_stage_message:
+                    self.stage.message = next_stage_message
+                if start_next_stage:
+                    self.stage.state = StageStateEnum.IN_PROGRESS
+            self.on_status_update()
+        else:
+            raise ValueError(
+                "Invalid state transition to done. current state is ", self.stage.state
+            )
 
     def error(self, message: str, exception=None):
         """
@@ -126,6 +130,7 @@ class StatusCallback(ABC):
         self.stage.state = StageStateEnum.ERROR
         self.stage.message = message
         self.status.result = None
+        self.status.suggestions = None
         # Set all subsequent stages to SKIPPED if an error occurs
         rest_of_index = (
             self.current_stage_index + 1
@@ -155,7 +160,7 @@ class StatusCallback(ABC):
         self.stage.state = StageStateEnum.SKIPPED
         self.stage.message = message
         self.status.result = None
-        self.stage.suggestions = None
+        self.status.suggestions = None
         next_stage = self.get_next_stage()
         if next_stage is not None:
             self.stage = next_stage
@@ -197,17 +202,7 @@ class ExerciseChatStatusCallback(StatusCallback):
             StageDTO(
                 weight=30,
                 state=StageStateEnum.NOT_STARTED,
-                name="Code and Lecture Context Lookup",
-            ),
-            StageDTO(
-                weight=60,
-                state=StageStateEnum.NOT_STARTED,
-                name="Response Generation",
-            ),
-            StageDTO(
-                weight=20,
-                state=StageStateEnum.NOT_STARTED,
-                name="Response Refining",
+                name="Checking available information",
             ),
             StageDTO(
                 weight=10, state=StageStateEnum.NOT_STARTED, name="Creating suggestions"

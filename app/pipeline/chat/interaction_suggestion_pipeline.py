@@ -22,14 +22,11 @@ from ..prompts.iris_interaction_suggestion_prompts import (
     course_chat_begin_prompt,
     iris_course_suggestion_initial_system_prompt,
     course_chat_history_exists_prompt,
-    no_course_chat_history_prompt,
     iris_exercise_suggestion_initial_system_prompt,
     exercise_chat_history_exists_prompt,
-    no_exercise_chat_history_prompt,
     exercise_chat_begin_prompt,
     iris_default_suggestion_initial_system_prompt,
     default_chat_history_exists_prompt,
-    no_default_chat_history_prompt,
     default_chat_begin_prompt,
 )
 
@@ -62,7 +59,6 @@ class InteractionSuggestionPipeline(Pipeline):
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
                 gpt_version_equivalent=4.5,
-                context_length=16385,
                 json_mode=True,
             )
         )
@@ -96,7 +92,6 @@ class InteractionSuggestionPipeline(Pipeline):
             iris_default_suggestion_initial_system_prompt
         )
         chat_history_exists_prompt = default_chat_history_exists_prompt
-        no_chat_history_prompt = no_default_chat_history_prompt
         chat_begin_prompt = default_chat_begin_prompt
 
         if self.variant == "course":
@@ -104,35 +99,29 @@ class InteractionSuggestionPipeline(Pipeline):
                 iris_course_suggestion_initial_system_prompt
             )
             chat_history_exists_prompt = course_chat_history_exists_prompt
-            no_chat_history_prompt = no_course_chat_history_prompt
             chat_begin_prompt = course_chat_begin_prompt
         elif self.variant == "exercise":
             iris_suggestion_initial_system_prompt = (
                 iris_exercise_suggestion_initial_system_prompt
             )
             chat_history_exists_prompt = exercise_chat_history_exists_prompt
-            no_chat_history_prompt = no_exercise_chat_history_prompt
             chat_begin_prompt = exercise_chat_begin_prompt
 
         try:
             logger.info("Running course interaction suggestion pipeline...")
 
             history: List[PyrisMessage] = dto.chat_history or []
-            query: Optional[PyrisMessage] = (
-                dto.chat_history[-1] if dto.chat_history else None
-            )
 
-            if query is not None:
-                # Add the conversation to the prompt
-                chat_history_messages = [
-                    convert_iris_message_to_langchain_message(message)
-                    for message in history[-4:]
-                ]
-                if dto.last_message:
-                    logger.info(f"Last message: {dto.last_message}")
-                    last_message = AIMessage(content=dto.last_message)
-                    chat_history_messages.append(last_message)
-
+            # Add the conversation to the prompt
+            chat_history_messages = [
+                convert_iris_message_to_langchain_message(message)
+                for message in history[-4:]
+            ]
+            if dto.last_message:
+                last_message = AIMessage(
+                    content=dto.last_message.replace("{", "{{").replace("}", "}}"),
+                )
+                chat_history_messages.append(last_message)
                 self.prompt = ChatPromptTemplate.from_messages(
                     [
                         (
@@ -145,26 +134,15 @@ class InteractionSuggestionPipeline(Pipeline):
                         ("system", chat_begin_prompt),
                     ]
                 )
+
+                prob_st_val = dto.problem_statement or "No problem statement provided."
+                prompt_val = self.prompt.format_messages(problem_statement=prob_st_val)
+                self.prompt = ChatPromptTemplate.from_messages(prompt_val)
+
+                response: dict = (self.prompt | self.pipeline).invoke({})
+                return response["questions"]
             else:
-                self.prompt = ChatPromptTemplate.from_messages(
-                    [
-                        (
-                            "system",
-                            iris_suggestion_initial_system_prompt
-                            + "\n"
-                            + no_chat_history_prompt
-                            + "\n"
-                            + chat_begin_prompt,
-                        ),
-                    ]
-                )
-
-            prob_st_val = dto.problem_statement or "No problem statement provided."
-            prompt_val = self.prompt.format_messages(problem_statement=prob_st_val)
-            self.prompt = ChatPromptTemplate.from_messages(prompt_val)
-
-            response: dict = (self.prompt | self.pipeline).invoke({})
-            return response["questions"]
+                raise ValueError("No last message provided")
         except Exception as e:
             logger.error(
                 "An error occurred while running the course chat pipeline", exc_info=e

@@ -11,13 +11,13 @@ from app.domain import (
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
 )
+from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
-from app.pipeline.chat.exercise_chat_pipeline import ExerciseChatPipeline
 from app.dependencies import TokenValidator
 from app.pipeline.competency_extraction_pipeline import CompetencyExtractionPipeline
 
@@ -25,14 +25,16 @@ router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
 
 
-def run_exercise_chat_pipeline_worker(dto: ExerciseChatPipelineExecutionDTO):
+def run_exercise_chat_pipeline_worker(
+    dto: ExerciseChatPipelineExecutionDTO, variant: str
+):
     try:
         callback = ExerciseChatStatusCallback(
             run_id=dto.settings.authentication_token,
             base_url=dto.settings.artemis_base_url,
             initial_stages=dto.initial_stages,
         )
-        pipeline = ExerciseChatPipeline(callback=callback)
+        pipeline = ExerciseChatAgentPipeline(callback=callback, variant=variant)
     except Exception as e:
         logger.error(f"Error preparing exercise chat pipeline: {e}")
         logger.error(traceback.format_exc())
@@ -53,7 +55,7 @@ def run_exercise_chat_pipeline_worker(dto: ExerciseChatPipelineExecutionDTO):
     dependencies=[Depends(TokenValidator())],
 )
 def run_exercise_chat_pipeline(variant: str, dto: ExerciseChatPipelineExecutionDTO):
-    thread = Thread(target=run_exercise_chat_pipeline_worker, args=(dto,))
+    thread = Thread(target=run_exercise_chat_pipeline_worker, args=(dto, variant))
     thread.start()
 
 

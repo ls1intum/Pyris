@@ -1,6 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional
+from typing import Optional, Sequence, Union, Dict, Any, Type, Callable
+from langchain_core.tools import BaseTool
+from pydantic.v1 import BaseModel
 
+from .. import LanguageModel
 from ...domain import PyrisMessage
 from ...domain.data.image_message_content_dto import ImageMessageContentDTO
 from ...llm import CompletionArguments
@@ -38,4 +41,12 @@ class RequestHandler(metaclass=ABCMeta):
     @abstractmethod
     def embed(self, text: str) -> list[float]:
         """Create an embedding from the text"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> LanguageModel:
+        """Bind tools"""
         raise NotImplementedError

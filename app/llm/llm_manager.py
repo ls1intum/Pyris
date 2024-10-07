@@ -39,7 +39,7 @@ class LlmManager(metaclass=Singleton):
         with open(path, "r") as file:
             loaded_llms = yaml.safe_load(file)
 
-        self.entries = LlmList.parse_obj({"llms": loaded_llms}).llms
+        self.entries = LlmList.model_validate({"llms": loaded_llms}).llms
 
     def get_llms_sorted_by_capabilities_score(
         self, requirements: RequirementList, invert_cost: bool = False

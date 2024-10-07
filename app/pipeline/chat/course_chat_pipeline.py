@@ -23,6 +23,8 @@ from .lecture_chat_pipeline import LectureChatPipeline
 from ..shared.citation_pipeline import CitationPipeline
 from ...common import convert_iris_message_to_langchain_message
 from ...domain import PyrisMessage
+from ...domain.data.exercise_with_submissions_dto import ExerciseWithSubmissionsDTO
+from ...domain.data.metrics.competency_jol_dto import CompetencyJolDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_course_chat_prompts import (
     tell_iris_initial_system_prompt,
@@ -31,6 +33,7 @@ from ..prompts.iris_course_chat_prompts import (
     tell_no_chat_history_prompt,
     tell_format_reminder_prompt,
     tell_begin_agent_jol_prompt,
+    tell_begin_agent_submission_successful_prompt,
 )
 from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_iris_initial_system_prompt,
@@ -39,6 +42,7 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_no_chat_history_prompt,
     elicit_format_reminder_prompt,
     elicit_begin_agent_jol_prompt,
+    elicit_begin_agent_submission_successful_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
 from ...retrieval.lecture_retrieval import LectureRetrieval
@@ -121,6 +125,7 @@ class CourseChatPipeline(Pipeline):
             :param dto: The pipeline execution data transfer object
             :param kwargs: The keyword arguments
         """
+        print(dto.model_dump_json(indent=4))
 
         # Define tools
         @tool
@@ -140,7 +145,7 @@ class CourseChatPipeline(Pipeline):
             current_time = datetime.now(tz=pytz.UTC)
             exercises = []
             for exercise in dto.course.exercises:
-                exercise_dict = exercise.dict()
+                exercise_dict = exercise.model_dump()
                 exercise_dict["due_date_over"] = (
                     exercise.due_date < current_time if exercise.due_date else None
                 )
@@ -232,24 +237,25 @@ class CourseChatPipeline(Pipeline):
             regarding their progress overall or in a specific area.
             A competency has the following attributes: name, description, taxonomy, soft due date, optional,
             and mastery threshold.
-            The response may include metrics for each competency, such as progress and mastery (0% - 100%).
+            The response may include metrics for each competency, such as progress and mastery (0%-100%).
             These are system-generated.
-            The judgment of learning (JOL) values indicate the self-reported mastery by the student (0 - 5, 5 star).
-            The object describing it also indicates the system-computed mastery at the time when the student
+            The judgment of learning (JOL) values indicate the self-reported confidence by the student (0-5, 5 star).
+            The object describing it also indicates the system-computed confidence at the time when the student
             added their JoL assessment.
             """
             self.callback.in_progress("Reading competency list ...")
             if not dto.metrics or not dto.metrics.competency_metrics:
                 return dto.course.competencies
             competency_metrics = dto.metrics.competency_metrics
+            weight = 2.0 / 3.0
             return [
                 {
                     "info": competency_metrics.competency_information.get(comp, None),
                     "exercise_ids": competency_metrics.exercises.get(comp, []),
                     "progress": competency_metrics.progress.get(comp, 0),
-                    "mastery": get_mastery(
-                        competency_metrics.progress.get(comp, 0),
-                        competency_metrics.confidence.get(comp, 0),
+                    "mastery": (
+                        (1 - weight) * competency_metrics.progress.get(comp, 0)
+                        + weight * competency_metrics.confidence.get(comp, 0)
                     ),
                     "judgment_of_learning": (
                         competency_metrics.jol_values.get[comp].json()
@@ -261,12 +267,12 @@ class CourseChatPipeline(Pipeline):
                 for comp in competency_metrics.competency_information
             ]
 
-        @tool()
+        @tool
         def lecture_content_retrieval() -> str:
             """
             Retrieve content from indexed lecture slides.
-            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the most
-            relevant paragraphs.
+            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the
+            most relevant paragraphs.
             Use this if you think it can be useful to answer the student's question, or if the student explicitly asks
             a question about the lecture content or slides.
             Only use this once.
@@ -299,6 +305,9 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = tell_no_chat_history_prompt
             format_reminder_prompt = tell_format_reminder_prompt
             begin_agent_jol_prompt = tell_begin_agent_jol_prompt
+            begin_agent_submission_successful_prompt = (
+                tell_begin_agent_submission_successful_prompt
+            )
         else:
             iris_initial_system_prompt = elicit_iris_initial_system_prompt
             begin_agent_prompt = elicit_begin_agent_prompt
@@ -306,6 +315,9 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = elicit_no_chat_history_prompt
             format_reminder_prompt = elicit_format_reminder_prompt
             begin_agent_jol_prompt = elicit_begin_agent_jol_prompt
+            begin_agent_submission_successful_prompt = (
+                elicit_begin_agent_submission_successful_prompt
+            )
 
         try:
             logger.info("Running course chat pipeline...")
@@ -321,11 +333,13 @@ class CourseChatPipeline(Pipeline):
             )
 
             if self.variant == "jol":
+                event_payload = CompetencyJolDTO.model_validate(dto.event_payload.event)
+                print("Event Payload:", event_payload)
                 comp = next(
                     (
                         c
                         for c in dto.course.competencies
-                        if c.id == dto.competency_jol.competency_id
+                        if c.id == event_payload.competency_id
                     ),
                     None,
                 )
@@ -333,14 +347,52 @@ class CourseChatPipeline(Pipeline):
                 params = {
                     "jol": json.dumps(
                         {
-                            "value": dto.competency_jol.jol_value,
+                            "value": event_payload.jol_value,
                             "competency_mastery": get_mastery(
-                                dto.competency_jol.competency_progress,
-                                dto.competency_jol.competency_confidence,
+                                event_payload.competency_progress,
+                                event_payload.competency_confidence,
                             ),
                         }
                     ),
-                    "competency": comp.json(),
+                    "competency": comp.model_dump_json(),
+                }
+            elif self.variant == "submission_successful":
+                event_payload = ExerciseWithSubmissionsDTO.model_validate(
+                    dto.event_payload.event
+                )
+                comp = next(
+                    (
+                        c
+                        for c in dto.course.competencies
+                        if event_payload.id in c.exercise_list
+                    ),
+                    None,
+                )
+                agent_prompt = begin_agent_submission_successful_prompt
+                params = {
+                    "exercise": json.dumps(
+                        {
+                            "id": event_payload.id,
+                            "course_id": dto.course.id,
+                            "title": event_payload.title,
+                            "type": event_payload.type,
+                            "mode": event_payload.mode,
+                            "max_points": event_payload.max_points,
+                            "bonus_points": event_payload.bonus_points,
+                            "difficulty_level": event_payload.difficulty_level,
+                            "due_date": datetime_to_string(event_payload.due_date),
+                            "submissions": [
+                                {
+                                    "timestamp": datetime_to_string(
+                                        submission.timestamp
+                                    ),
+                                    "score": submission.score,
+                                }
+                                for submission in event_payload.submissions
+                            ],
+                        }
+                    ),
+                    "competency": comp.model_dump() if comp else "<Unknown competency>",
                 }
             else:
                 agent_prompt = (
