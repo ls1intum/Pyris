@@ -24,8 +24,8 @@ from app.pipeline.competency_extraction_pipeline import CompetencyExtractionPipe
 from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
-from pipeline.text_exercise_chat_pipeline import TextExerciseChatPipeline
-from web.status.status_update import TextExerciseChatCallback
+from app.pipeline.text_exercise_chat_pipeline import TextExerciseChatPipeline
+from app.web.status.status_update import TextExerciseChatCallback
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
