@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from domain import PipelineExecutionDTO, PyrisMessage
-from domain.data.text_exercise_dto import TextExerciseDTO
+from app.domain import PipelineExecutionDTO, PyrisMessage
+from app.domain.data.text_exercise_dto import TextExerciseDTO
 
 
 class TextExerciseChatPipelineExecutionDTO(BaseModel):

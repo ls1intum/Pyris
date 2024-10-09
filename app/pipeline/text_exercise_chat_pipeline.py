@@ -4,8 +4,8 @@ from typing import Optional
 
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
-from domain import PyrisMessage, IrisMessageRole
-from domain.text_exercise_chat_pipeline_execution_dto import (
+from app.domain import PyrisMessage, IrisMessageRole
+from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
 from pipeline.prompts.text_exercise_chat_prompts import (

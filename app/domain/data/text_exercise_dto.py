@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from domain.data.course_dto import CourseDTO
+from app.domain.data.course_dto import CourseDTO
 
 
 class TextExerciseDTO(BaseModel):
