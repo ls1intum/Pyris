@@ -8,12 +8,12 @@ from app.domain import PyrisMessage, IrisMessageRole
 from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
-from pipeline.prompts.text_exercise_chat_prompts import (
+from app.pipeline.prompts.text_exercise_chat_prompts import (
     fmt_system_prompt,
     fmt_rejection_prompt,
     fmt_guard_prompt,
 )
-from web.status.status_update import TextExerciseChatCallback
+from app.web.status.status_update import TextExerciseChatCallback
 
 logger = logging.getLogger(__name__)
 
