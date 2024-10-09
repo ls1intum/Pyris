@@ -14,7 +14,8 @@ def fmt_guard_prompt(
     {problem_statement}
     The user says:
     {user_input}
-    If this is on-topic and appropriate discussion, respond with "Yes". If not, respond with "No".
+    If this is on-topic and appropriate discussion, respond with "Yes".
+    If the user's input is clearly about something else or inappropriate, respond with "No".
     """.format(
         exercise_name=exercise_name,
         course_name=course_name,
