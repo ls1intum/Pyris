@@ -53,7 +53,7 @@ class TextExerciseChatPipeline(Pipeline):
             course_name=dto.exercise.course.name,
             course_description=dto.exercise.course.description,
             problem_statement=dto.exercise.problem_statement,
-            user_input=dto.current_submission,
+            user_input=dto.conversation[-1].contents[0].text_content,
         )
         guard_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
@@ -91,7 +91,7 @@ class TextExerciseChatPipeline(Pipeline):
             course_name=dto.exercise.course.name,
             course_description=dto.exercise.course.description,
             problem_statement=dto.exercise.problem_statement,
-            user_input=dto.current_submission,
+            user_input=dto.conversation[-1].contents[0].text_content,
         )
         rejection_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
