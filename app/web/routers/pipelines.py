@@ -21,7 +21,7 @@ from app.pipeline.chat.exercise_chat_pipeline import ExerciseChatPipeline
 from app.dependencies import TokenValidator
 from app.domain import FeatureDTO
 from app.pipeline.competency_extraction_pipeline import CompetencyExtractionPipeline
-from domain.text_exercise_chat_pipeline_execution_dto import (
+from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
 from pipeline.text_exercise_chat_pipeline import TextExerciseChatPipeline
