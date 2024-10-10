@@ -233,7 +233,7 @@ class TextExerciseChatCallback(StatusCallback):
         stage = len(stages)
         stages += [
             StageDTO(
-                weight=20,
+                weight=30,
                 state=StageStateEnum.NOT_STARTED,
                 name="Thinking",
             ),

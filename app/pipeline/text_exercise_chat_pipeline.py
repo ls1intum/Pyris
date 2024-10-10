@@ -10,10 +10,10 @@ from app.domain.text_exercise_chat_pipeline_execution_dto import (
 )
 from app.pipeline.prompts.text_exercise_chat_prompts import (
     fmt_system_prompt,
-    fmt_rejection_prompt,
-    fmt_guard_prompt,
+    fmt_extract_sentiments_prompt,
 )
 from app.web.status.status_update import TextExerciseChatCallback
+from pipeline.prompts.text_exercise_chat_prompts import fmt_sentiment_analysis_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -34,70 +34,107 @@ class TextExerciseChatPipeline(Pipeline):
         dto: TextExerciseChatPipelineExecutionDTO,
         **kwargs,
     ):
+        """
+        Run the text exercise chat pipeline.
+        This consists of a sentiment analysis step followed by a response generation step.
+        """
         if not dto.exercise:
             raise ValueError("Exercise is required")
+        if not dto.conversation:
+            raise ValueError("Conversation with at least one message is required")
 
-        should_respond = self.guard(dto)
-        self.callback.done("Responding" if should_respond else "Rejecting")
+        sentiments = self.categorize_sentiments_by_relevance(dto)
+        print(f"Sentiments: {sentiments}")
+        self.callback.done("Responding")
 
-        if should_respond:
-            response = self.respond(dto)
-        else:
-            response = self.reject(dto)
-
+        response = self.respond(dto, sentiments)
         self.callback.done(final_result=response)
 
-    def guard(self, dto: TextExerciseChatPipelineExecutionDTO) -> bool:
-        guard_prompt = fmt_guard_prompt(
+    def categorize_sentiments_by_relevance(
+        self, dto: TextExerciseChatPipelineExecutionDTO
+    ) -> (list[str], list[str], list[str]):
+        """
+        Extracts the sentiments from the user's input and categorizes them as "Ok", "Neutral", or "Bad" in terms of
+        relevance to the text exercise at hand.
+        Returns a tuple of lists of sentiments in each category.
+        """
+        extract_sentiments_prompt = fmt_extract_sentiments_prompt(
             exercise_name=dto.exercise.title,
             course_name=dto.exercise.course.name,
             course_description=dto.exercise.course.description,
             problem_statement=dto.exercise.problem_statement,
+            previous_message=(
+                dto.conversation[-2].contents[0].text_content
+                if len(dto.conversation) > 1
+                else None
+            ),
             user_input=dto.conversation[-1].contents[0].text_content,
         )
-        guard_prompt = PyrisMessage(
+        extract_sentiments_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
-            contents=[{"text_content": guard_prompt}],
+            contents=[{"text_content": extract_sentiments_prompt}],
         )
-        response = self.request_handler.chat([guard_prompt], CompletionArguments())
+        response = self.request_handler.chat(
+            [extract_sentiments_prompt], CompletionArguments()
+        )
         response = response.contents[0].text_content
-        return "yes" in response.lower()
+        print(f"Sentiments response:\n{response}")
+        sentiments = ([], [], [])
+        for line in response.split("\n"):
+            line = line.strip()
+            if line.startswith("Ok: "):
+                sentiments[0].append(line[4:])
+            elif line.startswith("Neutral: "):
+                sentiments[1].append(line[10:])
+            elif line.startswith("Bad: "):
+                sentiments[2].append(line[5:])
+        return sentiments
 
-    def respond(self, dto: TextExerciseChatPipelineExecutionDTO) -> str:
-        system_prompt = fmt_system_prompt(
-            exercise_name=dto.exercise.title,
-            course_name=dto.exercise.course.name,
-            course_description=dto.exercise.course.description,
-            problem_statement=dto.exercise.problem_statement,
-            start_date=str(dto.exercise.start_date),
-            end_date=str(dto.exercise.end_date),
-            current_date=str(datetime.now()),
-            current_submission=dto.current_submission,
-        )
+    def respond(
+        self,
+        dto: TextExerciseChatPipelineExecutionDTO,
+        sentiments: (list[str], list[str], list[str]),
+    ) -> str:
+        """
+        Actually respond to the user's input.
+        This takes the user's input and the conversation so far and generates a response.
+        """
         system_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
-            contents=[{"text_content": system_prompt}],
+            contents=[
+                {
+                    "text_content": fmt_system_prompt(
+                        exercise_name=dto.exercise.title,
+                        course_name=dto.exercise.course.name,
+                        course_description=dto.exercise.course.description,
+                        problem_statement=dto.exercise.problem_statement,
+                        start_date=str(dto.exercise.start_date),
+                        end_date=str(dto.exercise.end_date),
+                        current_date=str(datetime.now()),
+                        current_submission=dto.current_submission,
+                    )
+                }
+            ],
         )
-        prompts = [system_prompt] + dto.conversation
+        sentiment_analysis = PyrisMessage(
+            sender=IrisMessageRole.SYSTEM,
+            contents=[
+                {
+                    "text_content": fmt_sentiment_analysis_prompt(
+                        respond_to=sentiments[0] + sentiments[1],
+                        ignore=sentiments[2],
+                    )
+                }
+            ],
+        )
+        prompts = (
+            [system_prompt]
+            + dto.conversation[:-1]
+            + [sentiment_analysis]
+            + dto.conversation[-1:]
+        )
 
         response = self.request_handler.chat(
             prompts, CompletionArguments(temperature=0.4)
-        )
-        return response.contents[0].text_content
-
-    def reject(self, dto: TextExerciseChatPipelineExecutionDTO) -> str:
-        rejection_prompt = fmt_rejection_prompt(
-            exercise_name=dto.exercise.title,
-            course_name=dto.exercise.course.name,
-            course_description=dto.exercise.course.description,
-            problem_statement=dto.exercise.problem_statement,
-            user_input=dto.conversation[-1].contents[0].text_content,
-        )
-        rejection_prompt = PyrisMessage(
-            sender=IrisMessageRole.SYSTEM,
-            contents=[{"text_content": rejection_prompt}],
-        )
-        response = self.request_handler.chat(
-            [rejection_prompt], CompletionArguments(temperature=0.4)
         )
         return response.contents[0].text_content
