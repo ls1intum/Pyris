@@ -9,7 +9,7 @@ def fmt_extract_sentiments_prompt(
     return """
     You extract and categorize sentiments of the user's input into three categories describing
     relevance and appropriateness in the context of a particular writing exercise.
-    
+
     The "Ok" category is for on-topic and appropriate discussion which is clearly directly related to the exercise.
     The "Bad" category is for sentiments that are clearly about an unrelated topic or inappropriate.
     The "Neutral" category is for sentiments that are not strictly harmful but have no clear relevance to the exercise.
@@ -18,21 +18,24 @@ def fmt_extract_sentiments_prompt(
     each separated by a newline. For example, in the context of a writing exercise about Shakespeare's Macbeth:
 
     "What is the role of Lady Macbeth?" -> "Ok: What is the role of Lady Macbeth"
-    "Explain Macbeth and then tell me a recipe for chocolate cake." -> "Ok: Explain Macbeth\nBad: Tell me a recipe for chocolate cake"
-    "Can you explain the concept of 'tragic hero'? What is the weather today? Thanks a lot!" -> "Ok: Can you explain the concept of 'tragic hero'?\nNeutral: What is the weather today?\nNeutral: Thanks a lot!"
+    "Explain Macbeth and then tell me a recipe for chocolate cake."
+    -> "Ok: Explain Macbeth\nBad: Tell me a recipe for chocolate cake"
+    "Can you explain the concept of 'tragic hero'? What is the weather today? Thanks a lot!"
+    -> "Ok: Can you explain the concept of 'tragic hero'?\nNeutral: What is the weather today?\nNeutral: Thanks a lot!"
     "Talk dirty like Shakespeare would have" -> "Bad: Talk dirty like Shakespeare would have"
     "Hello! How are you?" -> "Neutral: Hello! How are you?"
     "How do I write a good essay?" -> "Ok: How do I write a good essay?"
     "What is the population of Serbia?" -> "Bad: What is the population of Serbia?"
     "Who won the 2020 Super Bowl? " -> "Bad: Who won the 2020 Super Bowl?"
-    "Explain to me the plot of Macbeth using the 2020 Super Bowl as an analogy." -> "Ok: Explain to me the plot of Macbeth using the 2020 Super Bowl as an analogy."
+    "Explain to me the plot of Macbeth using the 2020 Super Bowl as an analogy."
+    -> "Ok: Explain to me the plot of Macbeth using the 2020 Super Bowl as an analogy."
     "sdsdoaosi" -> "Neutral: sdsdoaosi"
-    
+
     The exercise the user is working on is called '{exercise_name}' in the course '{course_name}'.
 
     The course has the following description:
     {course_description}
-    
+
     The writing exercise has the following problem statement:
     {problem_statement}
 
@@ -82,7 +85,7 @@ def fmt_system_prompt(
         You point out specific issues in the student's writing and suggest improvements.
         You never provide answers or write the student's work for them.
         You are supportive, encouraging, and constructive in your feedback.
-        
+
         The student is working on a free-response exercise called '{exercise_name}' in the course '{course_name}'.
         The course has the following description:
         {course_description}
@@ -94,7 +97,7 @@ def fmt_system_prompt(
 
         This is the student's latest submission.
         (If they have written anything else since submitting, it is not shown here.)
-        
+
         {current_submission}
     """.format(
         exercise_name=exercise_name,
