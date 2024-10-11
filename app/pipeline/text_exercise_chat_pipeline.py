@@ -44,7 +44,6 @@ class TextExerciseChatPipeline(Pipeline):
             raise ValueError("Conversation with at least one message is required")
 
         sentiments = self.categorize_sentiments_by_relevance(dto)
-        print(f"Sentiments: {sentiments}")
         self.callback.done("Responding")
 
         response = self.respond(dto, sentiments)
@@ -78,7 +77,6 @@ class TextExerciseChatPipeline(Pipeline):
             [extract_sentiments_prompt], CompletionArguments()
         )
         response = response.contents[0].text_content
-        print(f"Sentiments response:\n{response}")
         sentiments = ([], [], [])
         for line in response.split("\n"):
             line = line.strip()
