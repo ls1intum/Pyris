@@ -10,7 +10,6 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables import Runnable
 from langsmith import traceable, get_current_run_tree
-from sipbuild.generator.parser.tokens import tokens
 from weaviate.collections.classes.filters import Filter
 
 from .code_feedback_pipeline import CodeFeedbackPipeline
@@ -35,7 +34,6 @@ from ...domain.data.feedback_dto import FeedbackDTO
 from ...domain.data.programming_submission_dto import ProgrammingSubmissionDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
-from ...llm.external.LLMTokenCount import LLMTokenCount
 from ...llm.external.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
@@ -102,7 +100,9 @@ class ExerciseChatPipeline(Pipeline):
             )
             self._run_exercise_chat_pipeline(dto, should_execute_lecture_pipeline),
             self.callback.done(
-                "Generated response", final_result=self.exercise_chat_response, tokens=self.tokens
+                "Generated response",
+                final_result=self.exercise_chat_response,
+                tokens=self.tokens,
             )
 
             try:
@@ -116,7 +116,11 @@ class ExerciseChatPipeline(Pipeline):
                     suggestion_dto.last_message = self.exercise_chat_response
                     suggestion_dto.problem_statement = dto.exercise.problem_statement
                     suggestions = self.suggestion_pipeline(suggestion_dto)
-                    self.callback.done(final_result=None, suggestions=suggestions, tokens=[self.suggestion_pipeline.tokens])
+                    self.callback.done(
+                        final_result=None,
+                        suggestions=suggestions,
+                        tokens=[self.suggestion_pipeline.tokens],
+                    )
                 else:
                     # This should never happen but whatever
                     self.callback.skip(

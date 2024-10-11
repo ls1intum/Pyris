@@ -5,7 +5,6 @@ from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from sipbuild.generator.parser.tokens import tokens
 
 from app.domain import (
     CompetencyExtractionPipelineExecutionDTO,
@@ -80,10 +79,12 @@ class CompetencyExtractionPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        num_tokens = LLMTokenCount(model_info=response.model_info,
-                                   num_input_tokens=response.num_input_tokens,
-                                   num_output_tokens=response.num_output_tokens,
-                                   pipeline=PipelineEnum.IRIS_COMPETENCY_GENERATION)
+        num_tokens = LLMTokenCount(
+            model_info=response.model_info,
+            num_input_tokens=response.num_input_tokens,
+            num_output_tokens=response.num_output_tokens,
+            pipeline=PipelineEnum.IRIS_COMPETENCY_GENERATION,
+        )
         self.tokens.append(num_tokens)
         response = response.contents[0].text_content
 

@@ -57,7 +57,9 @@ def convert_to_ollama_messages(messages: list[PyrisMessage]) -> list[Message]:
     return messages_to_return
 
 
-def convert_to_iris_message(message: Message, num_input_tokens: int, num_output_tokens: int, model: str) -> PyrisMessage:
+def convert_to_iris_message(
+    message: Message, num_input_tokens: int, num_output_tokens: int, model: str
+) -> PyrisMessage:
     """
     Convert a Message to a PyrisMessage
     """
@@ -111,7 +113,12 @@ class OllamaModel(
             format="json" if arguments.response_format == "JSON" else "",
             options=self.options,
         )
-        return convert_to_iris_message(response["message"], response["prompt_eval_count"], response["eval_count"], response["model"])
+        return convert_to_iris_message(
+            response["message"],
+            response["prompt_eval_count"],
+            response["eval_count"],
+            response["model"],
+        )
 
     def embed(self, text: str) -> list[float]:
         response = self._client.embeddings(
