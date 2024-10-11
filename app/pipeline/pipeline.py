@@ -1,10 +1,14 @@
 from abc import ABCMeta
+from typing import List
+
+from app.llm.external import LLMTokenCount
 
 
 class Pipeline(metaclass=ABCMeta):
     """Abstract class for all pipelines"""
 
     implementation_id: str
+    tokens: List[LLMTokenCount]
 
     def __init__(self, implementation_id=None, **kwargs):
         self.implementation_id = implementation_id

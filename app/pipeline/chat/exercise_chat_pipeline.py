@@ -56,7 +56,6 @@ class ExerciseChatPipeline(Pipeline):
     suggestion_pipeline: InteractionSuggestionPipeline
     code_feedback_pipeline: CodeFeedbackPipeline
     prompt: ChatPromptTemplate
-    tokens: List[LLMTokenCount]
 
     def __init__(self, callback: ExerciseChatStatusCallback):
         super().__init__(implementation_id="exercise_chat_pipeline")

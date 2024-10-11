@@ -15,6 +15,7 @@ from ...domain.data.feedback_dto import FeedbackDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
 from ...llm.external.LLMTokenCount import LLMTokenCount
+from ...llm.external.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 from ...pipeline import Pipeline
 from ...web.status.status_update import StatusCallback
@@ -144,5 +145,7 @@ class CodeFeedbackPipeline(Pipeline):
                 }
             )
         )
-        self.tokens = self.llm.tokens
+        num_tokens = self.llm.tokens
+        num_tokens.pipeline = PipelineEnum.IRIS_CODE_FEEDBACK
+        self.tokens = num_tokens
         return response.replace("{", "{{").replace("}", "}}")

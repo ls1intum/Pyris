@@ -14,6 +14,7 @@ from langchain_core.prompts import (
 from langchain_core.runnables import Runnable
 from langchain_core.tools import tool
 from langsmith import traceable
+from sipbuild.generator.parser.tokens import tokens
 from weaviate.collections.classes.filters import Filter
 
 from .interaction_suggestion_pipeline import (
@@ -41,6 +42,8 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_begin_agent_jol_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
+from ...llm.external.LLMTokenCount import LLMTokenCount
+from ...llm.external.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -107,6 +110,7 @@ class CourseChatPipeline(Pipeline):
 
         # Create the pipeline
         self.pipeline = self.llm | StrOutputParser()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -406,14 +410,18 @@ class CourseChatPipeline(Pipeline):
             self.callback.in_progress()
             for step in agent_executor.iter(params):
                 print("STEP:", step)
+                token_count = self.llm.tokens
+                token_count.pipeline = PipelineEnum.IRIS_CHAT_COURSE_MESSAGE
+                self.tokens.append(token_count)
                 if step.get("output", None):
                     out = step["output"]
 
             if self.retrieved_paragraphs:
                 self.callback.in_progress("Augmenting response ...")
                 out = self.citation_pipeline(self.retrieved_paragraphs, out)
+            self.tokens.extend(self.citation_pipeline.tokens)
 
-            self.callback.done("Response created", final_result=out)
+            self.callback.done("Response created", final_result=out, tokens=self.tokens)
 
             # try:
             #     # if out:

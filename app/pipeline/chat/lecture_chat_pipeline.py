@@ -16,6 +16,8 @@ from ...domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from ...llm import CapabilityRequestHandler, RequirementList
+from ...llm.external import LLMTokenCount
+from ...llm.external.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -74,6 +76,7 @@ class LectureChatPipeline(Pipeline):
         self.retriever = LectureRetrieval(self.db.client)
         self.pipeline = self.llm | StrOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -114,9 +117,13 @@ class LectureChatPipeline(Pipeline):
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (self.prompt | self.pipeline).invoke({})
+            num_tokens = self.llm.tokens
+            num_tokens.pipeline = PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE
+            self.tokens.append(num_tokens)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
             )
+            self.tokens.extend(self.citation_pipeline.tokens)
             logger.info(f"Response from lecture chat pipeline: {response}")
             return response_with_citation
         except Exception as e:
