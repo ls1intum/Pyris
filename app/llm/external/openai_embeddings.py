@@ -37,9 +37,9 @@ class OpenAIEmbeddingModel(EmbeddingModel):
                 APITimeoutError,
                 RateLimitError,
                 InternalServerError,
-            ) as e:
+            ):
                 wait_time = initial_delay * (backoff_factor**attempt)
-                logging.warning(f"OpenAI error on attempt {attempt + 1}: {e}")
+                logging.exception(f"OpenAI error on attempt {attempt + 1}")
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
         raise Exception(f"Failed to get embedding from OpenAI after {retries} retries.")

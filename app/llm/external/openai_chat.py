@@ -1,6 +1,5 @@
 import logging
 import time
-import traceback
 from datetime import datetime
 from typing import Literal, Any
 
@@ -10,6 +9,7 @@ from openai import (
     APITimeoutError,
     RateLimitError,
     InternalServerError,
+    ContentFilterFinishReasonError,
 )
 from openai.lib.azure import AzureOpenAI
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
@@ -118,17 +118,16 @@ class OpenAIChatModel(ChatModel):
                     # but it seems that that is not the case.
                     # We don't want to retry because the same message will likely be rejected again.
                     # Raise an exception to trigger the global error handler and report a fatal error to the client.
-                    raise Exception("OpenAI content filter activated")
+                    raise ContentFilterFinishReasonError()
                 return convert_to_iris_message(choice.message)
             except (
                 APIError,
                 APITimeoutError,
                 RateLimitError,
                 InternalServerError,
-            ) as e:
+            ):
                 wait_time = initial_delay * (backoff_factor**attempt)
-                logging.warning(f"OpenAI error on attempt {attempt + 1}: {e}")
-                traceback.print_exc()
+                logging.exception(f"OpenAI error on attempt {attempt + 1}:")
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
         raise Exception(f"Failed to get response from OpenAI after {retries} retries")
