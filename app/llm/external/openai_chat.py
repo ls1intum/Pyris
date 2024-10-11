@@ -4,7 +4,13 @@ import traceback
 from datetime import datetime
 from typing import Literal, Any
 
-from openai import OpenAI
+from openai import (
+    OpenAI,
+    APIError,
+    APITimeoutError,
+    RateLimitError,
+    InternalServerError,
+)
 from openai.lib.azure import AzureOpenAI
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject
@@ -82,9 +88,10 @@ class OpenAIChatModel(ChatModel):
     ) -> PyrisMessage:
         print("Sending messages to OpenAI", messages)
         # noinspection PyTypeChecker
-        retries = 10
+        retries = 5
         backoff_factor = 2
         initial_delay = 1
+        # Maximum wait time: 1 + 2 + 4 + 8 + 16 = 31 seconds
 
         for attempt in range(retries):
             try:
@@ -104,13 +111,18 @@ class OpenAIChatModel(ChatModel):
                         max_tokens=arguments.max_tokens,
                     )
                 return convert_to_iris_message(response.choices[0].message)
-            except Exception as e:
+            except (
+                APIError,
+                APITimeoutError,
+                RateLimitError,
+                InternalServerError,
+            ) as e:
                 wait_time = initial_delay * (backoff_factor**attempt)
-                logging.warning(f"Exception on attempt {attempt + 1}: {e}")
+                logging.warning(f"OpenAI error on attempt {attempt + 1}: {e}")
                 traceback.print_exc()
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-        logging.error("Failed to interpret image after several attempts.")
+        logging.error(f"Failed to get response from OpenAI after {retries} retries")
 
 
 class DirectOpenAIChatModel(OpenAIChatModel):
