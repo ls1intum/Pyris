@@ -13,7 +13,9 @@ from app.pipeline.prompts.text_exercise_chat_prompts import (
     fmt_extract_sentiments_prompt,
 )
 from app.web.status.status_update import TextExerciseChatCallback
-from pipeline.prompts.text_exercise_chat_prompts import fmt_sentiment_analysis_prompt
+from app.pipeline.prompts.text_exercise_chat_prompts import (
+    fmt_sentiment_analysis_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
