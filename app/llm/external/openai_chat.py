@@ -93,12 +93,14 @@ class OpenAIChatModel(ChatModel):
         initial_delay = 1
         # Maximum wait time: 1 + 2 + 4 + 8 + 16 = 31 seconds
 
+        messages = convert_to_open_ai_messages(messages)
+
         for attempt in range(retries):
             try:
                 if arguments.response_format == "JSON":
                     response = self._client.chat.completions.create(
                         model=self.model,
-                        messages=convert_to_open_ai_messages(messages),
+                        messages=messages,
                         temperature=arguments.temperature,
                         max_tokens=arguments.max_tokens,
                         response_format=ResponseFormatJSONObject(type="json_object"),
@@ -106,11 +108,18 @@ class OpenAIChatModel(ChatModel):
                 else:
                     response = self._client.chat.completions.create(
                         model=self.model,
-                        messages=convert_to_open_ai_messages(messages),
+                        messages=messages,
                         temperature=arguments.temperature,
                         max_tokens=arguments.max_tokens,
                     )
-                return convert_to_iris_message(response.choices[0].message)
+                choice = response.choices[0]
+                if choice.finish_reason == "content_filter":
+                    # I figured that an openai error would be automatically raised if the content filter activated,
+                    # but it seems that that is not the case.
+                    # We don't want to retry because the same message will likely be rejected again.
+                    # Raise an exception to trigger the global error handler and report a fatal error to the client.
+                    raise Exception("OpenAI content filter activated")
+                return convert_to_iris_message(choice.message)
             except (
                 APIError,
                 APITimeoutError,
