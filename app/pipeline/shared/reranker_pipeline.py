@@ -6,7 +6,6 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import Runnable
 from langsmith import traceable
-from sipbuild.generator.parser.tokens import tokens
 
 from app.domain import PyrisMessage
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments

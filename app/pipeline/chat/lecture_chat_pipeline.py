@@ -16,7 +16,6 @@ from ...domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from ...llm import CapabilityRequestHandler, RequirementList
-from ...llm.external import LLMTokenCount
 from ...llm.external.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase

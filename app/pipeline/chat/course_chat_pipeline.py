@@ -14,7 +14,6 @@ from langchain_core.prompts import (
 from langchain_core.runnables import Runnable
 from langchain_core.tools import tool
 from langsmith import traceable
-from sipbuild.generator.parser.tokens import tokens
 from weaviate.collections.classes.filters import Filter
 
 from .interaction_suggestion_pipeline import (
@@ -42,7 +41,6 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_begin_agent_jol_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
-from ...llm.external.LLMTokenCount import LLMTokenCount
 from ...llm.external.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase

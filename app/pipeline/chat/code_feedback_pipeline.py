@@ -7,7 +7,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from langsmith import traceable
 from pydantic import BaseModel
-from sipbuild.generator.parser.tokens import tokens
 
 from ...domain import PyrisMessage
 from ...domain.data.build_log_entry import BuildLogEntryDTO

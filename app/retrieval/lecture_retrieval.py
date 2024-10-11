@@ -2,7 +2,6 @@ from asyncio.log import logger
 from typing import List
 
 from langsmith import traceable
-from sipbuild.generator.parser.tokens import tokens
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 
@@ -82,6 +81,7 @@ class LectureRetrieval(Pipeline):
     """
     Class for retrieving lecture data from the database.
     """
+
     tokens: LLMTokenCount
 
     def __init__(self, client: WeaviateClient, **kwargs):

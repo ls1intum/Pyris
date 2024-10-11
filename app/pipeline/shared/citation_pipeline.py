@@ -7,7 +7,6 @@ from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import Runnable
 
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
-from app.llm.external import LLMTokenCount
 from app.llm.external.PipelineEnum import PipelineEnum
 from app.llm.langchain import IrisLangchainChatModel
 from app.pipeline import Pipeline
