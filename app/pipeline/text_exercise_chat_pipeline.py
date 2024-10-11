@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Tuple
 
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
@@ -51,7 +51,7 @@ class TextExerciseChatPipeline(Pipeline):
 
     def categorize_sentiments_by_relevance(
         self, dto: TextExerciseChatPipelineExecutionDTO
-    ) -> (list[str], list[str], list[str]):
+    ) -> Tuple[List[str], List[str], List[str]]:
         """
         Extracts the sentiments from the user's input and categorizes them as "Ok", "Neutral", or "Bad" in terms of
         relevance to the text exercise at hand.
@@ -91,7 +91,7 @@ class TextExerciseChatPipeline(Pipeline):
     def respond(
         self,
         dto: TextExerciseChatPipelineExecutionDTO,
-        sentiments: (list[str], list[str], list[str]),
+        sentiments: Tuple[List[str], List[str], List[str]],
     ) -> str:
         """
         Actually respond to the user's input.

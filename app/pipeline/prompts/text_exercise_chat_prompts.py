@@ -1,3 +1,6 @@
+import textwrap
+
+
 def fmt_extract_sentiments_prompt(
     exercise_name: str,
     course_name: str,
@@ -6,7 +9,8 @@ def fmt_extract_sentiments_prompt(
     previous_message: str,
     user_input: str,
 ) -> str:
-    return """
+    return textwrap.dedent(
+        """
     You extract and categorize sentiments of the user's input into three categories describing
     relevance and appropriateness in the context of a particular writing exercise.
 
@@ -44,7 +48,8 @@ def fmt_extract_sentiments_prompt(
 
     Given this context, what are the sentiments of the user's input?
     {user_input}
-    """.format(
+    """
+    ).format(
         exercise_name=exercise_name,
         course_name=course_name,
         course_description=course_description,
@@ -60,12 +65,14 @@ def fmt_sentiment_analysis_prompt(respond_to: list[str], ignore: list[str]) -> s
         prompt += "Respond helpfully and positively to these sentiments in the user's input:\n"
         prompt += "\n".join(respond_to) + "\n\n"
     if ignore:
-        prompt += """
+        prompt += textwrap.dedent(
+            """
         The following sentiments in the user's input are not relevant or appropriate to the writing exercise
         and should be ignored.
         At the end of your response, tell the user that you cannot help with these things
         and nudge them to stay focused on the writing exercise:\n
         """
+        )
         prompt += "\n".join(ignore)
     return prompt
 
@@ -80,7 +87,8 @@ def fmt_system_prompt(
     current_date: str,
     current_submission: str,
 ) -> str:
-    return """
+    return textwrap.dedent(
+        """
         You are a writing tutor. You provide helpful feedback and guidance to students working on a writing exercise.
         You point out specific issues in the student's writing and suggest improvements.
         You never provide answers or write the student's work for them.
@@ -99,7 +107,8 @@ def fmt_system_prompt(
         (If they have written anything else since submitting, it is not shown here.)
 
         {current_submission}
-    """.format(
+    """
+    ).format(
         exercise_name=exercise_name,
         course_name=course_name,
         course_description=course_description,
