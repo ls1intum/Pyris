@@ -6,9 +6,11 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import Runnable
 from langsmith import traceable
+from sipbuild.generator.parser.tokens import tokens
 
 from app.domain import PyrisMessage
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
+from app.llm.external.PipelineEnum import PipelineEnum
 from app.llm.langchain import IrisLangchainChatModel
 from app.pipeline import Pipeline
 from app.pipeline.chat.output_models.output_models.selected_paragraphs import (
@@ -56,6 +58,7 @@ class RerankerPipeline(Pipeline):
         )
         logger.debug(self.output_parser.get_format_instructions())
         self.pipeline = self.llm | self.output_parser
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -108,4 +111,7 @@ class RerankerPipeline(Pipeline):
             prompt = self.default_prompt
 
         response = (prompt | self.pipeline).invoke(data)
+        num_tokens = self.llm.tokens
+        num_tokens.pipeline = PipelineEnum.IRIS_RERANKER_PIPELINE
+        self.tokens.append(num_tokens)
         return response.selected_paragraphs

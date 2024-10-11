@@ -6,6 +6,7 @@ from asyncio.log import logger
 import fitz
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from sipbuild.generator.parser.tokens import tokens
 from unstructured.cleaners.core import clean
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
@@ -18,6 +19,7 @@ from app.domain.ingestion.ingestion_pipeline_execution_dto import (
     IngestionPipelineExecutionDto,
 )
 from ..domain.data.text_message_content_dto import TextMessageContentDTO
+from ..llm.external.PipelineEnum import PipelineEnum
 from ..llm.langchain import IrisLangchainChatModel
 from ..vector_database.lecture_schema import init_lecture_schema, LectureSchema
 from ..ingestion.abstract_ingestion import AbstractIngestion
@@ -112,6 +114,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             request_handler=request_handler, completion_args=completion_args
         )
         self.pipeline = self.llm | StrOutputParser()
+        self.tokens = []
 
     def __call__(self) -> bool:
         try:
@@ -273,9 +276,14 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             image_interpretation=image_interpretation,
         )
         prompt = ChatPromptTemplate.from_messages(prompt_val)
-        return clean(
+        clean_output = clean(
             (prompt | self.pipeline).invoke({}), bullets=True, extra_whitespace=True
         )
+        # TODO: send to artemis
+        num_tokens = self.llm.tokens
+        num_tokens.pipeline = PipelineEnum.IRIS_LECTURE_INGESTION
+        tokens.append(num_tokens)
+        return clean_output
 
     def get_course_language(self, page_content: str) -> str:
         """
