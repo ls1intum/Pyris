@@ -8,6 +8,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult, ChatGeneration
 
 from ..external.LLMTokenCount import LLMTokenCount
+from ..external.PipelineEnum import PipelineEnum
 from ...common import (
     convert_iris_message_to_langchain_message,
     convert_langchain_message_to_iris_message,
@@ -46,7 +47,8 @@ class IrisLangchainChatModel(BaseChatModel):
         chat_generation = ChatGeneration(message=base_message)
         self.tokens = LLMTokenCount(model_info=iris_message.model_info,
                                          num_input_tokens=iris_message.num_input_tokens,
-                                         num_output_tokens=iris_message.num_output_tokens)
+                                         num_output_tokens=iris_message.num_output_tokens,
+                                         pipeline=PipelineEnum.NOT_SET)
         return ChatResult(generations=[chat_generation])
 
     @property

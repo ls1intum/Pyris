@@ -35,6 +35,7 @@ from ..prompts.iris_interaction_suggestion_prompts import (
 
 from ...llm import CompletionArguments
 from ...llm.external.LLMTokenCount import LLMTokenCount
+from ...llm.external.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
@@ -167,6 +168,7 @@ class InteractionSuggestionPipeline(Pipeline):
 
             response: dict = (self.prompt | self.pipeline).invoke({})
             self.tokens = self.llm.tokens
+            self.tokens.pipeline = PipelineEnum.IRIS_INTERACTION_SUGGESTION
             return response["questions"]
         except Exception as e:
             logger.error(

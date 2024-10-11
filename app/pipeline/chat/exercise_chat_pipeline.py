@@ -36,6 +36,7 @@ from ...domain.data.programming_submission_dto import ProgrammingSubmissionDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
 from ...llm.external.LLMTokenCount import LLMTokenCount
+from ...llm.external.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
@@ -261,6 +262,7 @@ class ExerciseChatPipeline(Pipeline):
                 .invoke({})
             )
             if self.llm.tokens is not None:
+                self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
                 self.tokens.append(self.llm.tokens)
             self.callback.done()
             self.prompt = ChatPromptTemplate.from_messages(
@@ -277,6 +279,7 @@ class ExerciseChatPipeline(Pipeline):
                 .invoke({})
             )
             if self.llm.tokens is not None:
+                self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
                 self.tokens.append(self.llm.tokens)
 
             if "!ok!" in guide_response:
