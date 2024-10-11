@@ -131,7 +131,7 @@ class OpenAIChatModel(ChatModel):
                 traceback.print_exc()
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-        logging.error(f"Failed to get response from OpenAI after {retries} retries")
+        raise Exception(f"Failed to get response from OpenAI after {retries} retries")
 
 
 class DirectOpenAIChatModel(OpenAIChatModel):

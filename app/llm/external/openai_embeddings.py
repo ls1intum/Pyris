@@ -42,8 +42,7 @@ class OpenAIEmbeddingModel(EmbeddingModel):
                 logging.warning(f"OpenAI error on attempt {attempt + 1}: {e}")
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-        logging.error(f"Failed to get embedding after {retries} retries.")
-        return []
+        raise Exception(f"Failed to get embedding from OpenAI after {retries} retries.")
 
 
 class DirectOpenAIEmbeddingModel(OpenAIEmbeddingModel):
