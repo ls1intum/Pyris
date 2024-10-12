@@ -24,8 +24,8 @@ from ..prompts.iris_exercise_chat_prompts import (
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
 from ...common import convert_iris_message_to_langchain_message
+from ...common.pyris_message import PyrisMessage
 from ...domain import ExerciseChatPipelineExecutionDTO
-from ...domain import PyrisMessage
 from ...domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
 )
@@ -34,7 +34,7 @@ from ...domain.data.feedback_dto import FeedbackDTO
 from ...domain.data.programming_submission_dto import ProgrammingSubmissionDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
-from ...llm.external.PipelineEnum import PipelineEnum
+from app.common.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
@@ -137,11 +137,15 @@ class ExerciseChatPipeline(Pipeline):
                 )
                 traceback.print_exc()
                 self.callback.error(
-                    "Generating interaction suggestions failed.", exception=e
+                    "Generating interaction suggestions failed.",
+                    exception=e,
+                    tokens=self.tokens,
                 )
         except Exception as e:
             traceback.print_exc()
-            self.callback.error(f"Failed to generate response: {e}", exception=e)
+            self.callback.error(
+                f"Failed to generate response: {e}", exception=e, tokens=self.tokens
+            )
 
     def _run_exercise_chat_pipeline(
         self,
@@ -226,7 +230,9 @@ class ExerciseChatPipeline(Pipeline):
                     )
                 except Exception as e:
                     self.callback.error(
-                        f"Failed to look up files in the repository: {e}", exception=e
+                        f"Failed to look up files in the repository: {e}",
+                        exception=e,
+                        tokens=self.tokens,
                     )
                     return
 
@@ -242,7 +248,9 @@ class ExerciseChatPipeline(Pipeline):
                         )
                 except Exception as e:
                     self.callback.error(
-                        f"Failed to retrieve lecture chunks: {e}", exception=e
+                        f"Failed to retrieve lecture chunks: {e}",
+                        exception=e,
+                        tokens=self.tokens,
                     )
                     return
 
@@ -268,7 +276,9 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Drafting"})
                 .invoke({})
             )
-            self._collect_llm_tokens()
+            self._append_tokens(
+                self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
+            )
             self.callback.done()
             self.prompt = ChatPromptTemplate.from_messages(
                 [
@@ -283,7 +293,9 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Refining"})
                 .invoke({})
             )
-            self._collect_llm_tokens()
+            self._append_tokens(
+                self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
+            )
 
             if "!ok!" in guide_response:
                 print("Response is ok and not rewritten!!!")
@@ -292,7 +304,9 @@ class ExerciseChatPipeline(Pipeline):
                 print("Response is rewritten.")
                 self.exercise_chat_response = guide_response
         except Exception as e:
-            self.callback.error(f"Failed to create response: {e}", exception=e)
+            self.callback.error(
+                f"Failed to create response: {e}", exception=e, tokens=self.tokens
+            )
             # print stack trace
             traceback.print_exc()
             return "Failed to generate response"
@@ -385,8 +399,3 @@ class ExerciseChatPipeline(Pipeline):
             )
             return len(result.objects) > 0
         return False
-
-    def _collect_llm_tokens(self):
-        if self.llm.tokens is not None:
-            self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
-            self.tokens.append(self.llm.tokens)

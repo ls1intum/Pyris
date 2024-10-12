@@ -22,7 +22,7 @@ from .interaction_suggestion_pipeline import (
 from .lecture_chat_pipeline import LectureChatPipeline
 from ..shared.citation_pipeline import CitationPipeline
 from ...common import convert_iris_message_to_langchain_message
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_course_chat_prompts import (
     tell_iris_initial_system_prompt,
@@ -41,7 +41,7 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_begin_agent_jol_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
-from ...llm.external.PipelineEnum import PipelineEnum
+from app.common.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -408,9 +408,9 @@ class CourseChatPipeline(Pipeline):
             self.callback.in_progress()
             for step in agent_executor.iter(params):
                 print("STEP:", step)
-                token_count = self.llm.tokens
-                token_count.pipeline = PipelineEnum.IRIS_CHAT_COURSE_MESSAGE
-                self.tokens.append(token_count)
+                self._append_tokens(
+                    self.llm.tokens, PipelineEnum.IRIS_CHAT_COURSE_MESSAGE
+                )
                 if step.get("output", None):
                     out = step["output"]
 
@@ -446,7 +446,8 @@ class CourseChatPipeline(Pipeline):
             )
             traceback.print_exc()
             self.callback.error(
-                "An error occurred while running the course chat pipeline."
+                "An error occurred while running the course chat pipeline.",
+                tokens=self.tokens,
             )
 
     def should_allow_lecture_tool(self, course_id: int) -> bool:

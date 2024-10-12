@@ -1,6 +1,6 @@
 from enum import Enum
 
-from app.domain import PyrisMessage
+from app.common.pyris_message import PyrisMessage
 from app.llm.capability import RequirementList
 from app.llm.external.model import (
     ChatModel,
@@ -45,8 +45,8 @@ class CapabilityRequestHandler(RequestHandler):
     ) -> PyrisMessage:
         llm = self._select_model(ChatModel)
         message = llm.chat(messages, arguments)
-        message.cost_per_input_token = llm.capabilities.input_cost.value
-        message.cost_per_output_token = llm.capabilities.output_cost.value
+        message.token_usage.cost_per_input_token = llm.capabilities.input_cost.value
+        message.token_usage.cost_per_output_token = llm.capabilities.output_cost.value
         return message
 
     def embed(self, text: str) -> list[float]:

@@ -6,12 +6,12 @@ from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 
 from ..common import convert_iris_message_to_langchain_message
-from ..llm.external.LLMTokenCount import LLMTokenCount
-from ..llm.external.PipelineEnum import PipelineEnum
+from app.common.token_usage_dto import TokenUsageDTO
+from app.common.PipelineEnum import PipelineEnum
+from ..common.pyris_message import PyrisMessage
 from ..llm.langchain import IrisLangchainChatModel
 from ..pipeline import Pipeline
 
-from app.domain import PyrisMessage
 from app.llm import (
     BasicRequestHandler,
     CompletionArguments,
@@ -83,7 +83,7 @@ class LectureRetrieval(Pipeline):
     Class for retrieving lecture data from the database.
     """
 
-    tokens: [LLMTokenCount]
+    tokens: [TokenUsageDTO]
 
     def __init__(self, client: WeaviateClient, **kwargs):
         super().__init__(implementation_id="lecture_retrieval_pipeline")

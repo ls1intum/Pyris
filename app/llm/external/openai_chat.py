@@ -12,7 +12,8 @@ from openai.types.shared_params import ResponseFormatJSONObject
 
 from ...common.message_converters import map_str_to_role, map_role_to_str
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage
+from ...common.token_usage_dto import TokenUsageDTO
 from ...domain.data.image_message_content_dto import ImageMessageContentDTO
 from ...domain.data.json_message_content_dto import JsonMessageContentDTO
 from ...llm import CompletionArguments
@@ -71,13 +72,17 @@ def convert_to_iris_message(
     num_input_tokens = getattr(usage, "prompt_tokens", -1)
     num_output_tokens = getattr(usage, "completion_tokens", -1)
 
+    tokens = TokenUsageDTO(
+        modelInfo=model,
+        numInputTokens=num_input_tokens,
+        numOutputTokens=num_output_tokens,
+    )
+
     message = PyrisMessage(
         sender=map_str_to_role(message.role),
         contents=[TextMessageContentDTO(textContent=message.content)],
-        send_at=datetime.now(),
-        num_input_tokens=num_input_tokens,
-        num_output_tokens=num_output_tokens,
-        model_info=model,
+        sentAt=datetime.now(),
+        token_usage=tokens,
     )
     return message
 

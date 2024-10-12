@@ -11,12 +11,12 @@ from langsmith import traceable
 
 from ..shared.citation_pipeline import CitationPipeline
 from ...common import convert_iris_message_to_langchain_message
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage
 from ...domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from ...llm import CapabilityRequestHandler, RequirementList
-from ...llm.external.PipelineEnum import PipelineEnum
+from app.common.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -116,9 +116,7 @@ class LectureChatPipeline(Pipeline):
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (self.prompt | self.pipeline).invoke({})
-            token_usage = self.llm.tokens
-            token_usage.pipeline = PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE
-            self.tokens.append(token_usage)
+            self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
             )

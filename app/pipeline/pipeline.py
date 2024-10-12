@@ -1,14 +1,15 @@
 from abc import ABCMeta
 from typing import List
 
-from app.llm.external.LLMTokenCount import LLMTokenCount
+from app.common.token_usage_dto import TokenUsageDTO
+from app.common.PipelineEnum import PipelineEnum
 
 
 class Pipeline(metaclass=ABCMeta):
     """Abstract class for all pipelines"""
 
     implementation_id: str
-    tokens: List[LLMTokenCount]
+    tokens: List[TokenUsageDTO]
 
     def __init__(self, implementation_id=None, **kwargs):
         self.implementation_id = implementation_id
@@ -31,3 +32,7 @@ class Pipeline(metaclass=ABCMeta):
             raise NotImplementedError(
                 "Subclasses of Pipeline interface must implement the __call__ method."
             )
+
+    def _append_tokens(self, tokens: TokenUsageDTO, pipeline: PipelineEnum) -> None:
+        tokens.pipeline = pipeline
+        self.tokens.append(tokens)

@@ -6,16 +6,13 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
 )
 
+from app.common.pyris_message import PyrisMessage, IrisMessageRole
 from app.domain import (
     CompetencyExtractionPipelineExecutionDTO,
-    PyrisMessage,
-    IrisMessageRole,
 )
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from app.domain.data.competency_dto import Competency
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
-from app.llm.external.LLMTokenCount import LLMTokenCount
-from app.llm.external.PipelineEnum import PipelineEnum
 from app.pipeline import Pipeline
 from app.web.status.status_update import CompetencyExtractionCallback
 from app.pipeline.prompts.competency_extraction import system_prompt
@@ -79,13 +76,7 @@ class CompetencyExtractionPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        token_usage = LLMTokenCount(
-            model_info=response.model_info,
-            num_input_tokens=response.num_input_tokens,
-            num_output_tokens=response.num_output_tokens,
-            pipeline=PipelineEnum.IRIS_COMPETENCY_GENERATION,
-        )
-        self.tokens.append(token_usage)
+        self.tokens.append(response.token_usage)
         response = response.contents[0].text_content
 
         generated_competencies: list[Competency] = []
