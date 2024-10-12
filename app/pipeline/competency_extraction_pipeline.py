@@ -6,6 +6,7 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
 )
 
+from app.common.PipelineEnum import PipelineEnum
 from app.common.pyris_message import PyrisMessage, IrisMessageRole
 from app.domain import (
     CompetencyExtractionPipelineExecutionDTO,
@@ -76,7 +77,9 @@ class CompetencyExtractionPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        self.tokens.append(response.token_usage)
+        self._append_tokens(
+            response.token_usage, PipelineEnum.IRIS_COMPETENCY_GENERATION
+        )
         response = response.contents[0].text_content
 
         generated_competencies: list[Competency] = []
