@@ -44,7 +44,10 @@ class CapabilityRequestHandler(RequestHandler):
         self, messages: list[PyrisMessage], arguments: CompletionArguments
     ) -> PyrisMessage:
         llm = self._select_model(ChatModel)
-        return llm.chat(messages, arguments)
+        message = llm.chat(messages, arguments)
+        message.cost_per_input_token = llm.capabilities.input_cost.value
+        message.cost_per_output_token = llm.capabilities.output_cost.value
+        return message
 
     def embed(self, text: str) -> list[float]:
         llm = self._select_model(EmbeddingModel)

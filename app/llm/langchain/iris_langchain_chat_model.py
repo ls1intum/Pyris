@@ -48,7 +48,9 @@ class IrisLangchainChatModel(BaseChatModel):
         self.tokens = LLMTokenCount(
             model_info=iris_message.model_info,
             num_input_tokens=iris_message.num_input_tokens,
+            cost_per_input_token=iris_message.cost_per_input_token,
             num_output_tokens=iris_message.num_output_tokens,
+            cost_per_output_token=iris_message.cost_per_output_token,
             pipeline=PipelineEnum.NOT_SET,
         )
         return ChatResult(generations=[chat_generation])
