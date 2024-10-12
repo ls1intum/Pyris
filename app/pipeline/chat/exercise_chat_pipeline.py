@@ -116,10 +116,14 @@ class ExerciseChatPipeline(Pipeline):
                     suggestion_dto.last_message = self.exercise_chat_response
                     suggestion_dto.problem_statement = dto.exercise.problem_statement
                     suggestions = self.suggestion_pipeline(suggestion_dto)
+                    if self.suggestion_pipeline.tokens is not None:
+                        tokens = [self.suggestion_pipeline.tokens]
+                    else:
+                        tokens = []
                     self.callback.done(
                         final_result=None,
                         suggestions=suggestions,
-                        tokens=[self.suggestion_pipeline.tokens],
+                        tokens=tokens,
                     )
                 else:
                     # This should never happen but whatever
@@ -264,9 +268,7 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Drafting"})
                 .invoke({})
             )
-            if self.llm.tokens is not None:
-                self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
-                self.tokens.append(self.llm.tokens)
+            self._collect_llm_tokens()
             self.callback.done()
             self.prompt = ChatPromptTemplate.from_messages(
                 [
@@ -281,9 +283,7 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Refining"})
                 .invoke({})
             )
-            if self.llm.tokens is not None:
-                self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
-                self.tokens.append(self.llm.tokens)
+            self._collect_llm_tokens()
 
             if "!ok!" in guide_response:
                 print("Response is ok and not rewritten!!!")
@@ -385,3 +385,8 @@ class ExerciseChatPipeline(Pipeline):
             )
             return len(result.objects) > 0
         return False
+
+    def _collect_llm_tokens(self):
+        if self.llm.tokens is not None:
+            self.llm.tokens.pipeline = PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
+            self.tokens.append(self.llm.tokens)

@@ -114,10 +114,10 @@ class OllamaModel(
             options=self.options,
         )
         return convert_to_iris_message(
-            response["message"],
-            response["prompt_eval_count"],
-            response["eval_count"],
-            response["model"],
+            response.get("message"),
+            response.get("prompt_eval_count", 0),
+            response.get("eval_count", 0),
+            response.get("model", self.model),
         )
 
     def embed(self, text: str) -> list[float]:

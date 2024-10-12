@@ -116,9 +116,9 @@ class LectureChatPipeline(Pipeline):
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (self.prompt | self.pipeline).invoke({})
-            num_tokens = self.llm.tokens
-            num_tokens.pipeline = PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE
-            self.tokens.append(num_tokens)
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE
+            self.tokens.append(token_usage)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
             )

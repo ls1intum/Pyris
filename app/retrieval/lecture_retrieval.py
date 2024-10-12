@@ -7,6 +7,7 @@ from weaviate.classes.query import Filter
 
 from ..common import convert_iris_message_to_langchain_message
 from ..llm.external.LLMTokenCount import LLMTokenCount
+from ..llm.external.PipelineEnum import PipelineEnum
 from ..llm.langchain import IrisLangchainChatModel
 from ..pipeline import Pipeline
 
@@ -82,7 +83,7 @@ class LectureRetrieval(Pipeline):
     Class for retrieving lecture data from the database.
     """
 
-    tokens: LLMTokenCount
+    tokens: [LLMTokenCount]
 
     def __init__(self, client: WeaviateClient, **kwargs):
         super().__init__(implementation_id="lecture_retrieval_pipeline")
@@ -101,6 +102,7 @@ class LectureRetrieval(Pipeline):
         self.pipeline = self.llm | StrOutputParser()
         self.collection = init_lecture_schema(client)
         self.reranker_pipeline = RerankerPipeline()
+        self.tokens = []
 
     @traceable(name="Full Lecture Retrieval")
     def __call__(
@@ -239,7 +241,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
-            self.tokens = self.llm.tokens
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:
@@ -277,6 +281,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:
@@ -312,6 +319,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from retirval pipeline: {response}")
             return response
         except Exception as e:
@@ -351,6 +361,9 @@ class LectureRetrieval(Pipeline):
         )
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:

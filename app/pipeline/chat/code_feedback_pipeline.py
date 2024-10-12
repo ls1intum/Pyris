@@ -144,7 +144,7 @@ class CodeFeedbackPipeline(Pipeline):
                 }
             )
         )
-        num_tokens = self.llm.tokens
-        num_tokens.pipeline = PipelineEnum.IRIS_CODE_FEEDBACK
-        self.tokens = num_tokens
+        token_usage = self.llm.tokens
+        token_usage.pipeline = PipelineEnum.IRIS_CODE_FEEDBACK
+        self.tokens = token_usage
         return response.replace("{", "{{").replace("}", "}}")

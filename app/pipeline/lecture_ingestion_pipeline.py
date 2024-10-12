@@ -6,7 +6,6 @@ from asyncio.log import logger
 import fitz
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from sipbuild.generator.parser.tokens import tokens
 from unstructured.cleaners.core import clean
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
@@ -280,9 +279,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             (prompt | self.pipeline).invoke({}), bullets=True, extra_whitespace=True
         )
         # TODO: send to artemis
-        num_tokens = self.llm.tokens
-        num_tokens.pipeline = PipelineEnum.IRIS_LECTURE_INGESTION
-        tokens.append(num_tokens)
+        token_usage = self.llm.tokens
+        token_usage.pipeline = PipelineEnum.IRIS_LECTURE_INGESTION
+        self.tokens.append(token_usage)
         return clean_output
 
     def get_course_language(self, page_content: str) -> str:

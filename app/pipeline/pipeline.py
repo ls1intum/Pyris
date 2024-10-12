@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from typing import List
 
-from app.llm.external import LLMTokenCount
+from app.llm.external.LLMTokenCount import LLMTokenCount
 
 
 class Pipeline(metaclass=ABCMeta):

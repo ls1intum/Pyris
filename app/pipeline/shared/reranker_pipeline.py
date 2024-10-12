@@ -110,7 +110,7 @@ class RerankerPipeline(Pipeline):
             prompt = self.default_prompt
 
         response = (prompt | self.pipeline).invoke(data)
-        num_tokens = self.llm.tokens
-        num_tokens.pipeline = PipelineEnum.IRIS_RERANKER_PIPELINE
-        self.tokens.append(num_tokens)
+        token_usage = self.llm.tokens
+        token_usage.pipeline = PipelineEnum.IRIS_RERANKER_PIPELINE
+        self.tokens.append(token_usage)
         return response.selected_paragraphs

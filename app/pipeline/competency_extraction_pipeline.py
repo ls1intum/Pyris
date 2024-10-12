@@ -79,13 +79,13 @@ class CompetencyExtractionPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        num_tokens = LLMTokenCount(
+        token_usage = LLMTokenCount(
             model_info=response.model_info,
             num_input_tokens=response.num_input_tokens,
             num_output_tokens=response.num_output_tokens,
             pipeline=PipelineEnum.IRIS_COMPETENCY_GENERATION,
         )
-        self.tokens.append(num_tokens)
+        self.tokens.append(token_usage)
         response = response.contents[0].text_content
 
         generated_competencies: list[Competency] = []
