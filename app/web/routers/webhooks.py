@@ -87,7 +87,7 @@ def lecture_ingestion_webhook(dto: IngestionPipelineExecutionDto):
 )
 def lecture_deletion_webhook(dto: LecturesDeletionExecutionDto):
     """
-    Webhook endpoint to trigger the exercise chat pipeline
+    Webhook endpoint to trigger the lecture deletion
     """
     thread = Thread(target=run_lecture_deletion_pipeline_worker, args=(dto,))
     thread.start()

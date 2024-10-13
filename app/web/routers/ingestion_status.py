@@ -8,10 +8,9 @@ from weaviate.collections.classes.filters import Filter
 from app.dependencies import TokenValidator
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
+from enum import Enum
 
 router = APIRouter(prefix="/api/v1", tags=["ingestion_status"])
-
-from enum import Enum
 
 
 class IngestionState(str, Enum):
@@ -24,7 +23,7 @@ class IngestionState(str, Enum):
     dependencies=[Depends(TokenValidator())],
 )
 def get_lecture_unit_ingestion_state(
-        course_id: int, lecture_id: int, lecture_unit_id: int, base_url: str = Query(...)
+    course_id: int, lecture_id: int, lecture_unit_id: int, base_url: str = Query(...)
 ):
     """
 
@@ -38,12 +37,12 @@ def get_lecture_unit_ingestion_state(
     decoded_base_url = unquote(base_url)
     result = db.lectures.query.fetch_objects(
         filters=(
-                Filter.by_property(LectureSchema.BASE_URL.value).equal(decoded_base_url)
-                & Filter.by_property(LectureSchema.COURSE_ID.value).equal(course_id)
-                & Filter.by_property(LectureSchema.LECTURE_ID.value).equal(lecture_id)
-                & Filter.by_property(LectureSchema.LECTURE_UNIT_ID.value).equal(
-            lecture_unit_id
-        )
+            Filter.by_property(LectureSchema.BASE_URL.value).equal(decoded_base_url)
+            & Filter.by_property(LectureSchema.COURSE_ID.value).equal(course_id)
+            & Filter.by_property(LectureSchema.LECTURE_ID.value).equal(lecture_id)
+            & Filter.by_property(LectureSchema.LECTURE_UNIT_ID.value).equal(
+                lecture_unit_id
+            )
         ),
         limit=1,
         return_properties=[LectureSchema.LECTURE_UNIT_NAME.value],
