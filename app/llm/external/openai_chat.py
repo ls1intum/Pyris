@@ -128,13 +128,15 @@ class OpenAIChatModel(ChatModel):
                         max_tokens=arguments.max_tokens,
                     )
                 choice = response.choices[0]
+                usage = response.usage
+                model = response.model
                 if choice.finish_reason == "content_filter":
                     # I figured that an openai error would be automatically raised if the content filter activated,
                     # but it seems that that is not the case.
                     # We don't want to retry because the same message will likely be rejected again.
                     # Raise an exception to trigger the global error handler and report a fatal error to the client.
                     raise ContentFilterFinishReasonError()
-                return convert_to_iris_message(choice.message)
+                return convert_to_iris_message(choice.message, usage, model)
             except (
                 APIError,
                 APITimeoutError,
