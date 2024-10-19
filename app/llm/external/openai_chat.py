@@ -79,7 +79,7 @@ def convert_to_iris_message(
     num_output_tokens = getattr(usage, "completion_tokens", -1)
 
     tokens = TokenUsageDTO(
-        modelInfo=model,
+        model=model,
         numInputTokens=num_input_tokens,
         numOutputTokens=num_output_tokens,
     )

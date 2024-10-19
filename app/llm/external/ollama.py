@@ -68,7 +68,7 @@ def convert_to_iris_message(
     tokens = TokenUsageDTO(
         numInputTokens=num_input_tokens,
         numOutputTokens=num_output_tokens,
-        modelInfo=model,
+        model=model,
     )
     return PyrisMessage(
         sender=map_str_to_role(message["role"]),
