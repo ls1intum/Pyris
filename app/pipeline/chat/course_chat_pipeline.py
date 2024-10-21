@@ -23,7 +23,6 @@ from .lecture_chat_pipeline import LectureChatPipeline
 from ..shared.citation_pipeline import CitationPipeline
 from ...common import convert_iris_message_to_langchain_message
 from ...domain import PyrisMessage
-from ...domain.data.exercise_with_submissions_dto import ExerciseWithSubmissionsDTO
 from ...domain.data.metrics.competency_jol_dto import CompetencyJolDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_course_chat_prompts import (
@@ -33,7 +32,6 @@ from ..prompts.iris_course_chat_prompts import (
     tell_no_chat_history_prompt,
     tell_format_reminder_prompt,
     tell_begin_agent_jol_prompt,
-    tell_begin_agent_submission_successful_prompt,
 )
 from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_iris_initial_system_prompt,
@@ -42,7 +40,6 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_no_chat_history_prompt,
     elicit_format_reminder_prompt,
     elicit_begin_agent_jol_prompt,
-    elicit_begin_agent_submission_successful_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
 from ...retrieval.lecture_retrieval import LectureRetrieval
@@ -81,12 +78,19 @@ class CourseChatPipeline(Pipeline):
     callback: CourseChatStatusCallback
     prompt: ChatPromptTemplate
     variant: str
+    event: str | None
     retrieved_paragraphs: List[dict] = None
 
-    def __init__(self, callback: CourseChatStatusCallback, variant: str = "default"):
+    def __init__(
+        self,
+        callback: CourseChatStatusCallback,
+        variant: str = "default",
+        event: str | None = None,
+    ):
         super().__init__(implementation_id="course_chat_pipeline")
 
         self.variant = variant
+        self.event = event
 
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
@@ -125,7 +129,7 @@ class CourseChatPipeline(Pipeline):
             :param dto: The pipeline execution data transfer object
             :param kwargs: The keyword arguments
         """
-        print(dto.model_dump_json(indent=4))
+        logger.debug(dto.model_dump_json(indent=4))
 
         # Define tools
         @tool
@@ -305,9 +309,6 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = tell_no_chat_history_prompt
             format_reminder_prompt = tell_format_reminder_prompt
             begin_agent_jol_prompt = tell_begin_agent_jol_prompt
-            begin_agent_submission_successful_prompt = (
-                tell_begin_agent_submission_successful_prompt
-            )
         else:
             iris_initial_system_prompt = elicit_iris_initial_system_prompt
             begin_agent_prompt = elicit_begin_agent_prompt
@@ -315,9 +316,6 @@ class CourseChatPipeline(Pipeline):
             no_chat_history_prompt = elicit_no_chat_history_prompt
             format_reminder_prompt = elicit_format_reminder_prompt
             begin_agent_jol_prompt = elicit_begin_agent_jol_prompt
-            begin_agent_submission_successful_prompt = (
-                elicit_begin_agent_submission_successful_prompt
-            )
 
         try:
             logger.info("Running course chat pipeline...")
@@ -332,9 +330,9 @@ class CourseChatPipeline(Pipeline):
                 datetime.now(tz=pytz.UTC).strftime("%Y-%m-%d %H:%M:%S"),
             )
 
-            if self.variant == "jol":
+            if self.event == "jol":
                 event_payload = CompetencyJolDTO.model_validate(dto.event_payload.event)
-                print("Event Payload:", event_payload)
+                logger.debug("Event Payload:", event_payload)
                 comp = next(
                     (
                         c
@@ -355,44 +353,6 @@ class CourseChatPipeline(Pipeline):
                         }
                     ),
                     "competency": comp.model_dump_json(),
-                }
-            elif self.variant == "submission_successful":
-                event_payload = ExerciseWithSubmissionsDTO.model_validate(
-                    dto.event_payload.event
-                )
-                comp = next(
-                    (
-                        c
-                        for c in dto.course.competencies
-                        if event_payload.id in c.exercise_list
-                    ),
-                    None,
-                )
-                agent_prompt = begin_agent_submission_successful_prompt
-                params = {
-                    "exercise": json.dumps(
-                        {
-                            "id": event_payload.id,
-                            "course_id": dto.course.id,
-                            "title": event_payload.title,
-                            "type": event_payload.type,
-                            "mode": event_payload.mode,
-                            "max_points": event_payload.max_points,
-                            "bonus_points": event_payload.bonus_points,
-                            "difficulty_level": event_payload.difficulty_level,
-                            "due_date": datetime_to_string(event_payload.due_date),
-                            "submissions": [
-                                {
-                                    "timestamp": datetime_to_string(
-                                        submission.timestamp
-                                    ),
-                                    "score": submission.score,
-                                }
-                                for submission in event_payload.submissions
-                            ],
-                        }
-                    ),
-                    "competency": comp.model_dump() if comp else "<Unknown competency>",
                 }
             else:
                 agent_prompt = (

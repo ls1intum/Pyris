@@ -118,8 +118,14 @@ class ExerciseChatAgentPipeline(Pipeline):
     code_feedback_pipeline: CodeFeedbackPipeline
     prompt: ChatPromptTemplate
     variant: str
+    event: str | None
 
-    def __init__(self, callback: ExerciseChatStatusCallback, variant: str = "default"):
+    def __init__(
+        self,
+        callback: ExerciseChatStatusCallback,
+        variant: str = "default",
+        event: str | None = None,
+    ):
         super().__init__(implementation_id="exercise_chat_pipeline")
         # Set the langchain chat model
         completion_args = CompletionArguments(temperature=0.5, max_tokens=2000)
@@ -132,6 +138,7 @@ class ExerciseChatAgentPipeline(Pipeline):
             completion_args=completion_args,
         )
         self.variant = variant
+        self.event = event
         self.callback = callback
 
         # Create the pipelines
@@ -439,12 +446,12 @@ class ExerciseChatAgentPipeline(Pipeline):
                 "{current_date}",
                 datetime.now(tz=pytz.UTC).strftime("%Y-%m-%d %H:%M:%S"),
             )
-            # Determine the agent prompt based on the variant.
-            # A variant other than "default" might indicate that a
+            # Determine the agent prompt based on the event.
+            # An event parameter might indicates that a
             # specific event is triggered, such as a build failure or stalled progress.
-            if self.variant == "build_failed":
+            if self.event == "build_failed":
                 agent_prompt = tell_build_failed_system_prompt
-            elif self.variant == "progress_stalled":
+            elif self.event == "progress_stalled":
                 agent_prompt = tell_progress_stalled_system_prompt
             else:
                 agent_prompt = (
@@ -459,11 +466,7 @@ class ExerciseChatAgentPipeline(Pipeline):
 
             params = {}
 
-            if (
-                len(chat_history) > 0
-                and query is not None
-                and self.variant == "default"
-            ):
+            if len(chat_history) > 0 and query is not None and self.event is None:
                 # Add the conversation to the prompt
                 chat_history_messages = convert_chat_history_to_str(chat_history)
                 self.prompt = ChatPromptTemplate.from_messages(
@@ -487,7 +490,7 @@ class ExerciseChatAgentPipeline(Pipeline):
                     ]
                 )
             else:
-                if query is not None and self.variant == "default":
+                if query is not None and self.event is None:
                     self.prompt = ChatPromptTemplate.from_messages(
                         [
                             SystemMessage(
