@@ -4,9 +4,16 @@ import time
 from datetime import datetime
 from typing import Literal, Any, Sequence, Union, Dict, Type, Callable, Optional
 
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.tools import BaseTool
-from openai import OpenAI
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from openai import (
+    OpenAI,
+    APIError,
+    APITimeoutError,
+    RateLimitError,
+    InternalServerError,
+    ContentFilterFinishReasonError,
+)
 from openai.lib.azure import AzureOpenAI
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
@@ -138,16 +145,20 @@ class OpenAIChatModel(ChatModel):
         self, messages: list[PyrisMessage], arguments: CompletionArguments
     ) -> PyrisMessage:
         # noinspection PyTypeChecker
-        retries = 10
+        retries = 5
         backoff_factor = 2
         initial_delay = 1
+        # Maximum wait time: 1 + 2 + 4 + 8 + 16 = 31 seconds
+
+        messages = convert_to_open_ai_messages(messages)
+
         for attempt in range(retries):
             try:
                 if arguments.response_format == "JSON":
                     if self.tools:
                         response = self._client.chat.completions.create(
                             model=self.model,
-                            messages=convert_to_open_ai_messages(messages),
+                            messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
                             response_format=ResponseFormat(type="json_object"),
@@ -156,7 +167,7 @@ class OpenAIChatModel(ChatModel):
                     else:
                         response = self._client.chat.completions.create(
                             model=self.model,
-                            messages=convert_to_open_ai_messages(messages),
+                            messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
                             response_format=ResponseFormat(type="json_object"),
@@ -165,7 +176,7 @@ class OpenAIChatModel(ChatModel):
                     if self.tools:
                         response = self._client.chat.completions.create(
                             model=self.model,
-                            messages=convert_to_open_ai_messages(messages),
+                            messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
                             tools=self.tools,
@@ -173,17 +184,28 @@ class OpenAIChatModel(ChatModel):
                     else:
                         response = self._client.chat.completions.create(
                             model=self.model,
-                            messages=convert_to_open_ai_messages(messages),
+                            messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
                         )
-                return convert_to_iris_message(response.choices[0].message)
-            except Exception as e:
+                choice = response.choices[0]
+                if choice.finish_reason == "content_filter":
+                    # I figured that an openai error would be automatically raised if the content filter activated,
+                    # but it seems that that is not the case.
+                    # We don't want to retry because the same message will likely be rejected again.
+                    # Raise an exception to trigger the global error handler and report a fatal error to the client.
+                    raise ContentFilterFinishReasonError()
+                return convert_to_iris_message(choice.message)
+            except (
+                APIError,
+                APITimeoutError,
+                RateLimitError,
+            ):
                 wait_time = initial_delay * (backoff_factor**attempt)
-                logging.warning(f"Exception on attempt {attempt + 1}: {e}")
+                logging.exception(f"OpenAI error on attempt {attempt + 1}:")
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-        logging.error("Failed to interpret image after several attempts.")
+        raise Exception(f"Failed to get response from OpenAI after {retries} retries")
 
     def bind_tools(
         self,
