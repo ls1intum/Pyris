@@ -83,7 +83,7 @@ class LectureRetrieval(Pipeline):
     Class for retrieving lecture data from the database.
     """
 
-    tokens: [TokenUsageDTO]
+    tokens: List[TokenUsageDTO]
 
     def __init__(self, client: WeaviateClient, **kwargs):
         super().__init__(implementation_id="lecture_retrieval_pipeline")
