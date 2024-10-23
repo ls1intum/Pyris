@@ -119,8 +119,8 @@ class OllamaModel(
         )
         return convert_to_iris_message(
             response.get("message"),
-            response.get("prompt_eval_count", -1),
-            response.get("eval_count", -1),
+            response.get("prompt_eval_count", 0),
+            response.get("eval_count", 0),
             response.get("model", self.model),
         )
 

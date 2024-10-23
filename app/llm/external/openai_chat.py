@@ -75,8 +75,8 @@ def convert_to_iris_message(
     """
     Convert a ChatCompletionMessage to a PyrisMessage
     """
-    num_input_tokens = getattr(usage, "prompt_tokens", -1)
-    num_output_tokens = getattr(usage, "completion_tokens", -1)
+    num_input_tokens = getattr(usage, "prompt_tokens", 0)
+    num_output_tokens = getattr(usage, "completion_tokens", 0)
 
     tokens = TokenUsageDTO(
         model=model,
