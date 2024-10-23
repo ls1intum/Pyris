@@ -240,7 +240,10 @@ class ExerciseChatPipeline(Pipeline):
             if should_execute_lecture_pipeline:
                 try:
                     self.retrieved_lecture_chunks = future_lecture.result()
-                    if self.retriever.tokens is not None and len(self.retriever.tokens) > 0:
+                    if (
+                        self.retriever.tokens is not None
+                        and len(self.retriever.tokens) > 0
+                    ):
                         self.tokens.extend(self.retriever.tokens)
                     if len(self.retrieved_lecture_chunks) > 0:
                         self._add_relevant_chunks_to_prompt(
