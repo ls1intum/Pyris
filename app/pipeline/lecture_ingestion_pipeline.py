@@ -12,7 +12,7 @@ from unstructured.cleaners.core import clean
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 from . import Pipeline
-from ..domain import IrisMessageRole, PyrisMessage
+from ..common.pyris_message import PyrisMessage, IrisMessageRole
 from ..domain.data.image_message_content_dto import ImageMessageContentDTO
 
 from ..domain.data.lecture_unit_dto import LectureUnitDTO
@@ -20,6 +20,7 @@ from app.domain.ingestion.ingestion_pipeline_execution_dto import (
     IngestionPipelineExecutionDto,
 )
 from ..domain.data.text_message_content_dto import TextMessageContentDTO
+from app.common.PipelineEnum import PipelineEnum
 from ..llm.langchain import IrisLangchainChatModel
 from ..vector_database.lecture_schema import init_lecture_schema, LectureSchema
 from ..ingestion.abstract_ingestion import AbstractIngestion
@@ -115,6 +116,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             request_handler=request_handler, completion_args=completion_args
         )
         self.pipeline = self.llm | StrOutputParser()
+        self.tokens = []
 
     def __call__(self) -> bool:
         try:
@@ -140,7 +142,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             self.callback.done("Lecture Chunking and interpretation Finished")
             self.callback.in_progress("Ingesting lecture chunks into database...")
             self.batch_update(chunks)
-            self.callback.done("Lecture Ingestion Finished")
+            self.callback.done("Lecture Ingestion Finished", tokens=self.tokens)
             logger.info(
                 f"Lecture ingestion pipeline finished Successfully for course "
                 f"{self.dto.lecture_unit.course_name}"
@@ -149,7 +151,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         except Exception as e:
             logger.error(f"Error updating lecture unit: {e}")
             self.callback.error(
-                f"Failed to ingest lectures into the database: {e}", exception=e
+                f"Failed to ingest lectures into the database: {e}",
+                exception=e,
+                tokens=self.tokens,
             )
             return False
 
@@ -171,7 +175,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
                 except Exception as e:
                     logger.error(f"Error updating lecture unit: {e}")
                     self.callback.error(
-                        f"Failed to ingest lectures into the database: {e}", exception=e
+                        f"Failed to ingest lectures into the database: {e}",
+                        exception=e,
+                        tokens=self.tokens,
                     )
 
     def chunk_data(
@@ -246,6 +252,9 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             response = self.llm_vision.chat(
                 [iris_message], CompletionArguments(temperature=0, max_tokens=512)
             )
+            self._append_tokens(
+                response.token_usage, PipelineEnum.IRIS_LECTURE_INGESTION
+            )
         except Exception as e:
             logger.error(f"Error interpreting image: {e}")
             return None
@@ -274,9 +283,11 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
             image_interpretation=image_interpretation,
         )
         prompt = ChatPromptTemplate.from_messages(prompt_val)
-        return clean(
+        clean_output = clean(
             (prompt | self.pipeline).invoke({}), bullets=True, extra_whitespace=True
         )
+        self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_LECTURE_INGESTION)
+        return clean_output
 
     def get_course_language(self, page_content: str) -> str:
         """
@@ -293,6 +304,7 @@ class LectureIngestionPipeline(AbstractIngestion, Pipeline):
         response = self.llm_chat.chat(
             [iris_message], CompletionArguments(temperature=0, max_tokens=20)
         )
+        self._append_tokens(response.token_usage, PipelineEnum.IRIS_LECTURE_INGESTION)
         return response.contents[0].text_content
 
     def delete_old_lectures(
