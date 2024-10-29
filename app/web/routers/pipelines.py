@@ -11,6 +11,7 @@ from app.domain import (
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
 )
+from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import LectureChatPipelineExecutionDTO
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
@@ -132,6 +133,16 @@ def run_text_exercise_chat_pipeline(
     thread = Thread(target=run_text_exercise_chat_pipeline_worker, args=(dto, variant))
     thread.start()
 
+@router.post(
+    "/lecture-chat/{variant}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(TokenValidator())],
+)
+def run_lecture_chat_pipeline(
+        variant: str, dto: LectureChatPipelineExecutionDTO
+):
+    thread = Thread(target=run_lecture_chat_pipeline, args=(dto, variant))
+    thread.start()
 
 def run_competency_extraction_pipeline_worker(
     dto: CompetencyExtractionPipelineExecutionDTO, _variant: str
@@ -223,6 +234,14 @@ def get_pipeline(feature: str):
                     id="default",
                     name="Default Variant",
                     description="Default lecture ingestion variant.",
+                )
+            ]
+        case "LECTURE_CHAT":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default lecture chat variant.",
                 )
             ]
         case _:
