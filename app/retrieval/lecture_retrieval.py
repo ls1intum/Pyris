@@ -512,6 +512,10 @@ class LectureRetrieval(Pipeline):
         """
         course_language = "english"
 
+        print(self.collection)
+        print(self.llm_embedding)
+        print(self.collection.query)
+
         if course_id:
             # Fetch the first object that matches the course ID with the language property
             result = self.collection.query.fetch_objects(

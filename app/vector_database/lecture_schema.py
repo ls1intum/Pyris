@@ -30,7 +30,19 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
     Initialize the schema for the lecture slides
     """
     if client.collections.exists(LectureSchema.COLLECTION_NAME.value):
-        return client.collections.get(LectureSchema.COLLECTION_NAME.value)
+        collection = client.collections.get(LectureSchema.COLLECTION_NAME.value)
+
+        # collection.config.add_property(
+        #     Property(
+        #         name=LectureSchema.COURSE_LANGUAGE.value,
+        #         description="The language of the COURSE",
+        #         data_type=DataType.TEXT,
+        #         index_searchable=False,
+        #     )
+        # )
+
+        return collection
+
     return client.collections.create(
         name=LectureSchema.COLLECTION_NAME.value,
         vectorizer_config=Configure.Vectorizer.none(),
@@ -53,6 +65,12 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
             Property(
                 name=LectureSchema.COURSE_DESCRIPTION.value,
                 description="The description of the COURSE",
+                data_type=DataType.TEXT,
+                index_searchable=False,
+            ),
+            Property(
+                name=LectureSchema.COURSE_LANGUAGE.value,
+                description="The language of the COURSE",
                 data_type=DataType.TEXT,
                 index_searchable=False,
             ),

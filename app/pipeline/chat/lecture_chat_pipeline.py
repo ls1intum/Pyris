@@ -25,6 +25,7 @@ from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 
 from ..pipeline import Pipeline
+from ...web.status.status_update import LectureChatCallback
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +56,9 @@ class LectureChatPipeline(Pipeline):
     llm: IrisLangchainChatModel
     pipeline: Runnable
     prompt: ChatPromptTemplate
+    callback: LectureChatCallback
 
-    def __init__(self):
+    def __init__(self, callback: LectureChatCallback):
         super().__init__(implementation_id="lecture_chat_pipeline")
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
@@ -66,6 +68,9 @@ class LectureChatPipeline(Pipeline):
                 privacy_compliance=True,
             )
         )
+
+        self.callback = callback
+
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
         self.llm = IrisLangchainChatModel(
             request_handler=request_handler, completion_args=completion_args
@@ -89,7 +94,6 @@ class LectureChatPipeline(Pipeline):
         Runs the pipeline
         :param dto:  execution data transfer object
         """
-
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", lecture_initial_prompt()),
@@ -115,7 +119,13 @@ class LectureChatPipeline(Pipeline):
         prompt_val = self.prompt.format_messages()
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
+            self.callback.in_progress()
             response = (self.prompt | self.pipeline).invoke({})
+            self.callback.done(
+                "Generated response",
+                final_result=response,
+                tokens=self.tokens,
+            )
             self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
@@ -124,6 +134,11 @@ class LectureChatPipeline(Pipeline):
             logger.info(f"Response from lecture chat pipeline: {response}")
             return response_with_citation
         except Exception as e:
+            self.callback.error(
+                "Generating interaction suggestions failed.",
+                exception=e,
+                tokens=self.tokens,
+            )
             raise e
 
     def _add_conversation_to_prompt(
