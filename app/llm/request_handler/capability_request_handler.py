@@ -4,7 +4,7 @@ from typing import Sequence, Union, Dict, Any, Type, Callable
 from langchain_core.tools import BaseTool
 from pydantic.v1 import BaseModel
 
-from app.domain import PyrisMessage
+from app.common.pyris_message import PyrisMessage
 from app.llm.capability import RequirementList
 from app.llm.external.model import (
     ChatModel,
@@ -48,7 +48,10 @@ class CapabilityRequestHandler(RequestHandler):
         self, messages: list[PyrisMessage], arguments: CompletionArguments
     ) -> PyrisMessage:
         llm = self._select_model(ChatModel)
-        return llm.chat(messages, arguments)
+        message = llm.chat(messages, arguments)
+        message.token_usage.cost_per_input_token = llm.capabilities.input_cost.value
+        message.token_usage.cost_per_output_token = llm.capabilities.output_cost.value
+        return message
 
     def embed(self, text: str) -> list[float]:
         llm = self._select_model(EmbeddingModel)

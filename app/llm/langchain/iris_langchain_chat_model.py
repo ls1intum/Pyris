@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Any, Sequence, Union, Dict, Type, Callable
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -12,10 +13,12 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
+from app.common.PipelineEnum import PipelineEnum
 from ...common import (
     convert_iris_message_to_langchain_message,
     convert_langchain_message_to_iris_message,
 )
+from app.common.token_usage_dto import TokenUsageDTO
 from ...llm import RequestHandler, CompletionArguments
 
 
@@ -24,6 +27,8 @@ class IrisLangchainChatModel(BaseChatModel):
 
     request_handler: RequestHandler
     completion_args: CompletionArguments
+    tokens: TokenUsageDTO = None
+    logger = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -55,6 +60,14 @@ class IrisLangchainChatModel(BaseChatModel):
         iris_message = self.request_handler.chat(iris_messages, self.completion_args)
         base_message = convert_iris_message_to_langchain_message(iris_message)
         chat_generation = ChatGeneration(message=base_message)
+        self.tokens = TokenUsageDTO(
+            model=iris_message.token_usage.model_info,
+            numInputTokens=iris_message.token_usage.num_input_tokens,
+            costPerMillionInputToken=iris_message.token_usage.cost_per_input_token,
+            numOutputTokens=iris_message.token_usage.num_output_tokens,
+            costPerMillionOutputToken=iris_message.token_usage.cost_per_output_token,
+            pipeline=PipelineEnum.NOT_SET,
+        )
         return ChatResult(generations=[chat_generation])
 
     @property

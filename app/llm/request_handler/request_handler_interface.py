@@ -4,7 +4,7 @@ from langchain_core.tools import BaseTool
 from pydantic.v1 import BaseModel
 
 from .. import LanguageModel
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage
 from ...domain.data.image_message_content_dto import ImageMessageContentDTO
 from ...llm import CompletionArguments
 

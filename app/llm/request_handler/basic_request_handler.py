@@ -3,7 +3,7 @@ from typing import Optional, Sequence, Union, Dict, Any, Type, Callable
 from langchain_core.tools import BaseTool
 from pydantic.v1 import BaseModel
 
-from app.domain import PyrisMessage
+from app.common.pyris_message import PyrisMessage
 from app.domain.data.image_message_content_dto import ImageMessageContentDTO
 from app.llm import LanguageModel
 from app.llm.request_handler import RequestHandler

@@ -5,7 +5,7 @@ from openai.types.chat import ChatCompletionMessage
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as LegacyBaseModel
 
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage
 from ...llm import CompletionArguments
 from ...llm.capability import CapabilityList
 
