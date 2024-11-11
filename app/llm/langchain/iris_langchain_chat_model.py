@@ -45,6 +45,25 @@ class IrisLangchainChatModel(BaseChatModel):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind a sequence of tools to the request handler for function calling support.
+
+        Args:
+            tools: Sequence of tools that can be one of:
+                  - Dict describing the tool
+                  - Pydantic BaseModel
+                  - Callable function
+                  - BaseTool instance
+            **kwargs: Additional arguments passed to the request handler
+
+        Returns:
+            self: Returns this instance as a Runnable
+
+        Raises:
+            ValueError: If tools sequence is empty or contains invalid tool types
+        """
+        if not tools:
+            raise ValueError("At least one tool must be provided")
+
         self.request_handler.bind_tools(tools)
         return self
 
