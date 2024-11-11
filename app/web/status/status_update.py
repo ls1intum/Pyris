@@ -57,7 +57,6 @@ class StatusCallback(ABC):
     def on_status_update(self):
         """Send a status update to the Artemis API."""
         try:
-            print(self.url)
             print(self.status.dict(by_alias=True))
             requests.post(
                 self.url,

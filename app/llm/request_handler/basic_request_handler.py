@@ -14,7 +14,6 @@ class BasicRequestHandler(RequestHandler):
     def __init__(self, model_id: str):
         self.model_id = model_id
         self.llm_manager = LlmManager()
-        print("llm manager" + str(self.llm_manager.entries))
 
     def complete(
         self,
@@ -33,5 +32,4 @@ class BasicRequestHandler(RequestHandler):
 
     def embed(self, text: str) -> list[float]:
         llm = self.llm_manager.get_llm_by_id(self.model_id)
-        print("llm uiuiu" + str(llm))
         return llm.embed(text)
