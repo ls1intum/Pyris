@@ -14,11 +14,11 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
 from app.common.PipelineEnum import PipelineEnum
-from ...common import (
-    convert_iris_message_to_langchain_message,
-    convert_langchain_message_to_iris_message,
-)
 from app.common.token_usage_dto import TokenUsageDTO
+from ...common.message_converters import (
+    convert_langchain_message_to_iris_message,
+    convert_iris_message_to_langchain_message,
+)
 from ...llm import RequestHandler, CompletionArguments
 
 

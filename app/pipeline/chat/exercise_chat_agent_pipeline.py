@@ -30,8 +30,8 @@ from ..prompts.iris_exercise_chat_agent_prompts import (
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
 from ...common.message_converters import convert_iris_message_to_langchain_human_message
-from ...domain import ExerciseChatPipelineExecutionDTO, IrisMessageRole
-from ...domain import PyrisMessage
+from ...common.pyris_message import PyrisMessage, IrisMessageRole
+from ...domain import ExerciseChatPipelineExecutionDTO
 from ...domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
 )

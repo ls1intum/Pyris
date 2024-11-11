@@ -21,7 +21,7 @@ from .interaction_suggestion_pipeline import (
 )
 from .lecture_chat_pipeline import LectureChatPipeline
 from ..shared.citation_pipeline import CitationPipeline
-from ...common import convert_iris_message_to_langchain_message
+from ...common.message_converters import convert_iris_message_to_langchain_message
 from ...common.pyris_message import PyrisMessage
 from ...domain.data.metrics.competency_jol_dto import CompetencyJolDTO
 from ...llm import CapabilityRequestHandler, RequirementList

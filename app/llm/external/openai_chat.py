@@ -11,25 +11,23 @@ from openai import (
     APIError,
     APITimeoutError,
     RateLimitError,
-    InternalServerError,
     ContentFilterFinishReasonError,
 )
 from openai.lib.azure import AzureOpenAI
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
-from openai.types.chat.completion_create_params import ResponseFormat
+from openai.types.shared_params import ResponseFormatJSONObject
 from pydantic import Field
 from pydantic.v1 import BaseModel as LegacyBaseModel
 
 from ...common.message_converters import map_str_to_role, map_role_to_str
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
-from ...common.pyris_message import PyrisMessage
+from ...common.pyris_message import PyrisMessage, PyrisAIMessage
 from ...common.token_usage_dto import TokenUsageDTO
 from ...domain.data.image_message_content_dto import ImageMessageContentDTO
 from ...domain.data.json_message_content_dto import JsonMessageContentDTO
 from ...domain.data.tool_call_dto import ToolCallDTO
 from ...domain.data.tool_message_content_dto import ToolMessageContentDTO
-from ...domain.pyris_message import PyrisAIMessage
 from ...llm import CompletionArguments
 from ...llm.external.model import ChatModel
 
@@ -147,14 +145,12 @@ def convert_to_iris_message(
         )
 
 
-
 class OpenAIChatModel(ChatModel):
     model: str
     api_key: str
     tools: Optional[
         Sequence[Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]]
     ] = Field(default_factory=list, alias="tools")
-    _client: OpenAI
 
     def chat(
         self, messages: list[PyrisMessage], arguments: CompletionArguments
@@ -172,25 +168,29 @@ class OpenAIChatModel(ChatModel):
             try:
                 if arguments.response_format == "JSON":
                     if self.tools:
-                        response = self._client.chat.completions.create(
+                        response = client.chat.completions.create(
                             model=self.model,
                             messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
-                            response_format=ResponseFormatJSONObject(type="json_object"),
+                            response_format=ResponseFormatJSONObject(
+                                type="json_object"
+                            ),
                             tools=self.tools,
                         )
                     else:
-                        response = self._client.chat.completions.create(
+                        response = client.chat.completions.create(
                             model=self.model,
                             messages=messages,
                             temperature=arguments.temperature,
                             max_tokens=arguments.max_tokens,
-                            response_format=ResponseFormatJSONObject(type="json_object"),
+                            response_format=ResponseFormatJSONObject(
+                                type="json_object"
+                            ),
                         )
                 else:
                     if self.tools:
-                        response = self._client.chat.completions.create(
+                        response = client.chat.completions.create(
                             model=self.model,
                             messages=messages,
                             temperature=arguments.temperature,
@@ -198,7 +198,7 @@ class OpenAIChatModel(ChatModel):
                             tools=self.tools,
                         )
                     else:
-                        response = self._client.chat.completions.create(
+                        response = client.chat.completions.create(
                             model=self.model,
                             messages=messages,
                             temperature=arguments.temperature,
@@ -231,7 +231,7 @@ class OpenAIChatModel(ChatModel):
             Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
         ],
     ):
-        self.tools = tools
+        self.tools = [convert_to_openai_tool(tool) for tool in tools]
 
 
 class DirectOpenAIChatModel(OpenAIChatModel):
@@ -242,14 +242,6 @@ class DirectOpenAIChatModel(OpenAIChatModel):
 
     def __str__(self):
         return f"OpenAIChat('{self.model}')"
-
-    def bind_tools(
-        self,
-        tools: Sequence[
-            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-        ],
-    ):
-        self.tools = [convert_to_openai_tool(tool) for tool in tools]
 
 
 class AzureOpenAIChatModel(OpenAIChatModel):
@@ -265,14 +257,6 @@ class AzureOpenAIChatModel(OpenAIChatModel):
             api_version=self.api_version,
             api_key=self.api_key,
         )
-
-    def bind_tools(
-        self,
-        tools: Sequence[
-            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-        ],
-    ):
-        self.tools = [convert_to_openai_tool(tool) for tool in tools]
 
     def __str__(self):
         return f"AzureChat('{self.model}')"

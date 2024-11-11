@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Union, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,7 +25,7 @@ class PyrisMessage(BaseModel):
     sent_at: datetime | None = Field(alias="sentAt", default=None)
     sender: IrisMessageRole
 
-    contents: Union[str, List[MessageContentDTO]] = ""
+    contents: List[MessageContentDTO] = Field(default=[])
 
     def __str__(self):
         return f"{self.sender.lower()}: {self.contents}"

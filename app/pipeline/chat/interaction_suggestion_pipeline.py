@@ -12,11 +12,11 @@ from langchain_core.runnables import Runnable
 from langsmith import traceable
 from pydantic.v1 import Field, BaseModel
 
-from ...common import convert_iris_message_to_langchain_message
 from app.domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
 )
 from app.common.token_usage_dto import TokenUsageDTO
+from ...common.message_converters import convert_iris_message_to_langchain_message
 from ...common.pyris_message import PyrisMessage
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_interaction_suggestion_prompts import (
