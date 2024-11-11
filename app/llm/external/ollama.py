@@ -137,6 +137,21 @@ class OllamaModel(
         )
         return list(response)
 
+    """Bind tools to the language model for function calling capabilities.
+    
+    Note: Tool binding is currently not supported in Ollama models. This feature
+    is only available for OpenAI models.
+    
+    Args:
+        tools: A sequence of tools to bind to the model.
+    
+    Returns:
+        A runnable that can process inputs with the bound tools.
+    
+    Raises:
+        NotImplementedError: Always raised as Ollama does not support tool binding.
+    """
+    # TODO: Implement tool binding support for Ollama models
     def bind_tools(
         self,
         tools: Sequence[
