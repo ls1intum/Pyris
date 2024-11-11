@@ -63,7 +63,7 @@ class LectureChatPipeline(Pipeline):
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
-                gpt_version_equivalent=3.5,
+                gpt_version_equivalent=4.5,
                 context_length=16385,
                 privacy_compliance=True,
             )
@@ -119,20 +119,19 @@ class LectureChatPipeline(Pipeline):
         prompt_val = self.prompt.format_messages()
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
-            self.callback.in_progress()
+            # self.callback.in_progress()
             response = (self.prompt | self.pipeline).invoke({})
-            self.callback.done(
-                "Generated response",
-                final_result=response,
-                tokens=self.tokens,
-            )
             self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
             )
             self.tokens.extend(self.citation_pipeline.tokens)
             logger.info(f"Response from lecture chat pipeline: {response}")
-            return response_with_citation
+            self.callback.done(
+                "Response created",
+                final_result=response_with_citation,
+                tokens=self.tokens,
+            )
         except Exception as e:
             self.callback.error(
                 "Generating interaction suggestions failed.",
