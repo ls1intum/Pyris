@@ -42,6 +42,15 @@ class BasicRequestHandler(RequestHandler):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> LanguageModel:
+        """
+        Binds a sequence of tools to the language model.
+
+        Args:
+            tools (Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]): A sequence of tools to be bound.
+
+        Returns:
+            LanguageModel: The language model with tools bound.
+        """
         llm = self.llm_manager.get_llm_by_id(self.model_id)
         llm.bind_tools(tools)
         return llm
