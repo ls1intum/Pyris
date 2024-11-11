@@ -334,7 +334,7 @@ class CourseChatPipeline(Pipeline):
 
             if self.event == "jol":
                 event_payload = CompetencyJolDTO.model_validate(dto.event_payload.event)
-                logger.debug("Event Payload:", event_payload)
+                logger.debug(f"Event Payload: {event_payload}")
                 comp = next(
                     (
                         c
