@@ -6,6 +6,13 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+_weaviate_database_client = None
+
+
+def __del__(self):
+    print("Closing Weaviate client")
+    self.client.close()
+
 
 class VectorDatabase:
     """
@@ -13,16 +20,16 @@ class VectorDatabase:
     """
 
     def __init__(self):
-        self.client = weaviate.connect_to_local(
-            host=settings.weaviate.host,
-            port=settings.weaviate.port,
-            grpc_port=settings.weaviate.grpc_port,
-        )
+        global _weaviate_database_client
+        if not _weaviate_database_client:
+            _weaviate_database_client = weaviate.connect_to_local(
+                host=settings.weaviate.host,
+                port=settings.weaviate.port,
+                grpc_port=settings.weaviate.grpc_port,
+            )
+        self.client = _weaviate_database_client
         self.lectures = init_lecture_schema(self.client)
-
-    def __del__(self):
-        logger.info("Closing Weaviate client")
-        self.client.close()
+        print("Weaviate client connected")
 
     def delete_collection(self, collection_name):
         """
