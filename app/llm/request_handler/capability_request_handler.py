@@ -79,27 +79,29 @@ class CapabilityRequestHandler(RequestHandler):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> LanguageModel:
         """Bind the provided tools to the selected ChatModel.
-        
+
         Args:
             tools: A sequence of tools to bind. Can be one of:
                 - Dict[str, Any]: Tool configuration dictionary
                 - Type[BaseModel]: Pydantic model class
                 - Callable: Function to be used as a tool
                 - BaseTool: LangChain tool instance
-        
+
         Returns:
             LanguageModel: The selected chat model with tools bound
-            
+
         Raises:
             ValueError: If tools sequence is empty or contains unsupported tool types
             TypeError: If selected model doesn't support tool binding
         """
         if not tools:
             raise ValueError("Tools sequence cannot be empty")
-            
+
         llm = self._select_model(ChatModel)
-        if not hasattr(llm, 'bind_tools'):
-            raise TypeError(f"Selected model {llm.description} doesn't support tool binding")
-            
+        if not hasattr(llm, "bind_tools"):
+            raise TypeError(
+                f"Selected model {llm.description} doesn't support tool binding"
+            )
+
         llm.bind_tools(tools)
         return llm

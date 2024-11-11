@@ -79,7 +79,7 @@ def create_openai_tool_calls(tool_calls):
     ]
 
 
-def convert_to_openai_messages(
+def convert_to_open_ai_messages(
     messages: list[PyrisMessage],
 ) -> list[ChatCompletionMessageParam]:
     """

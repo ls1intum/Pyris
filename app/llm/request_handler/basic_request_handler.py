@@ -46,7 +46,8 @@ class BasicRequestHandler(RequestHandler):
         Binds a sequence of tools to the language model.
 
         Args:
-            tools (Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]): A sequence of tools to be bound.
+            tools (Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]):
+            A sequence of tools to be bound.
 
         Returns:
             LanguageModel: The language model with tools bound.
