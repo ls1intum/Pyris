@@ -11,12 +11,15 @@ from app.domain import (
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
 )
-from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import LectureChatPipelineExecutionDTO
+from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
+    LectureChatPipelineExecutionDTO,
+)
 from app.pipeline.chat.lecture_chat_pipeline import LectureChatPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
-    CompetencyExtractionCallback, LectureChatCallback,
+    CompetencyExtractionCallback,
+    LectureChatCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.pipeline.chat.exercise_chat_pipeline import ExerciseChatPipeline
@@ -155,7 +158,7 @@ def run_lecture_chat_pipeline_worker(dto, variant):
     dependencies=[Depends(TokenValidator())],
 )
 def run_text_exercise_chat_pipeline(
-        variant: str, dto: TextExerciseChatPipelineExecutionDTO
+    variant: str, dto: TextExerciseChatPipelineExecutionDTO
 ):
     thread = Thread(target=run_text_exercise_chat_pipeline_worker, args=(dto, variant))
     thread.start()
@@ -166,15 +169,13 @@ def run_text_exercise_chat_pipeline(
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_lecture_chat_pipeline(
-        variant: str, dto: LectureChatPipelineExecutionDTO
-):
+def run_lecture_chat_pipeline(variant: str, dto: LectureChatPipelineExecutionDTO):
     thread = Thread(target=run_lecture_chat_pipeline_worker, args=(dto, variant))
     thread.start()
 
 
 def run_competency_extraction_pipeline_worker(
-        dto: CompetencyExtractionPipelineExecutionDTO, _variant: str
+    dto: CompetencyExtractionPipelineExecutionDTO, _variant: str
 ):
     try:
         callback = CompetencyExtractionCallback(
@@ -203,7 +204,7 @@ def run_competency_extraction_pipeline_worker(
     dependencies=[Depends(TokenValidator())],
 )
 def run_competency_extraction_pipeline(
-        variant: str, dto: CompetencyExtractionPipelineExecutionDTO
+    variant: str, dto: CompetencyExtractionPipelineExecutionDTO
 ):
     thread = Thread(
         target=run_competency_extraction_pipeline_worker, args=(dto, variant)

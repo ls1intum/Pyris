@@ -32,14 +32,14 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
     if client.collections.exists(LectureSchema.COLLECTION_NAME.value):
         collection = client.collections.get(LectureSchema.COLLECTION_NAME.value)
 
-        #collection.config.add_property(
+        # collection.config.add_property(
         #    Property(
         #        name=LectureSchema.COURSE_LANGUAGE.value,
         #        description="The language of the COURSE",
         #        data_type=DataType.TEXT,
         #        index_searchable=False,
         #    )
-        #)
+        # )
 
         return collection
 
