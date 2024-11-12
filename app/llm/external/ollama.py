@@ -6,10 +6,9 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from ollama import Client, Message
-from pydantic.v1 import BaseModel as LegacyBaseModel
 
 from ...common.message_converters import map_role_to_str, map_str_to_role
 from ...common.pyris_message import PyrisMessage
@@ -155,9 +154,7 @@ class OllamaModel(
     # TODO: Implement tool binding support for Ollama models
     def bind_tools(
         self,
-        tools: Sequence[
-            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-        ],
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError(
             f"The LLM {self.__str__()} does not support binding tools"

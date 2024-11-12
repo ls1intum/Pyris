@@ -1,7 +1,8 @@
 from typing import Optional, Sequence, Union, Dict, Any, Type, Callable
 
 from langchain_core.tools import BaseTool
-from pydantic.v1 import BaseModel
+from pydantic import ConfigDict
+from pydantic import BaseModel
 
 from app.common.pyris_message import PyrisMessage
 from app.domain.data.image_message_content_dto import ImageMessageContentDTO
@@ -13,9 +14,11 @@ from app.llm.llm_manager import LlmManager
 
 class BasicRequestHandler(RequestHandler):
     model_id: str
-    llm_manager: LlmManager
+    llm_manager: LlmManager | None = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, model_id: str):
+        super().__init__(model_id=model_id, llm_manager=None)
         self.model_id = model_id
         self.llm_manager = LlmManager()
 

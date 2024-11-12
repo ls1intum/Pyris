@@ -1,4 +1,5 @@
 import logging
+from logging import Logger
 from typing import List, Optional, Any, Sequence, Union, Dict, Type, Callable
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -28,7 +29,7 @@ class IrisLangchainChatModel(BaseChatModel):
     request_handler: RequestHandler
     completion_args: CompletionArguments
     tokens: TokenUsageDTO = None
-    logger = logging.getLogger(__name__)
+    logger: Logger = logging.getLogger(__name__)
 
     def __init__(
         self,

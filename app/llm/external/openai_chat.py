@@ -17,8 +17,7 @@ from openai.lib.azure import AzureOpenAI
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject
-from pydantic import Field
-from pydantic.v1 import BaseModel as LegacyBaseModel
+from pydantic import Field, BaseModel
 
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from ...common.message_converters import map_role_to_str, map_str_to_role
@@ -202,7 +201,7 @@ class OpenAIChatModel(ChatModel):
     model: str
     api_key: str
     tools: Optional[
-        Sequence[Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]]
+        Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
     ] = Field(default_factory=list, alias="tools")
 
     def chat(
@@ -258,9 +257,7 @@ class OpenAIChatModel(ChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-        ],
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ):
         self.tools = [convert_to_openai_tool(tool) for tool in tools]
 

@@ -1,6 +1,7 @@
 import os
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Discriminator
 
 import yaml
 
@@ -15,7 +16,7 @@ from ..llm.external import LanguageModel, AnyLLM
 
 # Small workaround to get pydantic discriminators working
 class LlmList(BaseModel):
-    llms: list[AnyLLM] = Field(discriminator="type")
+    llms: list[Annotated[AnyLLM, Discriminator("type")]]
 
 
 class LlmManager(metaclass=Singleton):

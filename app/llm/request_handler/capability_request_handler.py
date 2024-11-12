@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Sequence, Union, Dict, Any, Type, Callable
 
 from langchain_core.tools import BaseTool
-from pydantic.v1 import BaseModel
+from pydantic import ConfigDict
+from pydantic import BaseModel
 
 from app.common.pyris_message import PyrisMessage
 from app.llm.capability import RequirementList
@@ -29,13 +30,17 @@ class CapabilityRequestHandler(RequestHandler):
 
     requirements: RequirementList
     selection_mode: CapabilityRequestHandlerSelectionMode
-    llm_manager: LlmManager
+    llm_manager: LlmManager | None = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
         requirements: RequirementList,
         selection_mode: CapabilityRequestHandlerSelectionMode = CapabilityRequestHandlerSelectionMode.WORST,
     ) -> None:
+        super().__init__(
+            requirements=requirements, selection_mode=selection_mode, llm_manager=None
+        )
         self.requirements = requirements
         self.selection_mode = selection_mode
         self.llm_manager = LlmManager()

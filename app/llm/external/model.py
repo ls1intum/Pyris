@@ -3,7 +3,6 @@ from typing import Sequence, Union, Dict, Any, Type, Callable
 from langchain_core.tools import BaseTool
 from openai.types.chat import ChatCompletionMessage
 from pydantic import BaseModel
-from pydantic.v1 import BaseModel as LegacyBaseModel
 
 from ...common.pyris_message import PyrisMessage
 from ...llm import CompletionArguments
@@ -53,9 +52,7 @@ class ChatModel(LanguageModel, metaclass=ABCMeta):
     @abstractmethod
     def bind_tools(
         self,
-        tools: Sequence[
-            Union[Dict[str, Any], Type[LegacyBaseModel], Callable, BaseTool]
-        ],
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ):
         """Bind tools"""
         raise NotImplementedError(
