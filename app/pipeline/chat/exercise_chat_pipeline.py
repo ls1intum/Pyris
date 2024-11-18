@@ -58,8 +58,14 @@ class ExerciseChatPipeline(Pipeline):
     code_feedback_pipeline: CodeFeedbackPipeline
     prompt: ChatPromptTemplate
     variant: str
+    event: str | None
 
-    def __init__(self, callback: ExerciseChatStatusCallback, variant: str = "default"):
+    def __init__(
+        self,
+        callback: ExerciseChatStatusCallback,
+        variant: str = "default",
+        event: str | None = None,
+    ):
         super().__init__(implementation_id="exercise_chat_pipeline")
         # Set the langchain chat model
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
@@ -74,6 +80,7 @@ class ExerciseChatPipeline(Pipeline):
         )
         self.variant = variant
         self.callback = callback
+        self.event = event
 
         # Create the pipelines
         self.db = VectorDatabase()
@@ -272,11 +279,11 @@ class ExerciseChatPipeline(Pipeline):
         self._add_conversation_to_prompt(history, query)
 
         # Add the final message to the prompt and run the pipeline
-        if self.variant == "progress_stalled":
+        if self.event == "progress_stalled":
             self.prompt += SystemMessagePromptTemplate.from_template(
                 progress_stalled_system_prompt
             )
-        elif self.variant == "build_failed":
+        elif self.event == "build_failed":
             self.prompt += SystemMessagePromptTemplate.from_template(
                 build_failed_system_prompt
             )

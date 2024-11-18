@@ -29,6 +29,7 @@ from ..prompts.iris_exercise_chat_agent_prompts import (
 
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
+from ...common.PipelineEnum import PipelineEnum
 from ...common.message_converters import convert_iris_message_to_langchain_human_message
 from ...common.pyris_message import PyrisMessage, IrisMessageRole
 from ...domain import ExerciseChatPipelineExecutionDTO
@@ -40,6 +41,8 @@ from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
+from ...vector_database.lecture_schema import LectureSchema
+from weaviate.collections.classes.filters import Filter
 from ...web.status.status_update import ExerciseChatStatusCallback
 
 logger = logging.getLogger()
@@ -149,6 +152,7 @@ class ExerciseChatAgentPipeline(Pipeline):
         self.code_feedback_pipeline = CodeFeedbackPipeline()
         self.pipeline = self.llm | JsonOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -176,18 +180,6 @@ class ExerciseChatAgentPipeline(Pipeline):
             - is_practice: Practice or graded attempt
             - build_failed: Build process status
             - latest_result: Most recent evaluation outcome
-
-            ## Usage Guidelines
-            1. Use submission_date for deadline context.
-            2. Adjust feedback based on is_practice status.
-            3. Prioritize build issues if build_failed is True.
-            4. Tailor response according to latest_result.
-            5. For missing info (indicated by "No ... is provided"), consider requesting clarification if crucial.
-
-            ## Key Points
-            - Combine all details for comprehensive submission analysis.
-            - Interpret in context of exercise requirements and student's skill level.
-            - Provide targeted, constructive feedback based on these details.
 
 
             """
@@ -228,18 +220,6 @@ class ExerciseChatAgentPipeline(Pipeline):
             - end_date: Exercise deadline
             - due_date_over: Boolean indicating if the deadline has passed
 
-            ## Usage Guidelines
-            1. Use start_date to gauge exercise duration and student's time management.
-            2. Reference end_date for deadline-related advice and urgency assessment.
-            3. Check due_date_over to determine if submission is still possible or late.
-            4. For missing dates (indicated by "No ... date provided"), consider the impact on time-sensitive advice.
-
-            ## Key Points
-            - Combine with other exercise details for a complete timeline perspective.
-            - Tailor feedback and assistance based on the current date relative to these timeframes.
-            - Adjust urgency and type of support based on deadline status.
-
-
             """
             self.callback.in_progress("Reading exercise details...")
             current_time = datetime.now(tz=pytz.UTC)
@@ -273,22 +253,6 @@ class ExerciseChatAgentPipeline(Pipeline):
               - Warning messages
               - Timestamps for log entries
 
-            ## Usage Guidelines
-            1. Use when code fails to compile or to assess code quality.
-            2. If build successful, no further analysis needed.
-            3. For failed builds:
-               a. Identify specific error messages causing compilation failure.
-               b. Note warnings for style and potential issues.
-               c. Use timestamps to understand error sequence.
-            4. Relate log information to specific parts of student's code.
-            5. Provide targeted feedback on compilation errors and code quality issues.
-
-            ## Key Points
-            - Critical for addressing compilation failures.
-            - Useful for identifying and explaining code quality concerns.
-            - Combine with code content analysis for comprehensive feedback.
-            - Consider student's skill level when interpreting and explaining logs.
-
 
             """
             self.callback.in_progress("Analyzing build logs ...")
@@ -318,18 +282,6 @@ class ExerciseChatAgentPipeline(Pipeline):
             - Test case name
             - Credits awarded
             - Text feedback
-
-            ## Usage Guidelines
-            1. Use when automated tests fail to understand specific issues.
-            2. Analyze feedback to identify logic errors in student's code.
-            3. Use test case names to pinpoint problematic areas of the implementation.
-            4. Utilize text feedback to provide specific improvement suggestions.
-
-            ## Key Points
-            - Essential for detailed, test-based code evaluation.
-            - Helps in providing targeted, actionable feedback to students.
-            - If "No feedbacks" returned, consider if this indicates all tests passed or a system issue.
-            - Combine with code content analysis for comprehensive review.
 
 
             """
@@ -421,6 +373,36 @@ class ExerciseChatAgentPipeline(Pipeline):
             if file_path in repository:
                 return "{}:\n{}\n".format(file_path, repository[file_path])
             return "File not found or does not exist in the repository."
+
+        def lecture_content_retrieval() -> str:
+            """
+            Retrieve content from indexed lecture slides.
+            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the
+            most relevant paragraphs.
+            Use this if you think it can be useful to answer the student's question, or if the student explicitly asks
+            a question about the lecture content or slides.
+            Only use this once.
+            """
+            self.callback.in_progress("Retrieving lecture content ...")
+            self.retrieved_paragraphs = self.retriever(
+                chat_history=chat_history,
+                student_query=query.contents[0].text_content,
+                result_limit=5,
+                course_name=dto.course.name,
+                course_id=dto.course.id,
+                base_url=dto.settings.artemis_base_url,
+            )
+
+            result = ""
+            for paragraph in self.retrieved_paragraphs:
+                lct = "Lecture: {}, Unit: {}, Page: {}\nContent:\n---{}---\n\n".format(
+                    paragraph.get(LectureSchema.LECTURE_NAME.value),
+                    paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
+                    paragraph.get(LectureSchema.PAGE_NUMBER.value),
+                    paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
+                )
+                result += lct
+            return result
 
         iris_initial_system_prompt = tell_iris_initial_system_prompt
         chat_history_exists_prompt = tell_chat_history_exists_prompt
@@ -530,26 +512,30 @@ class ExerciseChatAgentPipeline(Pipeline):
                             ("placeholder", "{agent_scratchpad}"),
                         ]
                     )
-
-            tools = generate_structured_tools_from_functions(
-                [
-                    get_submission_details,
-                    get_additional_exercise_details,
-                    get_build_logs_analysis_tool,
-                    get_feedbacks,
-                    repository_files,
-                    file_lookup,
-                ]
-            )
+            tool_list = [
+                get_submission_details,
+                get_additional_exercise_details,
+                get_build_logs_analysis_tool,
+                get_feedbacks,
+                repository_files,
+                file_lookup,
+            ]
+            if self.should_allow_lecture_tool(dto.course.id):
+                tool_list.append(lecture_content_retrieval)
+            tools = generate_structured_tools_from_functions(tool_list)
             agent = create_tool_calling_agent(
                 llm=self.llm, tools=tools, prompt=self.prompt
             )
             agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
-            out = None
             self.callback.in_progress()
-            invocation_result = agent_executor.invoke(params)
-            if invocation_result.get("output", None):
-                out = invocation_result["output"]
+            out = None
+            for step in agent_executor.iter(params):
+                print("STEP:", step)
+                self._append_tokens(
+                    self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
+                )
+                if step.get("output", None):
+                    out = step["output"]
 
             try:
                 self.callback.in_progress("Refining response...")
@@ -564,13 +550,18 @@ class ExerciseChatAgentPipeline(Pipeline):
                         "response": out,
                     }
                 )
+                self._append_tokens(
+                    self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
+                )
                 if "!ok!" in guide_response:
                     print("Response is ok and not rewritten!!!")
                 else:
                     out = guide_response
                     print("Response is rewritten.")
 
-                self.callback.done("Response created", final_result=out)
+                self.callback.done(
+                    "Response created", final_result=out, tokens=self.tokens
+                )
             except Exception as e:
                 logger.error(
                     "An error occurred while running the course chat interaction suggestion pipeline",
@@ -584,7 +575,13 @@ class ExerciseChatAgentPipeline(Pipeline):
                     suggestion_dto.chat_history = dto.chat_history
                     suggestion_dto.last_message = out
                     suggestions = self.suggestion_pipeline(suggestion_dto)
-                    self.callback.done(final_result=None, suggestions=suggestions)
+                    if self.suggestion_pipeline.tokens is not None:
+                        tokens = [self.suggestion_pipeline.tokens]
+                    else:
+                        tokens = []
+                    self.callback.done(
+                        final_result=None, suggestions=suggestions, tokens=tokens
+                    )
                 else:
                     # This should never happen but whatever
                     self.callback.skip(
@@ -605,3 +602,22 @@ class ExerciseChatAgentPipeline(Pipeline):
             self.callback.error(
                 "An error occurred while running the course chat pipeline."
             )
+
+    def should_allow_lecture_tool(self, course_id: int) -> bool:
+        """
+        Checks if there are indexed lectures for the given course
+
+        :param course_id: The course ID
+        :return: True if there are indexed lectures for the course, False otherwise
+        """
+        if course_id:
+            # Fetch the first object that matches the course ID with the language property
+            result = self.db.lectures.query.fetch_objects(
+                filters=Filter.by_property(LectureSchema.COURSE_ID.value).equal(
+                    course_id
+                ),
+                limit=1,
+                return_properties=[LectureSchema.COURSE_NAME.value],
+            )
+            return len(result.objects) > 0
+        return False
