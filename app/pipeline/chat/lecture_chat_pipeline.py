@@ -60,7 +60,12 @@ class LectureChatPipeline(Pipeline):
     prompt: ChatPromptTemplate
     callback: LectureChatCallback
 
-    def __init__(self, callback: LectureChatCallback, dto: LectureChatPipelineExecutionDTO, variant: str):
+    def __init__(
+        self,
+        callback: LectureChatCallback,
+        dto: LectureChatPipelineExecutionDTO,
+        variant: str,
+    ):
         super().__init__(implementation_id="lecture_chat_pipeline")
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
