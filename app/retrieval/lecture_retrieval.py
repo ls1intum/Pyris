@@ -5,11 +5,13 @@ from langsmith import traceable
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 
-from ..common import convert_iris_message_to_langchain_message
+from app.common.token_usage_dto import TokenUsageDTO
+from app.common.PipelineEnum import PipelineEnum
+from ..common.message_converters import convert_iris_message_to_langchain_message
+from ..common.pyris_message import PyrisMessage
 from ..llm.langchain import IrisLangchainChatModel
 from ..pipeline import Pipeline
 
-from app.domain import PyrisMessage
 from app.llm import (
     BasicRequestHandler,
     CompletionArguments,
@@ -81,6 +83,8 @@ class LectureRetrieval(Pipeline):
     Class for retrieving lecture data from the database.
     """
 
+    tokens: List[TokenUsageDTO]
+
     def __init__(self, client: WeaviateClient, **kwargs):
         super().__init__(implementation_id="lecture_retrieval_pipeline")
         request_handler = CapabilityRequestHandler(
@@ -98,6 +102,7 @@ class LectureRetrieval(Pipeline):
         self.pipeline = self.llm | StrOutputParser()
         self.collection = init_lecture_schema(client)
         self.reranker_pipeline = RerankerPipeline()
+        self.tokens = []
 
     @traceable(name="Full Lecture Retrieval")
     def __call__(
@@ -143,7 +148,8 @@ class LectureRetrieval(Pipeline):
             selected_chunks_index = self.reranker_pipeline(
                 paragraphs=merged_chunks, query=student_query, chat_history=chat_history
             )
-            return [merged_chunks[int(i)] for i in selected_chunks_index]
+            if selected_chunks_index:
+                return [merged_chunks[int(i)] for i in selected_chunks_index]
         return []
 
     @traceable(name="Basic Lecture Retrieval")
@@ -235,6 +241,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:
@@ -272,6 +281,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:
@@ -307,6 +319,9 @@ class LectureRetrieval(Pipeline):
         prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from retirval pipeline: {response}")
             return response
         except Exception as e:
@@ -346,6 +361,9 @@ class LectureRetrieval(Pipeline):
         )
         try:
             response = (prompt | self.pipeline).invoke({})
+            token_usage = self.llm.tokens
+            token_usage.pipeline = PipelineEnum.IRIS_LECTURE_RETRIEVAL_PIPELINE
+            self.tokens.append(self.llm.tokens)
             logger.info(f"Response from exercise chat pipeline: {response}")
             return response
         except Exception as e:
@@ -386,11 +404,11 @@ class LectureRetrieval(Pipeline):
             alpha=hybrid_factor,
             vector=vec,
             return_properties=[
-                LectureSchema.PAGE_TEXT_CONTENT.value,
-                LectureSchema.COURSE_NAME.value,
-                LectureSchema.LECTURE_NAME.value,
-                LectureSchema.PAGE_NUMBER.value,
                 LectureSchema.COURSE_ID.value,
+                LectureSchema.LECTURE_UNIT_NAME.value,
+                LectureSchema.LECTURE_UNIT_LINK.value,
+                LectureSchema.PAGE_NUMBER.value,
+                LectureSchema.PAGE_TEXT_CONTENT.value,
             ],
             limit=result_limit,
             filters=filter_weaviate,
@@ -467,7 +485,7 @@ class LectureRetrieval(Pipeline):
             response_future = executor.submit(
                 self.search_in_db,
                 query=rewritten_query,
-                hybrid_factor=0.7,
+                hybrid_factor=0.9,
                 result_limit=result_limit,
                 course_id=course_id,
                 base_url=base_url,

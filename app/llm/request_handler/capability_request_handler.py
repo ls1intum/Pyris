@@ -1,6 +1,11 @@
 from enum import Enum
+from typing import Sequence, Union, Dict, Any, Type, Callable
 
-from app.domain import PyrisMessage
+from langchain_core.tools import BaseTool
+from pydantic import ConfigDict
+from pydantic import BaseModel
+
+from app.common.pyris_message import PyrisMessage
 from app.llm.capability import RequirementList
 from app.llm.external.model import (
     ChatModel,
@@ -25,13 +30,17 @@ class CapabilityRequestHandler(RequestHandler):
 
     requirements: RequirementList
     selection_mode: CapabilityRequestHandlerSelectionMode
-    llm_manager: LlmManager
+    llm_manager: LlmManager | None = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
         requirements: RequirementList,
         selection_mode: CapabilityRequestHandlerSelectionMode = CapabilityRequestHandlerSelectionMode.WORST,
     ) -> None:
+        super().__init__(
+            requirements=requirements, selection_mode=selection_mode, llm_manager=None
+        )
         self.requirements = requirements
         self.selection_mode = selection_mode
         self.llm_manager = LlmManager()
@@ -44,7 +53,10 @@ class CapabilityRequestHandler(RequestHandler):
         self, messages: list[PyrisMessage], arguments: CompletionArguments
     ) -> PyrisMessage:
         llm = self._select_model(ChatModel)
-        return llm.chat(messages, arguments)
+        message = llm.chat(messages, arguments)
+        message.token_usage.cost_per_input_token = llm.capabilities.input_cost.value
+        message.token_usage.cost_per_output_token = llm.capabilities.output_cost.value
+        return message
 
     def embed(self, text: str) -> list[float]:
         llm = self._select_model(EmbeddingModel)
@@ -65,4 +77,36 @@ class CapabilityRequestHandler(RequestHandler):
 
         # Print the selected model for the logs
         print(f"Selected {llm.description}")
+        return llm
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> LanguageModel:
+        """Bind the provided tools to the selected ChatModel.
+
+        Args:
+            tools: A sequence of tools to bind. Can be one of:
+                - Dict[str, Any]: Tool configuration dictionary
+                - Type[BaseModel]: Pydantic model class
+                - Callable: Function to be used as a tool
+                - BaseTool: LangChain tool instance
+
+        Returns:
+            LanguageModel: The selected chat model with tools bound
+
+        Raises:
+            ValueError: If tools sequence is empty or contains unsupported tool types
+            TypeError: If selected model doesn't support tool binding
+        """
+        if not tools:
+            raise ValueError("Tools sequence cannot be empty")
+
+        llm = self._select_model(ChatModel)
+        if not hasattr(llm, "bind_tools"):
+            raise TypeError(
+                f"Selected model {llm.description} doesn't support tool binding"
+            )
+
+        llm.bind_tools(tools)
         return llm

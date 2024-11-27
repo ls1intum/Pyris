@@ -20,12 +20,15 @@ from ..prompts.iris_exercise_chat_prompts import (
     chat_history_system_prompt,
     final_system_prompt,
     guide_system_prompt,
+    no_chat_history_system_prompt,
+    progress_stalled_system_prompt,
+    build_failed_system_prompt,
 )
 from ..shared.citation_pipeline import CitationPipeline
 from ..shared.reranker_pipeline import RerankerPipeline
 from ...common import convert_iris_message_to_langchain_message
+from ...common.pyris_message import PyrisMessage
 from ...domain import ExerciseChatPipelineExecutionDTO
-from ...domain import PyrisMessage
 from ...domain.chat.interaction_suggestion_dto import (
     InteractionSuggestionPipelineExecutionDTO,
 )
@@ -34,6 +37,7 @@ from ...domain.data.feedback_dto import FeedbackDTO
 from ...domain.data.programming_submission_dto import ProgrammingSubmissionDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
+from app.common.PipelineEnum import PipelineEnum
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
@@ -53,8 +57,15 @@ class ExerciseChatPipeline(Pipeline):
     suggestion_pipeline: InteractionSuggestionPipeline
     code_feedback_pipeline: CodeFeedbackPipeline
     prompt: ChatPromptTemplate
+    variant: str
+    event: str | None
 
-    def __init__(self, callback: ExerciseChatStatusCallback):
+    def __init__(
+        self,
+        callback: ExerciseChatStatusCallback,
+        variant: str = "default",
+        event: str | None = None,
+    ):
         super().__init__(implementation_id="exercise_chat_pipeline")
         # Set the langchain chat model
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
@@ -67,8 +78,9 @@ class ExerciseChatPipeline(Pipeline):
             ),
             completion_args=completion_args,
         )
-
+        self.variant = variant
         self.callback = callback
+        self.event = event
 
         # Create the pipelines
         self.db = VectorDatabase()
@@ -78,6 +90,7 @@ class ExerciseChatPipeline(Pipeline):
         self.code_feedback_pipeline = CodeFeedbackPipeline()
         self.pipeline = self.llm | StrOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -98,7 +111,9 @@ class ExerciseChatPipeline(Pipeline):
             )
             self._run_exercise_chat_pipeline(dto, should_execute_lecture_pipeline),
             self.callback.done(
-                "Generated response", final_result=self.exercise_chat_response
+                "Generated response",
+                final_result=self.exercise_chat_response,
+                tokens=self.tokens,
             )
 
             try:
@@ -112,7 +127,15 @@ class ExerciseChatPipeline(Pipeline):
                     suggestion_dto.last_message = self.exercise_chat_response
                     suggestion_dto.problem_statement = dto.exercise.problem_statement
                     suggestions = self.suggestion_pipeline(suggestion_dto)
-                    self.callback.done(final_result=None, suggestions=suggestions)
+                    if self.suggestion_pipeline.tokens is not None:
+                        tokens = [self.suggestion_pipeline.tokens]
+                    else:
+                        tokens = []
+                    self.callback.done(
+                        final_result=None,
+                        suggestions=suggestions,
+                        tokens=tokens,
+                    )
                 else:
                     # This should never happen but whatever
                     self.callback.skip(
@@ -125,11 +148,15 @@ class ExerciseChatPipeline(Pipeline):
                 )
                 traceback.print_exc()
                 self.callback.error(
-                    "Generating interaction suggestions failed.", exception=e
+                    "Generating interaction suggestions failed.",
+                    exception=e,
+                    tokens=self.tokens,
                 )
         except Exception as e:
             traceback.print_exc()
-            self.callback.error(f"Failed to generate response: {e}", exception=e)
+            self.callback.error(
+                f"Failed to generate response: {e}", exception=e, tokens=self.tokens
+            )
 
     def _run_exercise_chat_pipeline(
         self,
@@ -148,7 +175,9 @@ class ExerciseChatPipeline(Pipeline):
         )
         logger.info("Running exercise chat pipeline...")
         history: List[PyrisMessage] = dto.chat_history[:-1]
-        query: PyrisMessage = dto.chat_history[-1]
+        query: PyrisMessage | None = None
+        if history:
+            query = dto.chat_history[-1]
 
         submission: ProgrammingSubmissionDTO = dto.submission
         build_logs: List[BuildLogEntryDTO] = []
@@ -200,6 +229,8 @@ class ExerciseChatPipeline(Pipeline):
             if submission:
                 try:
                     feedback = future_feedback.result()
+                    if self.code_feedback_pipeline.tokens is not None:
+                        self.tokens.append(self.code_feedback_pipeline.tokens)
                     self.prompt += SystemMessagePromptTemplate.from_template(
                         "Another AI has checked the code of the student and has found the following issues. "
                         "Use this information to help the student. "
@@ -212,7 +243,9 @@ class ExerciseChatPipeline(Pipeline):
                     )
                 except Exception as e:
                     self.callback.error(
-                        f"Failed to look up files in the repository: {e}", exception=e
+                        f"Failed to look up files in the repository: {e}",
+                        exception=e,
+                        tokens=self.tokens,
                     )
                     return
 
@@ -220,13 +253,20 @@ class ExerciseChatPipeline(Pipeline):
             if should_execute_lecture_pipeline:
                 try:
                     self.retrieved_lecture_chunks = future_lecture.result()
+                    if (
+                        self.retriever.tokens is not None
+                        and len(self.retriever.tokens) > 0
+                    ):
+                        self.tokens.extend(self.retriever.tokens)
                     if len(self.retrieved_lecture_chunks) > 0:
                         self._add_relevant_chunks_to_prompt(
                             self.retrieved_lecture_chunks
                         )
                 except Exception as e:
                     self.callback.error(
-                        f"Failed to retrieve lecture chunks: {e}", exception=e
+                        f"Failed to retrieve lecture chunks: {e}",
+                        exception=e,
+                        tokens=self.tokens,
                     )
                     return
 
@@ -239,7 +279,18 @@ class ExerciseChatPipeline(Pipeline):
         self._add_conversation_to_prompt(history, query)
 
         # Add the final message to the prompt and run the pipeline
-        self.prompt += SystemMessagePromptTemplate.from_template(final_system_prompt)
+        if self.event == "progress_stalled":
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                progress_stalled_system_prompt
+            )
+        elif self.event == "build_failed":
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                build_failed_system_prompt
+            )
+        else:
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                final_system_prompt
+            )
         prompt_val = self.prompt.format_messages(
             exercise_title=exercise_title,
             problem_statement=problem_statement,
@@ -251,6 +302,9 @@ class ExerciseChatPipeline(Pipeline):
                 (self.prompt | self.pipeline)
                 .with_config({"run_name": "Response Drafting"})
                 .invoke({})
+            )
+            self._append_tokens(
+                self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
             )
             self.callback.done()
             self.prompt = ChatPromptTemplate.from_messages(
@@ -266,6 +320,9 @@ class ExerciseChatPipeline(Pipeline):
                 .with_config({"run_name": "Response Refining"})
                 .invoke({})
             )
+            self._append_tokens(
+                self.llm.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_MESSAGE
+            )
 
             if "!ok!" in guide_response:
                 print("Response is ok and not rewritten!!!")
@@ -274,7 +331,9 @@ class ExerciseChatPipeline(Pipeline):
                 print("Response is rewritten.")
                 self.exercise_chat_response = guide_response
         except Exception as e:
-            self.callback.error(f"Failed to create response: {e}", exception=e)
+            self.callback.error(
+                f"Failed to create response: {e}", exception=e, tokens=self.tokens
+            )
             # print stack trace
             traceback.print_exc()
             return "Failed to generate response"
@@ -299,10 +358,15 @@ class ExerciseChatPipeline(Pipeline):
                 chat_history_system_prompt
             )
             self.prompt += chat_history_messages
-        self.prompt += SystemMessagePromptTemplate.from_template(
-            "Consider the student's newest and latest input:"
-        )
-        self.prompt += convert_iris_message_to_langchain_message(user_question)
+        else:
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                no_chat_history_system_prompt
+            )
+        if user_question:
+            self.prompt += SystemMessagePromptTemplate.from_template(
+                "Consider the student's newest and latest input:"
+            )
+            self.prompt += convert_iris_message_to_langchain_message(user_question)
 
     def _add_exercise_context_to_prompt(
         self,
@@ -346,7 +410,9 @@ class ExerciseChatPipeline(Pipeline):
             )
             txt += lct
 
-        self.prompt += SystemMessagePromptTemplate.from_template(txt)
+        self.prompt += SystemMessagePromptTemplate.from_template(
+            txt.replace("{", "{{").replace("}", "}}")
+        )
 
     def should_execute_lecture_pipeline(self, course_id: int) -> bool:
         """

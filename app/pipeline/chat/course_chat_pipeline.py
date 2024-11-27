@@ -21,8 +21,9 @@ from .interaction_suggestion_pipeline import (
 )
 from .lecture_chat_pipeline import LectureChatPipeline
 from ..shared.citation_pipeline import CitationPipeline
-from ...common import convert_iris_message_to_langchain_message
-from ...domain import PyrisMessage
+from ...common.message_converters import convert_iris_message_to_langchain_message
+from ...common.pyris_message import PyrisMessage
+from ...domain.data.metrics.competency_jol_dto import CompetencyJolDTO
 from ...llm import CapabilityRequestHandler, RequirementList
 from ..prompts.iris_course_chat_prompts import (
     tell_iris_initial_system_prompt,
@@ -41,6 +42,7 @@ from ..prompts.iris_course_chat_prompts_elicit import (
     elicit_begin_agent_jol_prompt,
 )
 from ...domain import CourseChatPipelineExecutionDTO
+from app.common.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -77,12 +79,19 @@ class CourseChatPipeline(Pipeline):
     callback: CourseChatStatusCallback
     prompt: ChatPromptTemplate
     variant: str
+    event: str | None
     retrieved_paragraphs: List[dict] = None
 
-    def __init__(self, callback: CourseChatStatusCallback, variant: str = "default"):
+    def __init__(
+        self,
+        callback: CourseChatStatusCallback,
+        variant: str = "default",
+        event: str | None = None,
+    ):
         super().__init__(implementation_id="course_chat_pipeline")
 
         self.variant = variant
+        self.event = event
 
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
@@ -107,6 +116,7 @@ class CourseChatPipeline(Pipeline):
 
         # Create the pipeline
         self.pipeline = self.llm | StrOutputParser()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -121,6 +131,7 @@ class CourseChatPipeline(Pipeline):
             :param dto: The pipeline execution data transfer object
             :param kwargs: The keyword arguments
         """
+        logger.debug(dto.model_dump_json(indent=4))
 
         # Define tools
         @tool
@@ -140,7 +151,7 @@ class CourseChatPipeline(Pipeline):
             current_time = datetime.now(tz=pytz.UTC)
             exercises = []
             for exercise in dto.course.exercises:
-                exercise_dict = exercise.dict()
+                exercise_dict = exercise.model_dump()
                 exercise_dict["due_date_over"] = (
                     exercise.due_date < current_time if exercise.due_date else None
                 )
@@ -232,7 +243,7 @@ class CourseChatPipeline(Pipeline):
             regarding their progress overall or in a specific area.
             A competency has the following attributes: name, description, taxonomy, soft due date, optional,
             and mastery threshold.
-            The response may include metrics for each competency, such as progress and confidence (0%-100%).
+            The response may include metrics for each competency, such as progress and mastery (0%-100%).
             These are system-generated.
             The judgment of learning (JOL) values indicate the self-reported confidence by the student (0-5, 5 star).
             The object describing it also indicates the system-computed confidence at the time when the student
@@ -248,7 +259,6 @@ class CourseChatPipeline(Pipeline):
                     "info": competency_metrics.competency_information.get(comp, None),
                     "exercise_ids": competency_metrics.exercises.get(comp, []),
                     "progress": competency_metrics.progress.get(comp, 0),
-                    "confidence": competency_metrics.confidence.get(comp, 0),
                     "mastery": (
                         (1 - weight) * competency_metrics.progress.get(comp, 0)
                         + weight * competency_metrics.confidence.get(comp, 0)
@@ -263,12 +273,12 @@ class CourseChatPipeline(Pipeline):
                 for comp in competency_metrics.competency_information
             ]
 
-        @tool()
-        def lecture_content_retrieval(prompt: str) -> str:
+        @tool
+        def lecture_content_retrieval() -> str:
             """
             Retrieve content from indexed lecture slides.
-            The query should be a natural language question that can be answered by looking into the lecture materials.
-            This will run a RAG retrieval on the indexed lecture slides and return the most relevant paragraphs.
+            This will run a RAG retrieval based on the chat history on the indexed lecture slides and return the
+            most relevant paragraphs.
             Use this if you think it can be useful to answer the student's question, or if the student explicitly asks
             a question about the lecture content or slides.
             Only use this once.
@@ -285,8 +295,9 @@ class CourseChatPipeline(Pipeline):
 
             result = ""
             for paragraph in self.retrieved_paragraphs:
-                lct = "Lecture: {}, Page: {}\nContent:\n---{}---\n\n".format(
+                lct = "Lecture: {}, Unit: {}, Page: {}\nContent:\n---{}---\n\n".format(
                     paragraph.get(LectureSchema.LECTURE_NAME.value),
+                    paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
                     paragraph.get(LectureSchema.PAGE_NUMBER.value),
                     paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
                 )
@@ -321,12 +332,14 @@ class CourseChatPipeline(Pipeline):
                 datetime.now(tz=pytz.UTC).strftime("%Y-%m-%d %H:%M:%S"),
             )
 
-            if self.variant == "jol":
+            if self.event == "jol":
+                event_payload = CompetencyJolDTO.model_validate(dto.event_payload.event)
+                logger.debug(f"Event Payload: {event_payload}")
                 comp = next(
                     (
                         c
                         for c in dto.course.competencies
-                        if c.id == dto.competency_jol.competency_id
+                        if c.id == event_payload.competency_id
                     ),
                     None,
                 )
@@ -334,14 +347,14 @@ class CourseChatPipeline(Pipeline):
                 params = {
                     "jol": json.dumps(
                         {
-                            "value": dto.competency_jol.jol_value,
+                            "value": event_payload.jol_value,
                             "competency_mastery": get_mastery(
-                                dto.competency_jol.competency_progress,
-                                dto.competency_jol.competency_confidence,
+                                event_payload.competency_progress,
+                                event_payload.competency_confidence,
                             ),
                         }
                     ),
-                    "competency": comp.json(),
+                    "competency": comp.model_dump_json(),
                 }
             else:
                 agent_prompt = (
@@ -407,14 +420,18 @@ class CourseChatPipeline(Pipeline):
             self.callback.in_progress()
             for step in agent_executor.iter(params):
                 print("STEP:", step)
+                self._append_tokens(
+                    self.llm.tokens, PipelineEnum.IRIS_CHAT_COURSE_MESSAGE
+                )
                 if step.get("output", None):
                     out = step["output"]
 
             if self.retrieved_paragraphs:
                 self.callback.in_progress("Augmenting response ...")
                 out = self.citation_pipeline(self.retrieved_paragraphs, out)
+            self.tokens.extend(self.citation_pipeline.tokens)
 
-            self.callback.done("Response created", final_result=out)
+            self.callback.done("Response created", final_result=out, tokens=self.tokens)
 
             # try:
             #     self.callback.skip("Skipping suggestion generation.")
@@ -442,7 +459,8 @@ class CourseChatPipeline(Pipeline):
             )
             traceback.print_exc()
             self.callback.error(
-                "An error occurred while running the course chat pipeline."
+                "An error occurred while running the course chat pipeline.",
+                tokens=self.tokens,
             )
 
     def should_allow_lecture_tool(self, course_id: int) -> bool:

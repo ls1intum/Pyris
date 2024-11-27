@@ -5,15 +5,22 @@ from sentry_sdk import capture_exception, capture_message
 import requests
 from abc import ABC
 
-from ...domain.chat.course_chat.course_chat_status_update_dto import (
+from app.common.token_usage_dto import TokenUsageDTO
+from app.domain.status.competency_extraction_status_update_dto import (
+    CompetencyExtractionStatusUpdateDTO,
+)
+from app.domain.chat.course_chat.course_chat_status_update_dto import (
     CourseChatStatusUpdateDTO,
 )
-from ...domain.status.stage_state_dto import StageStateEnum
-from ...domain.status.stage_dto import StageDTO
-from ...domain.chat.exercise_chat.exercise_chat_status_update_dto import (
+from app.domain.status.stage_state_dto import StageStateEnum
+from app.domain.status.stage_dto import StageDTO
+from app.domain.status.text_exercise_chat_status_update_dto import (
+    TextExerciseChatStatusUpdateDTO,
+)
+from app.domain.chat.exercise_chat.exercise_chat_status_update_dto import (
     ExerciseChatStatusUpdateDTO,
 )
-from ...domain.status.status_update_dto import StatusUpdateDTO
+from app.domain.status.status_update_dto import StatusUpdateDTO
 import logging
 
 logger = logging.getLogger(__name__)
@@ -54,8 +61,7 @@ class StatusCallback(ABC):
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.run_id}",
                 },
-                # FIXME: Deprecated. Replace dict with model_dump
-                json=self.status.dict(by_alias=True),
+                json=self.status.model_dump(by_alias=True),
             ).raise_for_status()
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending status update: {e}")
@@ -93,6 +99,7 @@ class StatusCallback(ABC):
         message: Optional[str] = None,
         final_result: Optional[str] = None,
         suggestions: Optional[List[str]] = None,
+        tokens: Optional[List[TokenUsageDTO]] = None,
         next_stage_message: Optional[str] = None,
         start_next_stage: bool = True,
     ):
@@ -101,38 +108,35 @@ class StatusCallback(ABC):
         If there is a next stage, set the current
         stage to the next stage.
         """
-        if self.stage.state == StageStateEnum.IN_PROGRESS:
-            self.stage.state = StageStateEnum.DONE
-            self.stage.message = message
-            self.status.result = final_result
-            if hasattr(self.status, "suggestions"):
-                self.status.suggestions = suggestions
-            next_stage = self.get_next_stage()
-            if next_stage is not None:
-                self.stage = next_stage
-                if next_stage_message:
-                    self.stage.message = next_stage_message
-                if start_next_stage:
-                    self.stage.state = StageStateEnum.IN_PROGRESS
-            self.on_status_update()
-        else:
-            raise ValueError(
-                "Invalid state transition to done. current state is ", self.stage.state
-            )
-        # Reset the result after sending a final response
+        self.stage.state = StageStateEnum.DONE
+        self.stage.message = message
+        self.status.result = final_result
+        self.status.tokens = tokens or self.status.tokens
+        if hasattr(self.status, "suggestions"):
+            self.status.suggestions = suggestions
+        next_stage = self.get_next_stage()
+        if next_stage is not None:
+            self.stage = next_stage
+            if next_stage_message:
+                self.stage.message = next_stage_message
+            if start_next_stage:
+                self.stage.state = StageStateEnum.IN_PROGRESS
+        self.on_status_update()
         self.status.result = None
         self.status.suggestions = None
 
-    def error(self, message: str, exception=None):
+    def error(
+        self, message: str, exception=None, tokens: Optional[List[TokenUsageDTO]] = None
+    ):
         """
         Transition the current stage to ERROR and update the status.
         Set all later stages to SKIPPED if an error occurs.
         """
         self.stage.state = StageStateEnum.ERROR
         self.stage.message = message
-
         self.status.result = None
         self.status.suggestions = None
+        self.status.tokens = tokens or self.status.tokens
         # Set all subsequent stages to SKIPPED if an error occurs
         rest_of_index = (
             self.current_stage_index + 1
@@ -204,17 +208,7 @@ class ExerciseChatStatusCallback(StatusCallback):
             StageDTO(
                 weight=30,
                 state=StageStateEnum.NOT_STARTED,
-                name="Code and Lecture Context Lookup",
-            ),
-            StageDTO(
-                weight=60,
-                state=StageStateEnum.NOT_STARTED,
-                name="Response Generation",
-            ),
-            StageDTO(
-                weight=20,
-                state=StageStateEnum.NOT_STARTED,
-                name="Response Refining",
+                name="Checking available information",
             ),
             StageDTO(
                 weight=10, state=StageStateEnum.NOT_STARTED, name="Creating suggestions"
@@ -223,3 +217,55 @@ class ExerciseChatStatusCallback(StatusCallback):
         status = ExerciseChatStatusUpdateDTO(stages=stages)
         stage = stages[current_stage_index]
         super().__init__(url, run_id, status, stage, current_stage_index)
+
+
+class TextExerciseChatCallback(StatusCallback):
+    def __init__(
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO],
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/text-exercise-chat/runs/{run_id}/status"
+        stages = initial_stages or []
+        stage = len(stages)
+        stages += [
+            StageDTO(
+                weight=30,
+                state=StageStateEnum.NOT_STARTED,
+                name="Thinking",
+            ),
+            StageDTO(
+                weight=20,
+                state=StageStateEnum.NOT_STARTED,
+                name="Responding",
+            ),
+        ]
+        super().__init__(
+            url,
+            run_id,
+            TextExerciseChatStatusUpdateDTO(stages=stages),
+            stages[stage],
+            stage,
+        )
+
+
+class CompetencyExtractionCallback(StatusCallback):
+    def __init__(
+        self,
+        run_id: str,
+        base_url: str,
+        initial_stages: List[StageDTO],
+    ):
+        url = f"{base_url}/api/public/pyris/pipelines/competency-extraction/runs/{run_id}/status"
+        stages = initial_stages or []
+        stages.append(
+            StageDTO(
+                weight=10,
+                state=StageStateEnum.NOT_STARTED,
+                name="Generating Competencies",
+            )
+        )
+        status = CompetencyExtractionStatusUpdateDTO(stages=stages)
+        stage = stages[-1]
+        super().__init__(url, run_id, status, stage, len(stages) - 1)

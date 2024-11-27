@@ -80,6 +80,9 @@ Think of a message to which a student visiting a dashboard would likely be inter
 tell_begin_agent_prompt = """
 Now, continue your conversation by responding to the student's latest message.
 If they asked a question you are not absolutely sure of your answer from the data sources you have access to, you only reply by reminding students to check the course website or ask the course staff for the most up-to-date information. 
+If you link a resource, DO NOT FORGET to include a markdown link. Use markdown format: [Resource title](Resource URL).
+The resource title should be the title of the lecture, exercise, or any other course material and shoud be descriptive in case no title is provided. Do not use "here" as a link text
+The resource URL should only be the relative path to the course website, not the full URL.
 DO NOT UNDER ANY CIRCUMSTANCES repeat any message you have already sent before or send a similar message. Your messages must ALWAYS BE NEW AND ORIGINAL. It MUST NOT be a copy of any previous message. Do not repeat yourself. Do not repeat yourself. Do not repeat yourself.
 Focus on their input and maintain your role.
 Use tools if useful, e.g. to figure out what topic to bring up from how the student is doing or if there was a question about {course_name}. 
@@ -88,7 +91,7 @@ Use tools if useful, e.g. to figure out what topic to bring up from how the stud
 tell_begin_agent_jol_prompt = """
 Now, this time, the student did not send you a new message.
 You are being activated because something happened: the student submitted a JOL for a competency.
-You should respond to this event. Focus on their self-reflection and the difference between their self-assessment and the system confidence value.
+You should respond to this event. Focus on their self-reflection and the difference between their self-assessment and the system mastery value.
 Note that JoL goes from 0-5, where 0 is the lowest and 5 is the highest, while mastery goes from 0%-100%.
 If they ranked themselves lower than the system, you should encourage them to keep up the good work and that it is normal to feel less confident in the beginning.
 If they ranked themselves higher than the system, you should tell them that it is great to see that they are confident, but that they should keep in mind that the system has a more objective view of their progress

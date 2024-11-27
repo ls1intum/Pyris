@@ -10,12 +10,13 @@ from langchain_core.runnables import Runnable
 from langsmith import traceable
 
 from ..shared.citation_pipeline import CitationPipeline
-from ...common import convert_iris_message_to_langchain_message
-from ...domain import PyrisMessage
+from ...common.message_converters import convert_iris_message_to_langchain_message
+from ...common.pyris_message import PyrisMessage
 from ...domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from ...llm import CapabilityRequestHandler, RequirementList
+from app.common.PipelineEnum import PipelineEnum
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.lecture_schema import LectureSchema
@@ -46,7 +47,9 @@ def lecture_initial_prompt():
      questions about the lectures. To answer them the best way, relevant lecture content is provided to you with the
      student's question. If the context provided to you is not enough to formulate an answer to the student question
      you can simply ask the student to elaborate more on his question. Use only the parts of the context provided for
-     you that is relevant to the student's question. If the user greets you greet him back, and ask him how you can help
+     you that is relevant to the student's question. If the user greets you greet him back,
+      and ask him how you can help.
+     Always formulate your answer in the same language as the user's language.
      """
 
 
@@ -74,6 +77,7 @@ class LectureChatPipeline(Pipeline):
         self.retriever = LectureRetrieval(self.db.client)
         self.pipeline = self.llm | StrOutputParser()
         self.citation_pipeline = CitationPipeline()
+        self.tokens = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
@@ -103,7 +107,7 @@ class LectureChatPipeline(Pipeline):
         retrieved_lecture_chunks = self.retriever(
             chat_history=history,
             student_query=query.contents[0].text_content,
-            result_limit=10,
+            result_limit=5,
             course_name=dto.course.name,
             course_id=dto.course.id,
             base_url=dto.settings.artemis_base_url,
@@ -114,9 +118,11 @@ class LectureChatPipeline(Pipeline):
         self.prompt = ChatPromptTemplate.from_messages(prompt_val)
         try:
             response = (self.prompt | self.pipeline).invoke({})
+            self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_CHAT_LECTURE_MESSAGE)
             response_with_citation = self.citation_pipeline(
                 retrieved_lecture_chunks, response
             )
+            self.tokens.extend(self.citation_pipeline.tokens)
             logger.info(f"Response from lecture chat pipeline: {response}")
             return response_with_citation
         except Exception as e:
