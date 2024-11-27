@@ -7,10 +7,12 @@ import threading
 
 logger = logging.getLogger(__name__)
 
+
 class VectorDatabase:
     """
     Class to interact with the Weaviate vector database
     """
+
     _lock = threading.Lock()
     _client_instance = None
 
