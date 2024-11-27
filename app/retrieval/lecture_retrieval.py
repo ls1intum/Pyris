@@ -5,9 +5,9 @@ from langsmith import traceable
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 
-from ..common import convert_iris_message_to_langchain_message
 from app.common.token_usage_dto import TokenUsageDTO
 from app.common.PipelineEnum import PipelineEnum
+from ..common.message_converters import convert_iris_message_to_langchain_message
 from ..common.pyris_message import PyrisMessage
 from ..llm.langchain import IrisLangchainChatModel
 from ..pipeline import Pipeline
@@ -404,11 +404,11 @@ class LectureRetrieval(Pipeline):
             alpha=hybrid_factor,
             vector=vec,
             return_properties=[
-                LectureSchema.PAGE_TEXT_CONTENT.value,
-                LectureSchema.COURSE_NAME.value,
-                LectureSchema.LECTURE_NAME.value,
-                LectureSchema.PAGE_NUMBER.value,
                 LectureSchema.COURSE_ID.value,
+                LectureSchema.LECTURE_UNIT_NAME.value,
+                LectureSchema.LECTURE_UNIT_LINK.value,
+                LectureSchema.PAGE_NUMBER.value,
+                LectureSchema.PAGE_TEXT_CONTENT.value,
             ],
             limit=result_limit,
             filters=filter_weaviate,

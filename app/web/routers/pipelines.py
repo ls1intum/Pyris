@@ -4,13 +4,14 @@ from threading import Thread
 
 from sentry_sdk import capture_exception
 
-from fastapi import APIRouter, status, Response, Depends
+from fastapi import APIRouter, status, Response, Depends, Body, Query
 
 from app.domain import (
     ExerciseChatPipelineExecutionDTO,
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
 )
+from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
@@ -36,14 +37,18 @@ router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
 
 
-def run_exercise_chat_pipeline_worker(dto: ExerciseChatPipelineExecutionDTO):
+def run_exercise_chat_pipeline_worker(
+    dto: ExerciseChatPipelineExecutionDTO, variant: str, event: str | None = None
+):
     try:
         callback = ExerciseChatStatusCallback(
             run_id=dto.settings.authentication_token,
             base_url=dto.settings.artemis_base_url,
             initial_stages=dto.initial_stages,
         )
-        pipeline = ExerciseChatPipeline(callback=callback)
+        pipeline = ExerciseChatAgentPipeline(
+            callback=callback, variant=variant, event=event
+        )
     except Exception as e:
         logger.error(f"Error preparing exercise chat pipeline: {e}")
         logger.error(traceback.format_exc())
@@ -63,19 +68,27 @@ def run_exercise_chat_pipeline_worker(dto: ExerciseChatPipelineExecutionDTO):
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_exercise_chat_pipeline(variant: str, dto: ExerciseChatPipelineExecutionDTO):
-    thread = Thread(target=run_exercise_chat_pipeline_worker, args=(dto,))
+def run_exercise_chat_pipeline(
+    variant: str,
+    event: str | None = Query(None, description="Event query parameter"),
+    dto: ExerciseChatPipelineExecutionDTO = Body(
+        description="Exercise Chat Pipeline Execution DTO"
+    ),
+):
+    thread = Thread(
+        target=run_exercise_chat_pipeline_worker, args=(dto, variant, event)
+    )
     thread.start()
 
 
-def run_course_chat_pipeline_worker(dto, variant):
+def run_course_chat_pipeline_worker(dto, variant, event):
     try:
         callback = CourseChatStatusCallback(
             run_id=dto.settings.authentication_token,
             base_url=dto.settings.artemis_base_url,
             initial_stages=dto.initial_stages,
         )
-        pipeline = CourseChatPipeline(callback=callback, variant=variant)
+        pipeline = CourseChatPipeline(callback=callback, variant=variant, event=event)
     except Exception as e:
         logger.error(f"Error preparing exercise chat pipeline: {e}")
         logger.error(traceback.format_exc())
@@ -95,8 +108,14 @@ def run_course_chat_pipeline_worker(dto, variant):
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_course_chat_pipeline(variant: str, dto: CourseChatPipelineExecutionDTO):
-    thread = Thread(target=run_course_chat_pipeline_worker, args=(dto, variant))
+def run_course_chat_pipeline(
+    variant: str,
+    event: str | None = Query(None, description="Event query parameter"),
+    dto: CourseChatPipelineExecutionDTO = Body(
+        description="Course Chat Pipeline Execution DTO"
+    ),
+):
+    thread = Thread(target=run_course_chat_pipeline_worker, args=(dto, variant, event))
     thread.start()
 
 

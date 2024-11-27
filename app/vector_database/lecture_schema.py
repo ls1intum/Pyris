@@ -20,6 +20,7 @@ class LectureSchema(Enum):
     LECTURE_NAME = "lecture_name"
     LECTURE_UNIT_ID = "lecture_unit_id"
     LECTURE_UNIT_NAME = "lecture_unit_name"
+    LECTURE_UNIT_LINK = "lecture_unit_link"
     PAGE_TEXT_CONTENT = "page_text_content"
     PAGE_NUMBER = "page_number"
     BASE_URL = "base_url"
@@ -31,14 +32,31 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
     """
     if client.collections.exists(LectureSchema.COLLECTION_NAME.value):
         collection = client.collections.get(LectureSchema.COLLECTION_NAME.value)
+        properties = collection.config.get(simple=True).properties
+
+        # Check and add 'course_language' property if missing
         if not any(
-            (property.name == "course_language")
+            property.name == LectureSchema.COURSE_LANGUAGE.value
             for property in collection.config.get(simple=False).properties
         ):
             collection.config.add_property(
                 Property(
                     name=LectureSchema.COURSE_LANGUAGE.value,
                     description="The language of the COURSE",
+                    data_type=DataType.TEXT,
+                    index_searchable=False,
+                )
+            )
+
+        # Check and add 'lecture_unit_link' property if missing
+        if not any(
+            property.name == LectureSchema.LECTURE_UNIT_LINK.value
+            for property in properties
+        ):
+            collection.config.add_property(
+                Property(
+                    name=LectureSchema.LECTURE_UNIT_LINK.value,
+                    description="The link to the Lecture Unit",
                     data_type=DataType.TEXT,
                     index_searchable=False,
                 )
@@ -98,6 +116,12 @@ def init_lecture_schema(client: WeaviateClient) -> Collection:
                 name=LectureSchema.LECTURE_UNIT_NAME.value,
                 description="The name of the lecture unit",
                 data_type=DataType.TEXT,
+            ),
+            Property(
+                name=LectureSchema.LECTURE_UNIT_LINK.value,
+                description="The link to the Lecture Unit",
+                data_type=DataType.TEXT,
+                index_searchable=False,
             ),
             Property(
                 name=LectureSchema.PAGE_TEXT_CONTENT.value,
