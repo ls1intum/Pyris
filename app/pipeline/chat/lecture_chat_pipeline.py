@@ -60,7 +60,7 @@ class LectureChatPipeline(Pipeline):
     prompt: ChatPromptTemplate
     callback: LectureChatCallback
 
-    def __init__(self, callback: LectureChatCallback):
+    def __init__(self, callback: LectureChatCallback, dto: LectureChatPipelineExecutionDTO, variant: str):
         super().__init__(implementation_id="lecture_chat_pipeline")
         # Set the langchain chat model
         request_handler = CapabilityRequestHandler(
@@ -72,6 +72,8 @@ class LectureChatPipeline(Pipeline):
         )
 
         self.callback = callback
+        self.dto = dto
+        self.variant = variant
 
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
         self.llm = IrisLangchainChatModel(

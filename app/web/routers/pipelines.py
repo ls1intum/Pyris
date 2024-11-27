@@ -153,7 +153,7 @@ def run_lecture_chat_pipeline_worker(dto, variant):
         )
         match variant:
             case "default" | "lecture_chat_pipeline_reference_impl":
-                pipeline = LectureChatPipeline(callback=callback)
+                pipeline = LectureChatPipeline(callback=callback, dto=dto, variant=variant)
             case _:
                 raise ValueError(f"Unknown variant: {variant}")
     except Exception as e:
