@@ -145,7 +145,7 @@ def run_text_exercise_chat_pipeline_worker(dto, variant):
         callback.error("Fatal error.", exception=e)
 
 
-def run_lecture_chat_pipeline_worker(variant, dto):
+def run_lecture_chat_pipeline_worker(dto, variant):
     try:
         callback = LectureChatCallback(
             run_id=dto.settings.authentication_token,
@@ -189,7 +189,7 @@ def run_text_exercise_chat_pipeline(
     dependencies=[Depends(TokenValidator())],
 )
 def run_lecture_chat_pipeline(variant: str, dto: LectureChatPipelineExecutionDTO):
-    thread = Thread(target=run_lecture_chat_pipeline_worker, args=(variant, dto))
+    thread = Thread(target=run_lecture_chat_pipeline_worker, args=(dto, variant))
     thread.start()
 
 
