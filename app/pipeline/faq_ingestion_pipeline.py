@@ -34,15 +34,14 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
         callback: FaqIngestionStatus,
     ):
         super().__init__()
+        self.client = client
         self.collection = init_faq_schema(client)
         self.dto = dto
-        self.llm_vision = BasicRequestHandler("azure-gpt-4-omni")
-        self.llm_chat = BasicRequestHandler("azure-gpt-35-turbo")
         self.llm_embedding = BasicRequestHandler("embedding-small")
         self.callback = callback
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
-                gpt_version_equivalent=3.5,
+                gpt_version_equivalent=4.25,
                 context_length=16385,
                 privacy_compliance=True,
             )
@@ -88,14 +87,13 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
         with batch_update_lock:
             with self.collection.batch.rate_limit(requests_per_minute=600) as batch:
                 try:
-                    # this needs to be working, otherwise its working just fine
-                    # embed_chunk = self.llm_embedding.embed(
-                    #     f"{faq.questionTitle} : {faq.questionAnswer}"
-                    # )
-
-                    embed_chunk = [0.125, -1.179,-14.4,7.6,7.97]
+                    embed_chunk = self.llm_embedding.embed(
+                        f"{faq.question_title} : {faq.question_answer}"
+                    )
                     faq_dict = faq.model_dump()
+
                     batch.add_object(properties=faq_dict, vector=embed_chunk)
+
                     for item in self.collection.iterator():
                         logging.info(item)
 

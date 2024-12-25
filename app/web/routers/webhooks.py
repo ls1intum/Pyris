@@ -172,7 +172,6 @@ def faq_deletion_webhook(dto: FaqDeletionExecutionDto):
     """
     Webhook endpoint to trigger the faq deletion pipeline
     """
-    logging.info(dto)
     logging.info("Starting faq deletion")
     thread = Thread(target=run_faq_delete_pipeline_worker, args=(dto,))
     thread.start()

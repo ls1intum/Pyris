@@ -42,8 +42,10 @@ from ..prompts.iris_course_chat_prompts_elicit import (
 )
 from ...domain import CourseChatPipelineExecutionDTO
 from app.common.PipelineEnum import PipelineEnum
+from ...retrieval.faq_retrieval import FaqRetrieval
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
+from ...vector_database.faq_schema import FaqSchema
 from ...vector_database.lecture_schema import LectureSchema
 from ...web.status.status_update import (
     CourseChatStatusCallback,
@@ -105,7 +107,8 @@ class CourseChatPipeline(Pipeline):
         self.callback = callback
 
         self.db = VectorDatabase()
-        self.retriever = LectureRetrieval(self.db.client)
+        self.lecture_retriever = LectureRetrieval(self.db.client)
+        self.faq_retriever = FaqRetrieval(self.db.client)
         self.suggestion_pipeline = InteractionSuggestionPipeline(variant="course")
         self.citation_pipeline = CitationPipeline()
 
@@ -273,7 +276,7 @@ class CourseChatPipeline(Pipeline):
             Only use this once.
             """
             self.callback.in_progress("Retrieving lecture content ...")
-            self.retrieved_paragraphs = self.retriever(
+            self.retrieved_paragraphs = self.lecture_retriever(
                 chat_history=history,
                 student_query=query.contents[0].text_content,
                 result_limit=5,
@@ -291,6 +294,35 @@ class CourseChatPipeline(Pipeline):
                     paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
                 )
                 result += lct
+            return result
+
+        def faq_content_retrieval() -> str:
+            """
+            Retrieve content from indexed faqs.
+            This will run a RAG retrieval based on the chat history on the indexed faqs and return the
+            most relevant paragraphs.
+            Use this if you think it can be useful to answer the student's question with a faq, or if the student explicitly asks
+            an organizational question about the course.
+            Only use this once.
+            """
+            self.callback.in_progress("Retrieving faq content ...")
+            self.retrieved_paragraphs = self.faq_retriever(
+                chat_history=history,
+                student_query=query.contents[0].text_content,
+                result_limit=5,
+                course_name=dto.course.name,
+                course_id=dto.course.id,
+                base_url=dto.settings.artemis_base_url,
+            )
+
+            result = ""
+            for faq in self.retrieved_faqs:
+                res = "FAQ Title: {}, FAQ Answer: {}, ID: {}".format(
+                    faq.get(FaqSchema.QUESTION_TITLE.value),
+                    faq.get(FaqSchema.QUESTION_Answer.value),
+                    faq.get(FaqSchema.FAQ_ID.value),
+                )
+                result += res
             return result
 
         if dto.user.id % 3 < 2:
@@ -391,6 +423,9 @@ class CourseChatPipeline(Pipeline):
             if self.should_allow_lecture_tool(dto.course.id):
                 tool_list.append(lecture_content_retrieval)
 
+            if self.should_allow_faq_tool(dto.course.id):
+                tool_list.append(faq_content_retrieval)
+
             tools = generate_structured_tools_from_functions(tool_list)
             # No idea why we need this extra contrary to exercise chat agent in this case, but solves the issue.
             params.update({"tools": tools})
@@ -461,6 +496,25 @@ class CourseChatPipeline(Pipeline):
                 ),
                 limit=1,
                 return_properties=[LectureSchema.COURSE_NAME.value],
+            )
+            return len(result.objects) > 0
+        return False
+
+    def should_allow_faq_tool(self, course_id: int) -> bool:
+        """
+        Checks if there are indexed faqs for the given course
+
+        :param course_id: The course ID
+        :return: True if there are indexed lectures for the course, False otherwise
+        """
+        if course_id:
+            # Fetch the first object that matches the course ID with the language property
+            result = self.db.faqs.query.fetch_objects(
+                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(
+                    course_id
+                ),
+                limit=1,
+                return_properties=[FaqSchema.COURSE_NAME.value],
             )
             return len(result.objects) > 0
         return False
