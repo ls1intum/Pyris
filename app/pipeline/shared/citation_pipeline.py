@@ -1,5 +1,7 @@
+import logging
 import os
 from asyncio.log import logger
+from enum import Enum
 from typing import List, Union
 
 from langchain_core.output_parsers import StrOutputParser
@@ -10,8 +12,13 @@ from app.llm import CapabilityRequestHandler, RequirementList, CompletionArgumen
 from app.common.PipelineEnum import PipelineEnum
 from app.llm.langchain import IrisLangchainChatModel
 from app.pipeline import Pipeline
+from app.vector_database.faq_schema import FaqSchema
 
 from app.vector_database.lecture_schema import LectureSchema
+
+class InformationType(str, Enum):
+    PARAGRAPHS = "PARAGRAPHS"
+    FAQS = "FAQS"
 
 
 class CitationPipeline(Pipeline):
@@ -47,7 +54,8 @@ class CitationPipeline(Pipeline):
     def __str__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
 
-    def create_formatted_string(self, paragraphs):
+
+    def create_formatted_lecture_string(self, paragraphs):
         """
         Create a formatted string from the data
         """
@@ -64,19 +72,40 @@ class CitationPipeline(Pipeline):
 
         return formatted_string.replace("{", "{{").replace("}", "}}")
 
+    def create_formatted_faq_string(self, faqs):
+        """
+        Create a formatted string from the data
+        """
+        formatted_string = ""
+        for i, faq in enumerate(faqs):
+            faq = "Question: {}, Answer: {}".format(
+                faq.get(FaqSchema.QUESTION_ANSWER.value),
+                faq.get(FaqSchema.QUESTION_TITLE.value),
+            )
+            formatted_string += faq
+
+        return formatted_string.replace("{", "{{").replace("}", "}}")
+
+
     def __call__(
         self,
-        paragraphs: Union[List[dict], List[str]],
+        information: Union[List[dict], List[str]],
         answer: str,
+        information_type: InformationType = InformationType.PARAGRAPHS,
         **kwargs,
     ) -> str:
         """
         Runs the pipeline
-            :param paragraphs: List of paragraphs which can be list of dicts or list of strings
+            :param information: List of information which can be list of dicts or list of strings. Used to augment the response
             :param query: The query
             :return: Selected file content
         """
-        paras = self.create_formatted_string(paragraphs)
+        paras = ""
+
+        if information_type == InformationType.FAQS:
+            paras = self.create_formatted_faq_string(information)
+        if information_type == InformationType.PARAGRAPHS:
+            paras = self.create_formatted_lecture_string(information)
 
         try:
             self.default_prompt = PromptTemplate(
@@ -89,7 +118,6 @@ class CitationPipeline(Pipeline):
             self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_CITATION_PIPELINE)
             if response == "!NONE!":
                 return answer
-            print(response)
             return response
         except Exception as e:
             logger.error("citation pipeline failed", e)

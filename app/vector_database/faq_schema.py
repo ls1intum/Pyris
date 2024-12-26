@@ -19,7 +19,7 @@ class FaqSchema(Enum):
     COURSE_ID = "course_id"
     FAQ_ID = "faq_id"
     QUESTION_TITLE = "question_title"
-    QUESTION_Answer = "question_answer"
+    QUESTION_ANSWER = "question_answer"
 
 
 def init_faq_schema(client: WeaviateClient) -> Collection:
@@ -88,7 +88,7 @@ def init_faq_schema(client: WeaviateClient) -> Collection:
                 data_type=DataType.TEXT,
             ),
             Property(
-                name=FaqSchema.QUESTION_Answer.value,
+                name=FaqSchema.QUESTION_ANSWER.value,
                 description="The answer of the faq",
                 data_type=DataType.TEXT,
             ),

@@ -20,7 +20,7 @@ from .interaction_suggestion_pipeline import (
     InteractionSuggestionPipeline,
 )
 from .lecture_chat_pipeline import LectureChatPipeline
-from ..shared.citation_pipeline import CitationPipeline
+from ..shared.citation_pipeline import CitationPipeline, InformationType
 from ..shared.utils import generate_structured_tools_from_functions
 from ...common.message_converters import convert_iris_message_to_langchain_message
 from ...common.pyris_message import PyrisMessage
@@ -82,6 +82,7 @@ class CourseChatPipeline(Pipeline):
     variant: str
     event: str | None
     retrieved_paragraphs: List[dict] = None
+    retrieved_faqs: List[dict] = None
 
     def __init__(
         self,
@@ -299,14 +300,14 @@ class CourseChatPipeline(Pipeline):
         def faq_content_retrieval() -> str:
             """
             Retrieve content from indexed faqs.
+            Use this if you think the question is a common question, or it can be useful to answer the student's question
+            with a faq, or if the student explicitly asks an organizational question about the course
             This will run a RAG retrieval based on the chat history on the indexed faqs and return the
-            most relevant paragraphs.
-            Use this if you think it can be useful to answer the student's question with a faq, or if the student explicitly asks
-            an organizational question about the course.
+            most relevant faqs.
             Only use this once.
             """
             self.callback.in_progress("Retrieving faq content ...")
-            self.retrieved_paragraphs = self.faq_retriever(
+            self.retrieved_faqs = self.faq_retriever(
                 chat_history=history,
                 student_query=query.contents[0].text_content,
                 result_limit=5,
@@ -317,12 +318,12 @@ class CourseChatPipeline(Pipeline):
 
             result = ""
             for faq in self.retrieved_faqs:
-                res = "FAQ Title: {}, FAQ Answer: {}, ID: {}".format(
+                res = ("FAQ Question: {}, FAQ Answer: {}").format(
                     faq.get(FaqSchema.QUESTION_TITLE.value),
-                    faq.get(FaqSchema.QUESTION_Answer.value),
-                    faq.get(FaqSchema.FAQ_ID.value),
+                    faq.get(FaqSchema.QUESTION_ANSWER.value),
                 )
                 result += res
+            logging.info(f"result from faq retrieval: {result}")
             return result
 
         if dto.user.id % 3 < 2:
@@ -446,8 +447,12 @@ class CourseChatPipeline(Pipeline):
 
             if self.retrieved_paragraphs:
                 self.callback.in_progress("Augmenting response ...")
-                out = self.citation_pipeline(self.retrieved_paragraphs, out)
+                out = self.citation_pipeline(self.retrieved_paragraphs, out, InformationType.PARAGRAPHS)
             self.tokens.extend(self.citation_pipeline.tokens)
+
+            if self.retrieved_faqs:
+                self.callback.in_progress("Augmenting response ...")
+                out = self.citation_pipeline(self.retrieved_faqs, out, InformationType.FAQS)
 
             self.callback.done("Response created", final_result=out, tokens=self.tokens)
 

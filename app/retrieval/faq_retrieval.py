@@ -123,13 +123,16 @@ class FaqRetrieval(Pipeline):
         merged_chunks = merge_retrieved_chunks(
             basic_retrieved_faqs, hyde_retrieved_faqs
         )
-        if len(merged_chunks) != 0:
-            selected_chunks_index = self.reranker_pipeline(
-                paragraphs=merged_chunks, query=student_query, chat_history=chat_history
-            )
-            if selected_chunks_index:
-                return [merged_chunks[int(i)] for i in selected_chunks_index]
-        return []
+
+        logging.info(f"merged_chunks, {merged_chunks}")
+        return merged_chunks
+        #if len(merged_chunks) != 0:
+        #    selected_chunks_index = self.reranker_pipeline(
+        #        paragraphs=merged_chunks, query=student_query, chat_history=chat_history
+        #    )
+        #    if selected_chunks_index:
+        #        return [merged_chunks[int(i)] for i in selected_chunks_index]
+        #return []
 
     @traceable(name="Basic Faq Retrieval")
     def basic_faq_retrieval(
@@ -297,7 +300,7 @@ class FaqRetrieval(Pipeline):
                 FaqSchema.COURSE_ID.value,
                 FaqSchema.FAQ_ID.value,
                 FaqSchema.QUESTION_TITLE.value,
-                FaqSchema.QUESTION_Answer.value,
+                FaqSchema.QUESTION_ANSWER.value,
             ],
             limit=result_limit,
             filters=filter_weaviate,
