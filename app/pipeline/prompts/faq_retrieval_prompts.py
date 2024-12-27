@@ -8,3 +8,12 @@ A good vector database query is formulated in natural language, just like a stud
 It is not an instruction to the database, but a question to the database.
 The chat history between the AI tutor and the student is provided to you in the next messages.
 """
+
+write_hypothetical_answer_prompt = """
+A student has sent a query in the context the course {course_name}.
+The chat history between the AI tutor and the student is provided to you in the next messages.
+Please provide a response in {course_language}.
+You should create a response that looks like a faq answer.
+Craft your response to closely reflect the style and content of typical university lecture materials.
+Do not exceed 350 words. Add keywords and phrases that are relevant to student intent.
+"""

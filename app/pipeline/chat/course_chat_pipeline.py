@@ -10,7 +10,7 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import (
-    ChatPromptTemplate,
+    ChatPromptTemplate, SystemMessagePromptTemplate,
 )
 from langchain_core.runnables import Runnable
 from langsmith import traceable
@@ -301,9 +301,10 @@ class CourseChatPipeline(Pipeline):
             """
             Retrieve content from indexed faqs.
             Use this if you think the question is a common question, or it can be useful to answer the student's question
-            with a faq, or if the student explicitly asks an organizational question about the course
+            with a faq, or if the student explicitly asks an organizational question about the course.
             This will run a RAG retrieval based on the chat history on the indexed faqs and return the
-            most relevant faqs.
+            most relevant faq. Every FAQ has the following format: [FAQ ID: ..., FAQ Question: ..., FAQ Answer: ...]
+            You will get the question and answer of the faq. Make sure to answer the question with the answer of your selected FAQ.
             Only use this once.
             """
             self.callback.in_progress("Retrieving faq content ...")
@@ -318,7 +319,8 @@ class CourseChatPipeline(Pipeline):
 
             result = ""
             for faq in self.retrieved_faqs:
-                res = ("FAQ Question: {}, FAQ Answer: {}").format(
+                res = "[FAQ ID: {}, FAQ Question: {}, FAQ Answer: {}]".format(
+                    faq.get(FaqSchema.FAQ_ID.value),
                     faq.get(FaqSchema.QUESTION_TITLE.value),
                     faq.get(FaqSchema.QUESTION_ANSWER.value),
                 )
@@ -427,6 +429,8 @@ class CourseChatPipeline(Pipeline):
             if self.should_allow_faq_tool(dto.course.id):
                 tool_list.append(faq_content_retrieval)
 
+
+
             tools = generate_structured_tools_from_functions(tool_list)
             # No idea why we need this extra contrary to exercise chat agent in this case, but solves the issue.
             params.update({"tools": tools})
@@ -453,7 +457,6 @@ class CourseChatPipeline(Pipeline):
             if self.retrieved_faqs:
                 self.callback.in_progress("Augmenting response ...")
                 out = self.citation_pipeline(self.retrieved_faqs, out, InformationType.FAQS)
-
             self.callback.done("Response created", final_result=out, tokens=self.tokens)
 
             # try:
@@ -530,3 +533,5 @@ def datetime_to_string(dt: Optional[datetime]) -> str:
         return "No date provided"
     else:
         return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+

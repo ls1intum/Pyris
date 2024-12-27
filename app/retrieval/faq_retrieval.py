@@ -26,13 +26,11 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
-from ..pipeline.prompts.faq_retrieval_prompts import faq_retriever_initial_prompt
+from ..pipeline.prompts.faq_retrieval_prompts import faq_retriever_initial_prompt, write_hypothetical_answer_prompt
 from ..pipeline.prompts.lecture_retrieval_prompts import (
     assessment_prompt,
     assessment_prompt_final,
     rewrite_student_query_prompt,
-    write_hypothetical_answer_prompt,
-    rewrite_student_query_prompt_with_exercise_context, write_hypothetical_answer_with_exercise_context_prompt,
 )
 import concurrent.futures
 
@@ -126,6 +124,7 @@ class FaqRetrieval(Pipeline):
 
         logging.info(f"merged_chunks, {merged_chunks}")
         return merged_chunks
+
         #if len(merged_chunks) != 0:
         #    selected_chunks_index = self.reranker_pipeline(
         #        paragraphs=merged_chunks, query=student_query, chat_history=chat_history
@@ -224,7 +223,7 @@ class FaqRetrieval(Pipeline):
             token_usage = self.llm.tokens
             token_usage.pipeline = PipelineEnum.IRIS_FAQ_RETRIEVAL_PIPELINE
             self.tokens.append(self.llm.tokens)
-            logger.info(f"Response from exercise chat pipeline: {response}")
+            logger.info(f"Response from faq retrieval pipeline: {response}")
             return response
         except Exception as e:
             raise e
@@ -257,6 +256,7 @@ class FaqRetrieval(Pipeline):
             course_name=course_name,
         )
         prompt = ChatPromptTemplate.from_messages(prompt_val)
+        logging.info(f"Prompt for elaborated query: {prompt}")
         try:
             response = (prompt | self.pipeline).invoke({})
             token_usage = self.llm.tokens
@@ -340,7 +340,9 @@ class FaqRetrieval(Pipeline):
 
             # Get the results once both tasks are complete
             rewritten_query = rewritten_query_future.result()
+            logging.info(f"Rewritten query: {rewritten_query}")
             hypothetical_answer_query = hypothetical_answer_query_future.result()
+            logging.info(f"Hypothetical answer query: {hypothetical_answer_query}")
 
             # Execute the database search tasks
         with concurrent.futures.ThreadPoolExecutor() as executor:
