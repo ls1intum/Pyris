@@ -325,7 +325,6 @@ class CourseChatPipeline(Pipeline):
                     faq.get(FaqSchema.QUESTION_ANSWER.value),
                 )
                 result += res
-            logging.info(f"result from faq retrieval: {result}")
             return result
 
         if dto.user.id % 3 < 2:

@@ -94,9 +94,6 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
 
                     batch.add_object(properties=faq_dict, vector=embed_chunk)
 
-                    for item in self.collection.iterator():
-                        logging.info(item)
-
 
                 except Exception as e:
                     logger.error(f"Error updating faq: {e}")
