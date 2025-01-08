@@ -44,7 +44,10 @@ class CitationPipeline(Pipeline):
         dirname = os.path.dirname(__file__)
         prompt_file_path = os.path.join(dirname, "..", "prompts", "citation_prompt.txt")
         with open(prompt_file_path, "r") as file:
-            self.prompt_str = file.read()
+            self.lecture_prompt_str = file.read()
+        prompt_file_path = os.path.join(dirname, "..", "prompts", "faq_citation_prompt.txt")
+        with open(prompt_file_path, "r") as file:
+            self.faq_prompt_str = file.read()
         self.pipeline = self.llm | StrOutputParser()
         self.tokens = []
 
@@ -72,15 +75,18 @@ class CitationPipeline(Pipeline):
 
         return formatted_string.replace("{", "{{").replace("}", "}}")
 
-    def create_formatted_faq_string(self, faqs):
+    def create_formatted_faq_string(self, faqs, base_url):
         """
         Create a formatted string from the data
         """
         formatted_string = ""
         for i, faq in enumerate(faqs):
-            faq = "Question: {}, Answer: {}".format(
-                faq.get(FaqSchema.QUESTION_ANSWER.value),
+            faq = "FAQ ID {}, CourseId {} , FAQ Question title {} and FAQ Question Answer {} and FAQ link {}".format(
+                faq.get(FaqSchema.FAQ_ID.value),
+                faq.get(FaqSchema.COURSE_ID.value),
                 faq.get(FaqSchema.QUESTION_TITLE.value),
+                faq.get(FaqSchema.QUESTION_ANSWER.value),
+                f"{base_url}/courses/{faq.get(FaqSchema.COURSE_ID.value)}/faq/?faqId={faq.get(FaqSchema.FAQ_ID.value)}"
             )
             formatted_string += faq
 
@@ -103,9 +109,11 @@ class CitationPipeline(Pipeline):
         paras = ""
 
         if information_type == InformationType.FAQS:
-            paras = self.create_formatted_faq_string(information)
+            paras = self.create_formatted_faq_string(information, kwargs.get("base_url"))
+            self.prompt_str = self.faq_prompt_str
         if information_type == InformationType.PARAGRAPHS:
             paras = self.create_formatted_lecture_string(information)
+            self.prompt_str = self.lecture_prompt_str
 
         try:
             self.default_prompt = PromptTemplate(

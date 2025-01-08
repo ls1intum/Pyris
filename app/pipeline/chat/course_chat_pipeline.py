@@ -299,13 +299,14 @@ class CourseChatPipeline(Pipeline):
 
         def faq_content_retrieval() -> str:
             """
-            Retrieve content from indexed faqs.
-            Use this if you think the question is a common question, or it can be useful to answer the student's question
-            with a faq, or if the student explicitly asks an organizational question about the course.
-            This will run a RAG retrieval based on the chat history on the indexed faqs and return the
-            most relevant faq. Every FAQ has the following format: [FAQ ID: ..., FAQ Question: ..., FAQ Answer: ...]
-            You will get the question and answer of the faq. Make sure to answer the question with the answer of your selected FAQ.
-            Only use this once.
+            Use this tool to retrieve information from indexed FAQs.
+            It is suitable when no other tool fits, you think it is a common question or the question is frequently asked,
+            or the question could be effectively answered by an FAQ. Also use this if the question is explicitly organizational and course-related.
+            An organizational question about the course might be "What is the course structure?" or "How do I enroll?" or exam related content like "When is the exam".
+            The tool performs a RAG retrieval based on the chat history to find the most relevant FAQs. Each FAQ follows this format:
+            FAQ ID, FAQ Question, FAQ Answer.
+            Respond to the query concisely and solely using the answer from the relevant FAQs. This tool should only be used once per query.
+
             """
             self.callback.in_progress("Retrieving faq content ...")
             self.retrieved_faqs = self.faq_retriever(
@@ -455,7 +456,7 @@ class CourseChatPipeline(Pipeline):
 
             if self.retrieved_faqs:
                 self.callback.in_progress("Augmenting response ...")
-                out = self.citation_pipeline(self.retrieved_faqs, out, InformationType.FAQS)
+                out = self.citation_pipeline(self.retrieved_faqs, out, InformationType.FAQS, base_url=dto.settings.artemis_base_url)
             self.callback.done("Response created", final_result=out, tokens=self.tokens)
 
             # try:

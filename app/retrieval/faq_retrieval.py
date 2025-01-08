@@ -125,13 +125,6 @@ class FaqRetrieval(Pipeline):
         logging.info(f"merged_chunks, {merged_chunks}")
         return merged_chunks
 
-        #if len(merged_chunks) != 0:
-        #    selected_chunks_index = self.reranker_pipeline(
-        #        paragraphs=merged_chunks, query=student_query, chat_history=chat_history
-        #    )
-        #    if selected_chunks_index:
-        #        return [merged_chunks[int(i)] for i in selected_chunks_index]
-        #return []
 
     @traceable(name="Basic Faq Retrieval")
     def basic_faq_retrieval(
@@ -223,7 +216,6 @@ class FaqRetrieval(Pipeline):
             token_usage = self.llm.tokens
             token_usage.pipeline = PipelineEnum.IRIS_FAQ_RETRIEVAL_PIPELINE
             self.tokens.append(self.llm.tokens)
-            logger.info(f"Response from faq retrieval pipeline: {response}")
             return response
         except Exception as e:
             raise e
@@ -256,13 +248,12 @@ class FaqRetrieval(Pipeline):
             course_name=course_name,
         )
         prompt = ChatPromptTemplate.from_messages(prompt_val)
-        logging.info(f"Prompt for elaborated query: {prompt}")
+
         try:
             response = (prompt | self.pipeline).invoke({})
             token_usage = self.llm.tokens
             token_usage.pipeline = PipelineEnum.IRIS_FAQ_RETRIEVAL_PIPELINE
             self.tokens.append(self.llm.tokens)
-            logger.info(f"Response from faq retrival pipeline: {response}")
             return response
         except Exception as e:
             raise e
@@ -306,8 +297,6 @@ class FaqRetrieval(Pipeline):
             filters=filter_weaviate,
         )
 
-        logger.info(f"Search in the database response: {return_value}")
-
         return return_value
 
     @traceable(name="Retrieval: Run Parallel Rewrite Tasks")
@@ -340,9 +329,7 @@ class FaqRetrieval(Pipeline):
 
             # Get the results once both tasks are complete
             rewritten_query = rewritten_query_future.result()
-            logging.info(f"Rewritten query: {rewritten_query}")
             hypothetical_answer_query = hypothetical_answer_query_future.result()
-            logging.info(f"Hypothetical answer query: {hypothetical_answer_query}")
 
             # Execute the database search tasks
         with concurrent.futures.ThreadPoolExecutor() as executor:
