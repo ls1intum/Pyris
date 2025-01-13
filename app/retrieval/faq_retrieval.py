@@ -1,5 +1,4 @@
 import logging
-from asyncio.log import logger
 from typing import List
 
 from langsmith import traceable
@@ -35,6 +34,9 @@ from ..pipeline.prompts.lecture_retrieval_prompts import (
 import concurrent.futures
 
 from ..vector_database.faq_schema import FaqSchema, init_faq_schema
+
+
+logger = logging.getLogger(__name__)
 
 
 def merge_retrieved_chunks(
@@ -134,6 +136,7 @@ class FaqRetrieval(Pipeline):
         result_limit: int,
         course_name: str = None,
         course_id: int = None,
+        course_language: str = None,
     ) -> list[dict[str, dict]]:
         """
         Basic retrieval for pipelines that need performance and fast answers.
@@ -142,7 +145,7 @@ class FaqRetrieval(Pipeline):
             return []
 
         rewritten_query = self.rewrite_student_query(
-            chat_history, student_query, "course_language", course_name
+            chat_history, student_query, course_language, course_name
         )
         response = self.search_in_db(
             query=rewritten_query,
