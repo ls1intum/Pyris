@@ -99,7 +99,7 @@ def run_faq_update_pipeline_worker(dto: FaqIngestionPipelineExecutionDto):
             semaphore.release()
 
 
-def run_faq_delete_pipeline_worker(dto: IngestionPipelineExecutionDto):
+def run_faq_delete_pipeline_worker(dto: FaqDeletionExecutionDto):
     """
     Run the faq deletion in a separate thread
     """

@@ -312,7 +312,7 @@ class CourseChatPipeline(Pipeline):
             self.retrieved_faqs = self.faq_retriever(
                 chat_history=history,
                 student_query=query.contents[0].text_content,
-                result_limit=5,
+                result_limit=10,
                 course_name=dto.course.name,
                 course_id=dto.course.id,
                 base_url=dto.settings.artemis_base_url,
