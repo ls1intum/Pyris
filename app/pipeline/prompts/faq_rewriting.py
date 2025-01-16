@@ -9,7 +9,7 @@ You are a excellent tutor with expertise in computer science and practical appli
 6. Avoid repeating any information that is already present in the text.
 7. Make sure to keep the markdown formatting intact and add formatting for the most important information
 
-{rephrased_text}
+{rewritten_text}
 
 Respond with a single string containing only the improved version of the text. Your output will be used as a frequently asked question (FAQ) on the Artemis platform, so make sure it is clear and concise.
 """

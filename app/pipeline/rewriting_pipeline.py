@@ -10,23 +10,23 @@ from app.common.PipelineEnum import PipelineEnum
 from app.common.pyris_message import PyrisMessage, IrisMessageRole
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from app.domain.data.competency_dto import Competency
-from app.domain.rephrasing_pipeline_execution_dto import RephrasingPipelineExecutionDTO
+from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecutionDTO
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
-from app.pipeline.prompts.faq_rephrasal import system_prompt_faq
-from app.web.status.status_update import  RephrasingCallback
+from app.pipeline.prompts.faq_rewriting import system_prompt_faq
+from app.web.status.status_update import  RewritingCallback
 
 logger = logging.getLogger(__name__)
 
 
-class RephrasingPipeline(Pipeline):
-    callback: RephrasingCallback
+class RewritingPipeline(Pipeline):
+    callback: RewritingCallback
     request_handler: CapabilityRequestHandler
     output_parser: PydanticOutputParser
 
-    def __init__(self, callback: Optional[RephrasingCallback] = None):
+    def __init__(self, callback: Optional[RewritingCallback] = None):
         super().__init__(
-            implementation_id="rephrasing_pipeline_reference_impl"
+            implementation_id="rewriting_pipeline_reference_impl"
         )
         self.callback = callback
         self.request_handler = CapabilityRequestHandler(
@@ -40,16 +40,16 @@ class RephrasingPipeline(Pipeline):
 
     def __call__(
         self,
-        dto: RephrasingPipelineExecutionDTO,
+        dto: RewritingPipelineExecutionDTO,
         prompt: Optional[ChatPromptTemplate] = None,
         **kwargs,
     ):
-        if not dto.to_be_rephrased:
-            raise ValueError("You need to provide a text to rephrase")
+        if not dto.to_be_rewritten:
+            raise ValueError("You need to provide a text to rewrite")
 
         #
         prompt = system_prompt_faq.format(
-            rephrased_text=dto.to_be_rephrased,
+            rewritten_text=dto.to_be_rewritten,
         )
         prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
@@ -60,9 +60,9 @@ class RephrasingPipeline(Pipeline):
             [prompt], CompletionArguments(temperature=0.4)
         )
         self._append_tokens(
-            response.token_usage, PipelineEnum.IRIS_REPHRASING_PIPELINE
+            response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE
         )
         response = response.contents[0].text_content
         final_result = response
-        logging.info(f"Final rephrased text: {final_result}")
+        logging.info(f"Final rewritten text: {final_result}")
         self.callback.done(final_result=final_result, tokens=self.tokens)
