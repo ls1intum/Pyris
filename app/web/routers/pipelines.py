@@ -11,16 +11,18 @@ from app.domain import (
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
 )
+from app.domain.rephrasing_pipeline_execution_dto import RephrasingPipelineExecutionDTO
 from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from app.pipeline.chat.lecture_chat_pipeline import LectureChatPipeline
+from app.pipeline.rephrasing_pipeline import RephrasingPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
-    LectureChatCallback,
+    LectureChatCallback, RephrasingCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.dependencies import TokenValidator
@@ -218,6 +220,31 @@ def run_competency_extraction_pipeline_worker(
         callback.error("Fatal error.", exception=e)
 
 
+def run_rephrasing_pipeline_worker(
+    dto: RephrasingPipelineExecutionDTO, _variant: str
+):
+    try:
+        # Replace with actual Callback class
+        callback = RephrasingCallback(
+            run_id=dto.execution.settings.authentication_token,
+            base_url=dto.execution.settings.artemis_base_url,
+            initial_stages=dto.execution.initial_stages,
+        )
+        #Replace with actual pipeline RefrasingPipeline
+        pipeline = RephrasingPipeline(callback=callback)
+    except Exception as e:
+        logger.error(f"Error preparing rephrasing pipeline: {e}")
+        logger.error(traceback.format_exc())
+        capture_exception(e)
+        return
+
+    try:
+        pipeline(dto=dto)
+    except Exception as e:
+        logger.error(f"Error running competency extraction pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+
 @router.post(
     "/competency-extraction/{variant}/run",
     status_code=status.HTTP_202_ACCEPTED,
@@ -228,6 +255,22 @@ def run_competency_extraction_pipeline(
 ):
     thread = Thread(
         target=run_competency_extraction_pipeline_worker, args=(dto, variant)
+    )
+    thread.start()
+
+
+
+@router.post(
+    "/rephrasing/{variant}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(TokenValidator())],
+)
+def run_rephrasing_pipeline(
+    variant: str, dto: RephrasingPipelineExecutionDTO
+):
+    logger.info(f"Rephrasing pipeline started with variant: {variant} and dto: {dto}")
+    thread = Thread(
+        target=run_rephrasing_pipeline_worker, args=(dto, variant)
     )
     thread.start()
 
@@ -294,5 +337,15 @@ def get_pipeline(feature: str):
                     description="Default lecture chat variant.",
                 )
             ]
+
+        case "REPHRASING":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default rephrasing variant.",
+                )
+            ]
+
         case _:
             return Response(status_code=status.HTTP_400_BAD_REQUEST)
