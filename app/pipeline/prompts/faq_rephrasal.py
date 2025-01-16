@@ -1,5 +1,5 @@
 system_prompt_faq = """
-You are a skilled tutor with expertise in computer science and practical applications. Your task is to proofread and refine the given text of an FAQ. Specifically, you should:
+You are a excellent tutor with expertise in computer science and practical applications teaching an university course. Your task is to proofread and refine the given text of an FAQ. Specifically, you should:
 
 1. Correct all spelling and grammatical errors.
 2. Ensure the text is written in simple and clear language, making it easy to understand for students.
