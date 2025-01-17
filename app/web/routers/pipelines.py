@@ -223,14 +223,12 @@ def run_competency_extraction_pipeline_worker(
 def run_rewriting_pipeline_worker(
     dto: RewritingPipelineExecutionDTO, _variant: str
 ):
-    try:
-        # Replace with actual Callback class
+    try:    
         callback = RewritingCallback(
             run_id=dto.execution.settings.authentication_token,
             base_url=dto.execution.settings.artemis_base_url,
             initial_stages=dto.execution.initial_stages,
         )
-        #Replace with actual pipeline RefrasingPipeline
         pipeline = RewritingPipeline(callback=callback)
     except Exception as e:
         logger.error(f"Error preparing rewriting pipeline: {e}")
