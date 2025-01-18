@@ -275,6 +275,7 @@ class CompetencyExtractionCallback(StatusCallback):
         stage = stages[-1]
         super().__init__(url, run_id, status, stage, len(stages) - 1)
 
+
 class RewritingCallback(StatusCallback):
     def __init__(
         self,

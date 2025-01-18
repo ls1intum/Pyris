@@ -22,7 +22,8 @@ from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
-    LectureChatCallback, RewritingCallback,
+    LectureChatCallback,
+    RewritingCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.dependencies import TokenValidator
@@ -220,10 +221,8 @@ def run_competency_extraction_pipeline_worker(
         callback.error("Fatal error.", exception=e)
 
 
-def run_rewriting_pipeline_worker(
-    dto: RewritingPipelineExecutionDTO, _variant: str
-):
-    try:    
+def run_rewriting_pipeline_worker(dto: RewritingPipelineExecutionDTO, _variant: str):
+    try:
         callback = RewritingCallback(
             run_id=dto.execution.settings.authentication_token,
             base_url=dto.execution.settings.artemis_base_url,
@@ -243,6 +242,7 @@ def run_rewriting_pipeline_worker(
         logger.error(traceback.format_exc())
         callback.error("Fatal error.", exception=e)
 
+
 @router.post(
     "/competency-extraction/{variant}/run",
     status_code=status.HTTP_202_ACCEPTED,
@@ -257,19 +257,14 @@ def run_competency_extraction_pipeline(
     thread.start()
 
 
-
 @router.post(
     "/rewriting/{variant}/run",
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_rewriting_pipeline(
-    variant: str, dto: RewritingPipelineExecutionDTO
-):
+def run_rewriting_pipeline(variant: str, dto: RewritingPipelineExecutionDTO):
     logger.info(f"Rewriting pipeline started with variant: {variant} and dto: {dto}")
-    thread = Thread(
-        target=run_rewriting_pipeline_worker, args=(dto, variant)
-    )
+    thread = Thread(target=run_rewriting_pipeline_worker, args=(dto, variant))
     thread.start()
 
 

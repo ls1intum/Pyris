@@ -14,7 +14,7 @@ from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecuti
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
 from app.pipeline.prompts.faq_rewriting import system_prompt_faq
-from app.web.status.status_update import  RewritingCallback
+from app.web.status.status_update import RewritingCallback
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,7 @@ class RewritingPipeline(Pipeline):
     output_parser: PydanticOutputParser
 
     def __init__(self, callback: Optional[RewritingCallback] = None):
-        super().__init__(
-            implementation_id="rewriting_pipeline_reference_impl"
-        )
+        super().__init__(implementation_id="rewriting_pipeline_reference_impl")
         self.callback = callback
         self.request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
@@ -59,9 +57,7 @@ class RewritingPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        self._append_tokens(
-            response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE
-        )
+        self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         response = response.contents[0].text_content
         final_result = response
         logging.info(f"Final rewritten text: {final_result}")
