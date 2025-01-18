@@ -33,7 +33,6 @@ class RewritingPipeline(Pipeline):
                 context_length=16385,
             )
         )
-        self.output_parser = PydanticOutputParser(pydantic_object=Competency)
         self.tokens = []
 
     def __call__(
