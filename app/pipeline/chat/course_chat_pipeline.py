@@ -10,7 +10,8 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import (
-    ChatPromptTemplate, SystemMessagePromptTemplate,
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from langchain_core.runnables import Runnable
 from langsmith import traceable
@@ -103,14 +104,16 @@ class CourseChatPipeline(Pipeline):
                 requirements=RequirementList(
                     gpt_version_equivalent=4.5,
                 )
-            ), completion_args=completion_args
+            ),
+            completion_args=completion_args,
         )
         self.llm_small = IrisLangchainChatModel(
             request_handler=CapabilityRequestHandler(
                 requirements=RequirementList(
                     gpt_version_equivalent=4.25,
                 )
-            ), completion_args=completion_args
+            ),
+            completion_args=completion_args,
         )
         self.callback = callback
 
@@ -436,8 +439,6 @@ class CourseChatPipeline(Pipeline):
             if self.should_allow_faq_tool(dto.course.id):
                 tool_list.append(faq_content_retrieval)
 
-
-
             tools = generate_structured_tools_from_functions(tool_list)
             # No idea why we need this extra contrary to exercise chat agent in this case, but solves the issue.
             params.update({"tools": tools})
@@ -458,12 +459,19 @@ class CourseChatPipeline(Pipeline):
 
             if self.retrieved_paragraphs:
                 self.callback.in_progress("Augmenting response ...")
-                out = self.citation_pipeline(self.retrieved_paragraphs, out, InformationType.PARAGRAPHS)
+                out = self.citation_pipeline(
+                    self.retrieved_paragraphs, out, InformationType.PARAGRAPHS
+                )
             self.tokens.extend(self.citation_pipeline.tokens)
 
             if self.retrieved_faqs:
                 self.callback.in_progress("Augmenting response ...")
-                out = self.citation_pipeline(self.retrieved_faqs, out, InformationType.FAQS, base_url=dto.settings.artemis_base_url)
+                out = self.citation_pipeline(
+                    self.retrieved_faqs,
+                    out,
+                    InformationType.FAQS,
+                    base_url=dto.settings.artemis_base_url,
+                )
             self.callback.done("Response created", final_result=out, tokens=self.tokens)
 
             # try:
@@ -525,9 +533,7 @@ class CourseChatPipeline(Pipeline):
         if course_id:
             # Fetch the first object that matches the course ID with the language property
             result = self.db.faqs.query.fetch_objects(
-                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(
-                    course_id
-                ),
+                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(course_id),
                 limit=1,
                 return_properties=[FaqSchema.COURSE_NAME.value],
             )
@@ -540,5 +546,3 @@ def datetime_to_string(dt: Optional[datetime]) -> str:
         return "No date provided"
     else:
         return dt.strftime("%Y-%m-%d %H:%M:%S")
-
-

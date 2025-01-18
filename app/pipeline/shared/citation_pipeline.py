@@ -16,6 +16,7 @@ from app.vector_database.faq_schema import FaqSchema
 
 from app.vector_database.lecture_schema import LectureSchema
 
+
 class InformationType(str, Enum):
     PARAGRAPHS = "PARAGRAPHS"
     FAQS = "FAQS"
@@ -45,7 +46,9 @@ class CitationPipeline(Pipeline):
         prompt_file_path = os.path.join(dirname, "..", "prompts", "citation_prompt.txt")
         with open(prompt_file_path, "r") as file:
             self.lecture_prompt_str = file.read()
-        prompt_file_path = os.path.join(dirname, "..", "prompts", "faq_citation_prompt.txt")
+        prompt_file_path = os.path.join(
+            dirname, "..", "prompts", "faq_citation_prompt.txt"
+        )
         with open(prompt_file_path, "r") as file:
             self.faq_prompt_str = file.read()
         self.pipeline = self.llm | StrOutputParser()
@@ -57,7 +60,6 @@ class CitationPipeline(Pipeline):
     def __str__(self):
         return f"{self.__class__.__name__}(llm={self.llm})"
 
-
     def create_formatted_lecture_string(self, paragraphs):
         """
         Create a formatted string from the data
@@ -68,7 +70,8 @@ class CitationPipeline(Pipeline):
                 paragraph.get(LectureSchema.LECTURE_NAME.value),
                 paragraph.get(LectureSchema.LECTURE_UNIT_NAME.value),
                 paragraph.get(LectureSchema.PAGE_NUMBER.value),
-                paragraph.get(LectureSchema.LECTURE_UNIT_LINK.value) or "No link available",
+                paragraph.get(LectureSchema.LECTURE_UNIT_LINK.value)
+                or "No link available",
                 paragraph.get(LectureSchema.PAGE_TEXT_CONTENT.value),
             )
             formatted_string += lct
@@ -86,12 +89,11 @@ class CitationPipeline(Pipeline):
                 faq.get(FaqSchema.COURSE_ID.value),
                 faq.get(FaqSchema.QUESTION_TITLE.value),
                 faq.get(FaqSchema.QUESTION_ANSWER.value),
-                f"{base_url}/courses/{faq.get(FaqSchema.COURSE_ID.value)}/faq/?faqId={faq.get(FaqSchema.FAQ_ID.value)}"
+                f"{base_url}/courses/{faq.get(FaqSchema.COURSE_ID.value)}/faq/?faqId={faq.get(FaqSchema.FAQ_ID.value)}",
             )
             formatted_string += faq
 
         return formatted_string.replace("{", "{{").replace("}", "}}")
-
 
     def __call__(
         self,
@@ -109,7 +111,9 @@ class CitationPipeline(Pipeline):
         paras = ""
 
         if information_type == InformationType.FAQS:
-            paras = self.create_formatted_faq_string(information, kwargs.get("base_url"))
+            paras = self.create_formatted_faq_string(
+                information, kwargs.get("base_url")
+            )
             self.prompt_str = self.faq_prompt_str
         if information_type == InformationType.PARAGRAPHS:
             paras = self.create_formatted_lecture_string(information)

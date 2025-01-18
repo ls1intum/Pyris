@@ -8,6 +8,3 @@ class FaqDTO(BaseModel):
     question_answer: str = Field(alias="questionAnswer")
     course_name: str = Field(default="", alias="courseName")
     course_description: str = Field(default="", alias="courseDescription")
-
-
-

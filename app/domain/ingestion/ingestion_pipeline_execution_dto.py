@@ -15,10 +15,10 @@ class IngestionPipelineExecutionDto(PipelineExecutionDTO):
         default=None, alias="initialStages"
     )
 
+
 class FaqIngestionPipelineExecutionDto(PipelineExecutionDTO):
     faq: FaqDTO = Field(..., alias="pyrisFaqWebhookDTO")
     settings: Optional[PipelineExecutionSettingsDTO]
     initial_stages: Optional[List[StageDTO]] = Field(
         default=None, alias="initialStages"
-   )
-
+    )

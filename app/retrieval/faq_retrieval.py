@@ -25,7 +25,10 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
-from ..pipeline.prompts.faq_retrieval_prompts import faq_retriever_initial_prompt, write_hypothetical_answer_prompt
+from ..pipeline.prompts.faq_retrieval_prompts import (
+    faq_retriever_initial_prompt,
+    write_hypothetical_answer_prompt,
+)
 from ..pipeline.prompts.lecture_retrieval_prompts import (
     assessment_prompt,
     assessment_prompt_final,
@@ -94,7 +97,6 @@ class FaqRetrieval(Pipeline):
         problem_statement: str = None,
         exercise_title: str = None,
         base_url: str = None,
-
     ) -> List[dict]:
         """
         Retrieve faq data from the database.
@@ -107,7 +109,7 @@ class FaqRetrieval(Pipeline):
             result_limit=result_limit,
             course_language=course_language,
             course_name=course_name,
-            course_id=course_id
+            course_id=course_id,
         )
 
         logging.info(f"FAQ retrival response, {response}")
@@ -126,7 +128,6 @@ class FaqRetrieval(Pipeline):
 
         logging.info(f"merged_chunks, {merged_chunks}")
         return merged_chunks
-
 
     @traceable(name="Basic Faq Retrieval")
     def basic_faq_retrieval(
@@ -261,7 +262,6 @@ class FaqRetrieval(Pipeline):
         except Exception as e:
             raise e
 
-
     @traceable(name="Retrieval: Search in DB")
     def search_in_db(
         self,
@@ -283,7 +283,6 @@ class FaqRetrieval(Pipeline):
             filter_weaviate = Filter.by_property(FaqSchema.COURSE_ID.value).equal(
                 course_id
             )
-
 
         vec = self.llm_embedding.embed(query)
         return_value = self.collection.query.hybrid(
@@ -367,9 +366,7 @@ class FaqRetrieval(Pipeline):
         if course_id:
             # Fetch the first object that matches the course ID with the language property
             result = self.collection.query.fetch_objects(
-                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(
-                    course_id
-                ),
+                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(course_id),
                 limit=1,  # We only need one object to check and retrieve the language
                 return_properties=[FaqSchema.COURSE_LANGUAGE.value],
             )

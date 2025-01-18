@@ -10,7 +10,7 @@ from . import Pipeline
 from ..domain.data.faq_dto import FaqDTO
 
 from app.domain.ingestion.ingestion_pipeline_execution_dto import (
-     FaqIngestionPipelineExecutionDto,
+    FaqIngestionPipelineExecutionDto,
 )
 from ..llm.langchain import IrisLangchainChatModel
 from ..vector_database.faq_schema import FaqSchema, init_faq_schema
@@ -24,6 +24,7 @@ from ..llm import (
 from ..web.status.faq_ingestion_status_callback import FaqIngestionStatus
 
 batch_update_lock = threading.Lock()
+
 
 class FaqIngestionPipeline(AbstractIngestion, Pipeline):
 
@@ -94,7 +95,6 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
 
                     batch.add_object(properties=faq_dict, vector=embed_chunk)
 
-
                 except Exception as e:
                     logger.error(f"Error updating faq: {e}")
                     self.callback.error(
@@ -103,9 +103,7 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
                         tokens=self.tokens,
                     )
 
-    def delete_old_faqs(
-        self, faqs: list[FaqDTO]
-    ):
+    def delete_old_faqs(self, faqs: list[FaqDTO]):
         """
         Delete the faq from the database
         """
@@ -129,7 +127,6 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
             self.collection.data.delete_many(
                 where=Filter.by_property(FaqSchema.FAQ_ID.value).equal(faq_id)
                 & Filter.by_property(FaqSchema.COURSE_ID.value).equal(course_id)
-
             )
             logging.info(f"successfully deleted faq with id {faq_id}")
             return True
@@ -137,10 +134,8 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
             logger.error(f"Error deleting faq: {e}", exc_info=True)
             return False
 
-
     def chunk_data(self, path: str) -> List[Dict[str, str]]:
         """
-           Faqs are so small, they do not need to be chunked into smaller parts
+        Faqs are so small, they do not need to be chunked into smaller parts
         """
         return
-

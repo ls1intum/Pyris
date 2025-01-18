@@ -15,9 +15,10 @@ class LecturesDeletionExecutionDto(PipelineExecutionDTO):
         default=None, alias="initialStages"
     )
 
+
 class FaqDeletionExecutionDto(PipelineExecutionDTO):
     faq: FaqDTO = Field(..., alias="pyrisFaqWebhookDTO")
     settings: Optional[PipelineExecutionSettingsDTO]
     initial_stages: Optional[List[StageDTO]] = Field(
         default=None, alias="initialStages"
-   )
+    )
