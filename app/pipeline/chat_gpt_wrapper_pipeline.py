@@ -60,7 +60,6 @@ class ChatGPTWrapperPipeline(Pipeline):
                 context_length=16385,
             )
         )
-        self.tokens = []
 
     def __call__(
         self,
@@ -86,4 +85,4 @@ class ChatGPTWrapperPipeline(Pipeline):
             prompts, CompletionArguments(temperature=0.5, max_tokens=2000)
         )
         self.callback.done()
-        self.callback.done(final_result=response)
+        self.callback.done(final_result=response.contents[0].text_content)
