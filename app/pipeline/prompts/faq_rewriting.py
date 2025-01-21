@@ -13,7 +13,7 @@ convert them into complete sentences.
 8. If someone does input a very short text, that does not resemble to be an answer to a potential question please make 
 sure to respond accordingly. Also, if the input
 
-The text to be rephrased starts after the start tag and ends with an end tag:
+The text to be rephrased starts after the start tag (###START###) and ends before the an end tag (###END###):
 ###START###
 {rewritten_text}
 ###END###
