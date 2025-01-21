@@ -91,6 +91,9 @@ class ChatGPTWrapperPipeline(Pipeline):
 
         if response.contents is None or len(response.contents) == 0 or response.contents[0].text_content is None or len(response.contents[0].text_content) == 0:
             self.callback.error("ChatGPT did not reply. Try resending.")
+            # Print lots of debug info for this case
+            logger.error(f"ChatGPTWrapperPipeline response: {response}")
+            logger.error(f"ChatGPTWrapperPipeline request: {prompts}")
             return
 
         self.callback.done(final_result=response.contents[0].text_content)

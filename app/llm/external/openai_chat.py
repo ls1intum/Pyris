@@ -243,6 +243,10 @@ class OpenAIChatModel(ChatModel):
                     # We don't want to retry because the same message will likely be rejected again.
                     # Raise an exception to trigger the global error handler and report a fatal error to the client.
                     raise ContentFilterFinishReasonError()
+
+                if len(choice.message) == 0:
+                    logging.error("Model returned an empty message")
+
                 return convert_to_iris_message(choice.message, usage, model)
             except (
                 APIError,
