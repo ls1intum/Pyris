@@ -244,7 +244,7 @@ class OpenAIChatModel(ChatModel):
                     # Raise an exception to trigger the global error handler and report a fatal error to the client.
                     raise ContentFilterFinishReasonError()
 
-                if len(choice.message) == 0:
+                if choice.message is None or len(choice.message.text) == 0:
                     logging.error("Model returned an empty message")
 
                 return convert_to_iris_message(choice.message, usage, model)
