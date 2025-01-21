@@ -17,7 +17,7 @@ The text to be rephrased starts now:
 
 {rewritten_text}
 
-The rephrased text ends prior to line.
+The rephrased text ends prior to this line.
 
 Respond with a single string containing only the improved version of the text. Your output will be used as an answer to 
 a frequently asked question (FAQ) on the Artemis platform, so make sure it is clear and concise.
