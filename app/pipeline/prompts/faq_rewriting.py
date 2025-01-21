@@ -9,6 +9,7 @@ Your task is to proofread and refine the given text of an FAQ. Specifically, you
 5. Make sure to use the original language of the input text
 6. Avoid repeating any information that is already present in the text.
 7. Make sure to keep the markdown formatting intact and add formatting for the most important information
+8. If someone does input a very short text, that does not resemble to be an answer to a potential question please make sure to respond accordingly
 
 {rewritten_text}
 

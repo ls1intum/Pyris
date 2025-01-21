@@ -59,5 +59,4 @@ class RewritingPipeline(Pipeline):
         self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         response = response.contents[0].text_content
         final_result = response
-        logging.info(f"Final rewritten text: {final_result}")
         self.callback.done(final_result=final_result, tokens=self.tokens)
