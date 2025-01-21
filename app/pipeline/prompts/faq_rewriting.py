@@ -13,11 +13,13 @@ convert them into complete sentences.
 8. If someone does input a very short text, that does not resemble to be an answer to a potential question please make 
 sure to respond accordingly
 
-Respond with a single string containing only the improved version of the text. Your output will be used as an answer to 
-a frequently asked question (FAQ) on the Artemis platform, so make sure it is clear and concise.
-
-The text to be rephrased starts now and last until the of the prompt:
+The text to be rephrased starts now:
 
 {rewritten_text}
+
+The rephrased text ends prior to this.
+
+Respond with a single string containing only the improved version of the text. Your output will be used as an answer to 
+a frequently asked question (FAQ) on the Artemis platform, so make sure it is clear and concise.
 
 """
