@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List, Optional
 
@@ -80,9 +81,16 @@ class ChatGPTWrapperPipeline(Pipeline):
             ],
         )
 
-        prompts = [pyris_system_prompt] + dto.chat_history
+        prompts = [pyris_system_prompt] + [msg for msg in dto.chat_history if msg.contents is not None and len(msg.contents) > 0 and msg.contents[0].text_content and len(msg.contents[0].text_content) > 0]
 
         response = self.request_handler.chat(
             prompts, CompletionArguments(temperature=0.5, max_tokens=2000)
         )
+
+        logger.info(f"ChatGPTWrapperPipeline response: {response}")
+
+        if response.contents is None or len(response.contents) == 0 or response.contents[0].text_content is None or len(response.contents[0].text_content) == 0:
+            self.callback.error("ChatGPT did not reply. Try resending.")
+            return
+
         self.callback.done(final_result=response.contents[0].text_content)
