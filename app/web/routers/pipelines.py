@@ -18,6 +18,7 @@ from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
 from app.pipeline.chat.lecture_chat_pipeline import LectureChatPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
+    ChatGPTWrapperStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
     LectureChatCallback,
@@ -240,7 +241,7 @@ def run_chatgpt_wrapper_pipeline_worker(
     dto: ExerciseChatPipelineExecutionDTO, _variant: str
 ):
     try:
-        callback = ExerciseChatStatusCallback(
+        callback = ChatGPTWrapperStatusCallback(
             run_id=dto.settings.authentication_token,
             base_url=dto.settings.artemis_base_url,
             initial_stages=dto.initial_stages,

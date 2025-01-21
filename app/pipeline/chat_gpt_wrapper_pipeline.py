@@ -15,7 +15,7 @@ from langchain_core.runnables import Runnable
 
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
-from app.web.status.status_update import ExerciseChatStatusCallback
+from app.web.status.status_update import ChatGPTWrapperStatusCallback
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +47,11 @@ def convert_chat_history_to_str(chat_history: List[PyrisMessage]) -> str:
 
 
 class ChatGPTWrapperPipeline(Pipeline):
-    callback: ExerciseChatStatusCallback
+    callback: ChatGPTWrapperStatusCallback
     llm: IrisLangchainChatModel
     pipeline: Runnable
 
-    def __init__(self, callback: Optional[ExerciseChatStatusCallback] = None):
+    def __init__(self, callback: Optional[ChatGPTWrapperStatusCallback] = None):
         super().__init__(implementation_id="chat_gpt_wrapper_pipeline_reference_impl")
         self.callback = callback
         self.request_handler = CapabilityRequestHandler(
@@ -72,6 +72,7 @@ class ChatGPTWrapperPipeline(Pipeline):
         This consists of a single response generation step.
         """
 
+        self.callback.in_progress()
         pyris_system_prompt = PyrisMessage(
             sender=IrisMessageRole.SYSTEM,
             contents=[
@@ -84,5 +85,4 @@ class ChatGPTWrapperPipeline(Pipeline):
         response = self.request_handler.chat(
             prompts, CompletionArguments(temperature=0.5, max_tokens=2000)
         )
-        self.callback.done()
         self.callback.done(final_result=response.contents[0].text_content)
