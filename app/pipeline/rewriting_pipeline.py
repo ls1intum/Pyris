@@ -9,7 +9,6 @@ from langchain_core.prompts import (
 from app.common.PipelineEnum import PipelineEnum
 from app.common.pyris_message import PyrisMessage, IrisMessageRole
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
-from app.domain.data.competency_dto import Competency
 from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecutionDTO
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
