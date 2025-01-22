@@ -200,12 +200,10 @@ def convert_to_iris_message(
 class OpenAIChatModel(ChatModel):
     model: str
     api_key: str
-    tools: Optional[
-        Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
-    ] = Field(default_factory=list, alias="tools")
 
     def chat(
-        self, messages: list[PyrisMessage], arguments: CompletionArguments
+        self, messages: list[PyrisMessage], arguments: CompletionArguments,
+            tools: Optional[Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]]
     ) -> PyrisMessage:
         # noinspection PyTypeChecker
         retries = 5
@@ -230,8 +228,9 @@ class OpenAIChatModel(ChatModel):
                         type="json_object"
                     )
 
-                if self.tools:
-                    params["tools"] = self.tools
+                if tools:
+                    params["tools"] = [convert_to_openai_tool(tool) for tool in tools]
+                    logging.info(f"Using tools: {tools}")
 
                 response = client.chat.completions.create(**params)
                 choice = response.choices[0]
@@ -261,12 +260,6 @@ class OpenAIChatModel(ChatModel):
                 logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
         raise Exception(f"Failed to get response from OpenAI after {retries} retries")
-
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-    ):
-        self.tools = [convert_to_openai_tool(tool) for tool in tools]
 
 
 class DirectOpenAIChatModel(OpenAIChatModel):

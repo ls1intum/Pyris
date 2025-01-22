@@ -84,7 +84,7 @@ class ChatGPTWrapperPipeline(Pipeline):
         prompts = [pyris_system_prompt] + [msg for msg in dto.chat_history if msg.contents is not None and len(msg.contents) > 0 and msg.contents[0].text_content and len(msg.contents[0].text_content) > 0]
 
         response = self.request_handler.chat(
-            prompts, CompletionArguments(temperature=0.5, max_tokens=2000)
+            prompts, CompletionArguments(temperature=0.5, max_tokens=2000), tools=None
         )
 
         logger.info(f"ChatGPTWrapperPipeline response: {response}")
