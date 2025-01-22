@@ -534,14 +534,14 @@ class ExerciseChatAgentPipeline(Pipeline):
                 )
 
                 guide_response = (
-                    self.prompt | self.llm_small | StrOutputParser()
+                    self.prompt | self.llm_big | StrOutputParser()
                 ).invoke(
                     {
                         "response": out,
                     }
                 )
                 self._append_tokens(
-                    self.llm_small.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
+                    self.llm_big.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
                 )
                 if "!ok!" in guide_response:
                     print("Response is ok and not rewritten!!!")
