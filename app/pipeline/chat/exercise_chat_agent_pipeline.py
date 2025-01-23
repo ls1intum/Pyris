@@ -516,7 +516,7 @@ class ExerciseChatAgentPipeline(Pipeline):
                 llm=self.llm_big, tools=tools, prompt=self.prompt
             )
             agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
-            self.callback.in_progress()
+            self.callback.in_progress("Thinking ...")
             out = None
             for step in agent_executor.iter(params):
                 self._append_tokens(
@@ -526,28 +526,27 @@ class ExerciseChatAgentPipeline(Pipeline):
                     out = step["output"]
 
             try:
-                self.callback.in_progress("Refining response...")
-                self.prompt = ChatPromptTemplate.from_messages(
-                    [
-                        SystemMessagePromptTemplate.from_template(guide_system_prompt),
-                    ]
-                )
-
-                guide_response = (
-                    self.prompt | self.llm_big | StrOutputParser()
-                ).invoke(
-                    {
-                        "response": out,
-                    }
-                )
-                self._append_tokens(
-                    self.llm_big.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
-                )
-                if "!ok!" in guide_response:
-                    print("Response is ok and not rewritten!!!")
-                else:
-                    out = guide_response
-                    print("Response is rewritten.")
+                # self.prompt = ChatPromptTemplate.from_messages(
+                #     [
+                #         SystemMessagePromptTemplate.from_template(guide_system_prompt),
+                #     ]
+                # )
+                #
+                # guide_response = (
+                #     self.prompt | self.llm_big | StrOutputParser()
+                # ).invoke(
+                #     {
+                #         "response": out,
+                #     }
+                # )
+                # self._append_tokens(
+                #     self.llm_big.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
+                # )
+                # if "!ok!" in guide_response:
+                #     print("Response is ok and not rewritten!!!")
+                # else:
+                #     out = guide_response
+                #     print("Response is rewritten.")
 
                 self.callback.done(
                     "Response created", final_result=out, tokens=self.tokens
