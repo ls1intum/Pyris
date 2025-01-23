@@ -526,27 +526,31 @@ class ExerciseChatAgentPipeline(Pipeline):
                     out = step["output"]
 
             try:
-                # self.prompt = ChatPromptTemplate.from_messages(
-                #     [
-                #         SystemMessagePromptTemplate.from_template(guide_system_prompt),
-                #     ]
-                # )
-                #
-                # guide_response = (
-                #     self.prompt | self.llm_big | StrOutputParser()
-                # ).invoke(
-                #     {
-                #         "response": out,
-                #     }
-                # )
-                # self._append_tokens(
-                #     self.llm_big.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
-                # )
-                # if "!ok!" in guide_response:
-                #     print("Response is ok and not rewritten!!!")
-                # else:
-                #     out = guide_response
-                #     print("Response is rewritten.")
+                self.callback.in_progress("Refining response ...")
+                self.prompt = ChatPromptTemplate.from_messages(
+                    [
+                        SystemMessagePromptTemplate.from_template(guide_system_prompt),
+                        HumanMessage(out),
+                    ]
+                )
+
+                guide_response = (
+                    self.prompt | self.llm_small | StrOutputParser()
+                ).invoke(
+                    {
+                        "problem": problem_statement,
+                    }
+                )
+                self._append_tokens(
+                    self.llm_big.tokens, PipelineEnum.IRIS_CHAT_EXERCISE_AGENT_MESSAGE
+                )
+                if "!ok!" in guide_response:
+                    print("Response is ok and not rewritten!!!")
+                else:
+                    print("ORIGINAL RESPONSE: " + out)
+                    out = guide_response
+                    print("NEW RESPONSE: " + out)
+                    print("Response is rewritten.")
 
                 self.callback.done(
                     "Response created", final_result=out, tokens=self.tokens
