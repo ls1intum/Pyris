@@ -192,12 +192,15 @@ providing the solution directly. Your task is to review it according to the foll
 The response must not contain code that contains solutions for this exercise.
 If the draft contains such, you must rewrite them, but not delete them.
 DO NOT DELETE THE CODE! REWRITE IT SO ITS NOT A SOLUTION ANYMORE.
-The goal is to avoid that they can just copy and paste the code into their solution - but not more than that.
-You should still be helpful.
-If the code looks like a complete class, reduce it to a series of statements that is necessary.
+The goal is to avoid that they can just copy and paste the code into their solution.
+
+For code that is in code boxes, the following applies:
+- If the code looks like a complete class, reduce it to a series of statements that is necessary.
+- Remove all imports.
+- Be creative in changing the code example so it's not copyable to the real solution.
+- You can change variable names, the order of things, literal values (magic numbers), etc. Ensure not to reuse names from the exercise. Change the class and variable names always so they don't match the exercise.
 
 Avoid changing the other parts of the response. Only rewrite the code parts that contain solutions.
-
 
 How to do the task:
 1. Decide whether the response is appropriate and follows the rules or not.
