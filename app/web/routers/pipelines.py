@@ -28,7 +28,7 @@ from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.dependencies import TokenValidator
 from app.domain import FeatureDTO
 from app.pipeline.competency_extraction_pipeline import CompetencyExtractionPipeline
-from app.pipeline.inconsistenct_check_pipeline import InconsistencyCheckPipeline
+from app.pipeline.inconsistency_check_pipeline import InconsistencyCheckPipeline
 from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
@@ -260,7 +260,7 @@ def run_inconsistency_check_pipeline_worker(
 
 
 @router.post(
-    "/inconsistenct-check/{variant}/run",
+    "/inconsistency-check/{variant}/run",
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
