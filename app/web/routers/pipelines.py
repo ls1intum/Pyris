@@ -10,6 +10,7 @@ from app.domain import (
     ExerciseChatPipelineExecutionDTO,
     CourseChatPipelineExecutionDTO,
     CompetencyExtractionPipelineExecutionDTO,
+    InconsistencyCheckPipelineExecutionDTO,
 )
 from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
@@ -20,12 +21,14 @@ from app.web.status.status_update import (
     ExerciseChatStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
+    InconsistencyCheckCallback,
     LectureChatCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.dependencies import TokenValidator
 from app.domain import FeatureDTO
 from app.pipeline.competency_extraction_pipeline import CompetencyExtractionPipeline
+from app.pipeline.inconsistenct_check_pipeline import InconsistencyCheckPipeline
 from app.domain.text_exercise_chat_pipeline_execution_dto import (
     TextExerciseChatPipelineExecutionDTO,
 )
@@ -232,6 +235,44 @@ def run_competency_extraction_pipeline(
     thread.start()
 
 
+def run_inconsistency_check_pipeline_worker(
+    dto: InconsistencyCheckPipelineExecutionDTO, _variant: str
+):
+    try:
+        callback = InconsistencyCheckCallback(
+            run_id=dto.execution.settings.authentication_token,
+            base_url=dto.execution.settings.artemis_base_url,
+            initial_stages=dto.execution.initial_stages,
+        )
+        pipeline = InconsistencyCheckPipeline(callback=callback)
+    except Exception as e:
+        logger.error(f"Error preparing inconsistency check pipeline: {e}")
+        logger.error(traceback.format_exc())
+        capture_exception(e)
+        return
+
+    try:
+        pipeline(dto=dto)
+    except Exception as e:
+        logger.error(f"Error running inconsistency check pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+
+
+@router.post(
+    "/inconsistenct-check/{variant}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(TokenValidator())],
+)
+def run_inconsistency_check_pipeline(
+    variant: str, dto: InconsistencyCheckPipelineExecutionDTO
+):
+    thread = Thread(
+        target=run_inconsistency_check_pipeline_worker, args=(dto, variant)
+    )
+    thread.start()
+
+
 @router.get("/{feature}/variants")
 def get_pipeline(feature: str):
     """
@@ -292,6 +333,14 @@ def get_pipeline(feature: str):
                     id="default",
                     name="Default Variant",
                     description="Default lecture chat variant.",
+                )
+            ]
+        case "INCONSISTENCY_CHECK":
+            return [
+                FeatureDTO(
+                    id="default",
+                    name="Default Variant",
+                    description="Default inconsistency check variant.",
                 )
             ]
         case _:
