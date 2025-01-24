@@ -1,7 +1,7 @@
 basic_prompt = """\
 <Instruction>
 As detail-oriented expert, find inconsistencies between the provided problem statement and the template repository of a programming exercise. 
-The student will use the the template repository to write code that solved the problem statement.
+The student will use the the template repository to write code that solves the problem statement.
 
 Checks:
 - Given the problem statement, identify any missing or incorrect information in the template repository.
