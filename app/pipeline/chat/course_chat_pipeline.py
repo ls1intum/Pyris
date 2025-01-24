@@ -528,7 +528,7 @@ class CourseChatPipeline(Pipeline):
         Checks if there are indexed faqs for the given course
 
         :param course_id: The course ID
-        :return: True if there are indexed lectures for the course, False otherwise
+        :return: True if there are indexed faqs for the course, False otherwise
         """
         if course_id:
             # Fetch the first object that matches the course ID with the language property
