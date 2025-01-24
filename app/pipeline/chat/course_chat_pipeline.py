@@ -11,7 +11,6 @@ from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
 )
 from langchain_core.runnables import Runnable
 from langsmith import traceable
@@ -311,12 +310,13 @@ class CourseChatPipeline(Pipeline):
             """
             Use this tool to retrieve information from indexed FAQs.
             It is suitable when no other tool fits, you think it is a common question or the question is frequently asked,
-            or the question could be effectively answered by an FAQ. Also use this if the question is explicitly organizational and course-related.
-            An organizational question about the course might be "What is the course structure?" or "How do I enroll?" or exam related content like "When is the exam".
-            The tool performs a RAG retrieval based on the chat history to find the most relevant FAQs. Each FAQ follows this format:
-            FAQ ID, FAQ Question, FAQ Answer.
-            Respond to the query concisely and solely using the answer from the relevant FAQs. This tool should only be used once per query.
-
+            or the question could be effectively answered by an FAQ. Also use this if the question is explicitly
+            organizational and course-related. An organizational question about the course might be
+            "What is the course structure?" or "How do I enroll?" or exam related content like "When is the exam".
+            The tool performs a RAG retrieval based on the chat history to find the most relevant FAQs.
+            Each FAQ follows this format: FAQ ID, FAQ Question, FAQ Answer.
+            Respond to the query concisely and solely using the answer from the relevant FAQs.
+            This tool should only be used once per query.
             """
             self.callback.in_progress("Retrieving faq content ...")
             self.retrieved_faqs = self.faq_retriever(
