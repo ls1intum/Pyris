@@ -7,7 +7,7 @@ Checks:
 - Given the problem statement, identify any missing or incorrect information in the template repository.
 - Given the template repository, identify any missing or incorrect information in the problem statement.
 - Ensure that the theme of the problem statement is consistent with the template repository.
-- Ensure that the problem statement is clear and concise and it covers everything that the student needs to know to solve the exercise.
+- Ensure that the problem statement is clear and concise and it covers everything that the student needs to know in order to solve the exercise.
 
 It is not an inconsistency, if the problem statement clearly states that the student is responsible for writing a specific part of the code.
 </Instruction>
