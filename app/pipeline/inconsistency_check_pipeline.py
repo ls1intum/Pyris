@@ -67,9 +67,6 @@ class InconsistencyCheckPipeline(Pipeline):
             "template_repository": template_repository,
         })
 
-        # TODO: Remove response logging after testing
-        logger.info(f"Inconsistency check pipeline response:\n{response}")
-
         self._append_tokens(
             self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK
         )
