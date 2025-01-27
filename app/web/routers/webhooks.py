@@ -1,4 +1,3 @@
-import logging
 import traceback
 from asyncio.log import logger
 from threading import Thread, Semaphore
