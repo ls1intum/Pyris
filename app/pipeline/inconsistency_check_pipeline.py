@@ -23,9 +23,7 @@ class InconsistencyCheckPipeline(Pipeline):
     callback: InconsistencyCheckCallback
 
     def __init__(self, callback: Optional[InconsistencyCheckCallback] = None):
-        super().__init__(
-            implementation_id="inconsistency_check_pipeline"
-        )
+        super().__init__(implementation_id="inconsistency_check_pipeline")
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
         self.llm = IrisLangchainChatModel(
             request_handler=CapabilityRequestHandler(
@@ -41,7 +39,6 @@ class InconsistencyCheckPipeline(Pipeline):
         self.callback = callback
         self.tokens = []
 
-
     @traceable(name="Inconsistency Check Pipeline")
     def __call__(self, dto: InconsistencyCheckPipelineExecutionDTO, **kwargs):
         """
@@ -53,7 +50,7 @@ class InconsistencyCheckPipeline(Pipeline):
         if not dto.exercise:
             logger.error("Inconsistency check pipeline requires an exercise")
             raise ValueError("Exercise is required")
-        
+
         logger.info("Running inconsistency check pipeline...")
         self.callback.in_progress()
 
@@ -62,13 +59,13 @@ class InconsistencyCheckPipeline(Pipeline):
             for file_path, file_content in dto.exercise.template_repository.items()
         )
 
-        response: str = self.pipeline.invoke({
-            "problem_statement": dto.exercise.problem_statement,
-            "template_repository": template_repository,
-        })
-
-        self._append_tokens(
-            self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK
+        response: str = self.pipeline.invoke(
+            {
+                "problem_statement": dto.exercise.problem_statement,
+                "template_repository": template_repository,
+            }
         )
+
+        self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
 
         self.callback.done(final_result=response, tokens=self.tokens)

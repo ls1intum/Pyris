@@ -267,9 +267,7 @@ def run_inconsistency_check_pipeline_worker(
 def run_inconsistency_check_pipeline(
     variant: str, dto: InconsistencyCheckPipelineExecutionDTO
 ):
-    thread = Thread(
-        target=run_inconsistency_check_pipeline_worker, args=(dto, variant)
-    )
+    thread = Thread(target=run_inconsistency_check_pipeline_worker, args=(dto, variant))
     thread.start()
 
 

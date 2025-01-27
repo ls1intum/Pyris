@@ -12,7 +12,9 @@ from app.domain.status.competency_extraction_status_update_dto import (
 from app.domain.chat.course_chat.course_chat_status_update_dto import (
     CourseChatStatusUpdateDTO,
 )
-from app.domain.status.inconsistency_check_status_update_dto import InconsistencyCheckStatusUpdateDTO
+from app.domain.status.inconsistency_check_status_update_dto import (
+    InconsistencyCheckStatusUpdateDTO,
+)
 from app.domain.status.lecture_chat_status_update_dto import (
     LectureChatStatusUpdateDTO,
 )
