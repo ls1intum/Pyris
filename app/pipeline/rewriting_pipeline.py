@@ -9,7 +9,6 @@ from langchain_core.prompts import (
 from app.common.PipelineEnum import PipelineEnum
 from app.common.pyris_message import PyrisMessage, IrisMessageRole
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
-from app.domain.data.competency_dto import Competency
 from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecutionDTO
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
@@ -36,7 +35,6 @@ class RewritingPipeline(Pipeline):
                 context_length=16385,
             )
         )
-        self.output_parser = PydanticOutputParser(pydantic_object=Competency)
         self.tokens = []
         self.variant = variant
 
@@ -65,9 +63,7 @@ class RewritingPipeline(Pipeline):
         response = self.request_handler.chat(
             [prompt], CompletionArguments(temperature=0.4)
         )
-        self._append_tokens(
-            response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE
-        )
+        self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         response = response.contents[0].text_content
         
         # remove ``` from start and end if exists
@@ -78,5 +74,4 @@ class RewritingPipeline(Pipeline):
             response = response.strip()
         
         final_result = response
-        logging.info(f"Final rewritten text: {final_result}")
         self.callback.done(final_result=final_result, tokens=self.tokens)
