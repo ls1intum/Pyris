@@ -12,8 +12,11 @@ from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecutionDTO
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
-from app.pipeline.prompts.rewriting_prompts import faq_system_prompt, problem_statement_system_prompt
-from app.web.status.status_update import  RewritingCallback
+from app.pipeline.prompts.rewriting_prompts import (
+    faq_system_prompt,
+    problem_statement_system_prompt,
+)
+from app.web.status.status_update import RewritingCallback
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +27,10 @@ class RewritingPipeline(Pipeline):
     output_parser: PydanticOutputParser
     variant: Literal["faq", "problem_statement"]
 
-    def __init__(self, callback: RewritingCallback, variant: Literal["faq", "problem_statement"]):
-        super().__init__(
-            implementation_id="rewriting_pipeline_reference_impl"
-        )
+    def __init__(
+        self, callback: RewritingCallback, variant: Literal["faq", "problem_statement"]
+    ):
+        super().__init__(implementation_id="rewriting_pipeline_reference_impl")
         self.callback = callback
         self.request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
@@ -65,13 +68,13 @@ class RewritingPipeline(Pipeline):
         )
         self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         response = response.contents[0].text_content
-        
+
         # remove ``` from start and end if exists
         if response.startswith("```") and response.endswith("```"):
             response = response[3:-3]
             if response.startswith("markdown"):
                 response = response[8:]
             response = response.strip()
-        
+
         final_result = response
         self.callback.done(final_result=final_result, tokens=self.tokens)

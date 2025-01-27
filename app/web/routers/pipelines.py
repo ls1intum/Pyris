@@ -221,10 +221,8 @@ def run_competency_extraction_pipeline_worker(
         callback.error("Fatal error.", exception=e)
 
 
-def run_rewriting_pipeline_worker(
-    dto: RewritingPipelineExecutionDTO, variant: str
-):
-    try:    
+def run_rewriting_pipeline_worker(dto: RewritingPipelineExecutionDTO, variant: str):
+    try:
         callback = RewritingCallback(
             run_id=dto.execution.settings.authentication_token,
             base_url=dto.execution.settings.artemis_base_url,
@@ -232,9 +230,7 @@ def run_rewriting_pipeline_worker(
         )
         match variant:
             case "faq" | "problem_statement":
-                pipeline = RewritingPipeline(
-                    callback=callback, variant=variant
-                )
+                pipeline = RewritingPipeline(callback=callback, variant=variant)
             case _:
                 raise ValueError(f"Unknown variant: {variant}")
     except Exception as e:
@@ -270,9 +266,7 @@ def run_competency_extraction_pipeline(
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(TokenValidator())],
 )
-def run_rewriting_pipeline(
-    variant: str, dto: RewritingPipelineExecutionDTO
-):
+def run_rewriting_pipeline(variant: str, dto: RewritingPipelineExecutionDTO):
     variant = variant.lower()
     logger.info(f"Rewriting pipeline started with variant: {variant} and dto: {dto}")
     thread = Thread(target=run_rewriting_pipeline_worker, args=(dto, variant))
