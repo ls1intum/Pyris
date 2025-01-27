@@ -1,4 +1,3 @@
-import logging
 from enum import Enum
 
 from weaviate.classes.config import Property
@@ -28,8 +27,6 @@ def init_faq_schema(client: WeaviateClient) -> Collection:
     """
     if client.collections.exists(FaqSchema.COLLECTION_NAME.value):
         collection = client.collections.get(FaqSchema.COLLECTION_NAME.value)
-        properties = collection.config.get(simple=True).properties
-
         # Check and add 'course_language' property if missing
         if not any(
             property.name == FaqSchema.COURSE_LANGUAGE.value

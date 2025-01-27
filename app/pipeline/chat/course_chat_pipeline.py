@@ -309,7 +309,7 @@ class CourseChatPipeline(Pipeline):
         def faq_content_retrieval() -> str:
             """
             Use this tool to retrieve information from indexed FAQs.
-            It is suitable when no other tool fits, you think it is a common question or the question is frequently asked,
+            It is suitable when no other tool fits, it is a common question or the question is frequently asked,
             or the question could be effectively answered by an FAQ. Also use this if the question is explicitly
             organizational and course-related. An organizational question about the course might be
             "What is the course structure?" or "How do I enroll?" or exam related content like "When is the exam".

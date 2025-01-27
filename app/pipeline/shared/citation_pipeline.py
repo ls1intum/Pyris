@@ -1,4 +1,3 @@
-import logging
 import os
 from asyncio.log import logger
 from enum import Enum
@@ -104,8 +103,9 @@ class CitationPipeline(Pipeline):
     ) -> str:
         """
         Runs the pipeline
-            :param information: List of information which can be list of dicts or list of strings. Used to augment the response
+            :param information: List of info as list of dicts or strings to augment response
             :param query: The query
+            :param information_type: The type of information provided. can be either lectures or faqs
             :return: Selected file content
         """
         paras = ""

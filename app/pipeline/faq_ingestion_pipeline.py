@@ -3,7 +3,6 @@ import threading
 from asyncio.log import logger
 from typing import Optional, List, Dict
 from langchain_core.output_parsers import StrOutputParser
-from openai import OpenAI
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 from . import Pipeline
@@ -128,7 +127,7 @@ class FaqIngestionPipeline(AbstractIngestion, Pipeline):
                 where=Filter.by_property(FaqSchema.FAQ_ID.value).equal(faq_id)
                 & Filter.by_property(FaqSchema.COURSE_ID.value).equal(course_id)
             )
-            logging.info(f"successfully deleted faq with id {faq_id}")
+            logger.info(f"successfully deleted faq with id {faq_id}")
             return True
         except Exception as e:
             logger.error(f"Error deleting faq: {e}", exc_info=True)

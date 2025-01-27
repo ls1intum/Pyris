@@ -112,8 +112,6 @@ class FaqRetrieval(Pipeline):
             course_id=course_id,
         )
 
-        logging.info(f"FAQ retrival response, {response}")
-
         basic_retrieved_faqs: list[dict[str, dict]] = [
             {"id": obj.uuid.int, "properties": obj.properties}
             for obj in response.objects
@@ -126,7 +124,6 @@ class FaqRetrieval(Pipeline):
             basic_retrieved_faqs, hyde_retrieved_faqs
         )
 
-        logging.info(f"merged_chunks, {merged_chunks}")
         return merged_chunks
 
     @traceable(name="Basic Faq Retrieval")
