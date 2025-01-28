@@ -44,8 +44,12 @@ class ChatModel(LanguageModel, metaclass=ABCMeta):
 
     @abstractmethod
     def chat(
-        self, messages: list[PyrisMessage], arguments: CompletionArguments,
-            tools: Optional[Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]]
+        self,
+        messages: list[PyrisMessage],
+        arguments: CompletionArguments,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
+        ],
     ) -> ChatCompletionMessage:
         """Create a completion from the chat messages"""
         raise NotImplementedError(

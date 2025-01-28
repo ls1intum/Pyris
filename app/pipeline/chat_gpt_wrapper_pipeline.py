@@ -81,7 +81,14 @@ class ChatGPTWrapperPipeline(Pipeline):
             ],
         )
 
-        prompts = [pyris_system_prompt] + [msg for msg in dto.chat_history if msg.contents is not None and len(msg.contents) > 0 and msg.contents[0].text_content and len(msg.contents[0].text_content) > 0]
+        prompts = [pyris_system_prompt] + [
+            msg
+            for msg in dto.chat_history
+            if msg.contents is not None
+            and len(msg.contents) > 0
+            and msg.contents[0].text_content
+            and len(msg.contents[0].text_content) > 0
+        ]
 
         response = self.request_handler.chat(
             prompts, CompletionArguments(temperature=0.5, max_tokens=2000), tools=None
@@ -89,7 +96,12 @@ class ChatGPTWrapperPipeline(Pipeline):
 
         logger.info(f"ChatGPTWrapperPipeline response: {response}")
 
-        if response.contents is None or len(response.contents) == 0 or response.contents[0].text_content is None or len(response.contents[0].text_content) == 0:
+        if (
+            response.contents is None
+            or len(response.contents) == 0
+            or response.contents[0].text_content is None
+            or len(response.contents[0].text_content) == 0
+        ):
             self.callback.error("ChatGPT did not reply. Try resending.")
             # Print lots of debug info for this case
             logger.error(f"ChatGPTWrapperPipeline response: {response}")

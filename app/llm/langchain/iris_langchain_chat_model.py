@@ -80,7 +80,9 @@ class IrisLangchainChatModel(BaseChatModel):
     ) -> ChatResult:
         iris_messages = [convert_langchain_message_to_iris_message(m) for m in messages]
         self.completion_args.stop = stop
-        iris_message = self.request_handler.chat(iris_messages, self.completion_args, self.tools)
+        iris_message = self.request_handler.chat(
+            iris_messages, self.completion_args, self.tools
+        )
         base_message = convert_iris_message_to_langchain_message(iris_message)
         chat_generation = ChatGeneration(message=base_message)
         self.tokens = TokenUsageDTO(

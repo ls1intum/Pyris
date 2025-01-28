@@ -202,8 +202,12 @@ class OpenAIChatModel(ChatModel):
     api_key: str
 
     def chat(
-        self, messages: list[PyrisMessage], arguments: CompletionArguments,
-            tools: Optional[Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]]
+        self,
+        messages: list[PyrisMessage],
+        arguments: CompletionArguments,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
+        ],
     ) -> PyrisMessage:
         # noinspection PyTypeChecker
         retries = 5
@@ -211,6 +215,11 @@ class OpenAIChatModel(ChatModel):
         initial_delay = 1
         client = self.get_client()
         # Maximum wait time: 1 + 2 + 4 + 8 + 16 = 31 seconds
+
+        for message in messages:
+            if message.sender == "SYSTEM":
+                print("SYSTEM MESSAGE: " + message.contents[0].text_content)
+                break
 
         messages = convert_to_open_ai_messages(messages)
 
@@ -243,10 +252,17 @@ class OpenAIChatModel(ChatModel):
                     # Raise an exception to trigger the global error handler and report a fatal error to the client.
                     raise ContentFilterFinishReasonError()
 
-                if choice.message is None or choice.message.content is None or len(choice.message.content) == 0:
+                if (
+                    choice.message is None
+                    or choice.message.content is None
+                    or len(choice.message.content) == 0
+                ):
                     logging.error("Model returned an empty message")
                     logging.error("Finish reason: " + choice.finish_reason)
-                    if choice.message is not None and choice.message.refusal is not None:
+                    if (
+                        choice.message is not None
+                        and choice.message.refusal is not None
+                    ):
                         logging.error("Refusal: " + choice.message.refusal)
 
                 return convert_to_iris_message(choice.message, usage, model)

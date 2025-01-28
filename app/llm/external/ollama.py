@@ -115,8 +115,12 @@ class OllamaModel(
         return response["response"]
 
     def chat(
-        self, messages: list[PyrisMessage], arguments: CompletionArguments,
-            tools: Optional[Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]]
+        self,
+        messages: list[PyrisMessage],
+        arguments: CompletionArguments,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
+        ],
     ) -> PyrisMessage:
         response = self._client.chat(
             model=self.model,
@@ -136,8 +140,6 @@ class OllamaModel(
             model=self.model, prompt=text, options=self.options
         )
         return list(response)
-
-
 
     def __str__(self):
         return f"Ollama('{self.model}')"

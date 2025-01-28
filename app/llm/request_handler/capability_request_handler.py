@@ -50,8 +50,12 @@ class CapabilityRequestHandler(RequestHandler):
         return llm.complete(prompt, arguments)
 
     def chat(
-        self, messages: list[PyrisMessage], arguments: CompletionArguments,
-            tools: Optional[Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]]
+        self,
+        messages: list[PyrisMessage],
+        arguments: CompletionArguments,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]]
+        ],
     ) -> PyrisMessage:
         llm = self._select_model(ChatModel)
         message = llm.chat(messages, arguments, tools)
