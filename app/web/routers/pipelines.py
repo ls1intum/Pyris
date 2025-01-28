@@ -368,12 +368,12 @@ def get_pipeline(feature: str):
         case "REWRITING":
             return [
                 FeatureDTO(
-                    id="faq_rewriting",
+                    id="faq",
                     name="FAQ Variant",
                     description="FAQ rewriting variant.",
                 ),
                 FeatureDTO(
-                    id="problem_statement_rewriting",
+                    id="problem_statement",
                     name="Problem Statement Variant",
                     description="Problem statement rewriting variant.",
                 ),
