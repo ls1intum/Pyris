@@ -12,17 +12,21 @@ from app.domain import (
     CompetencyExtractionPipelineExecutionDTO,
     InconsistencyCheckPipelineExecutionDTO,
 )
+from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecutionDTO
 from app.pipeline.chat.exercise_chat_agent_pipeline import ExerciseChatAgentPipeline
 from app.domain.chat.lecture_chat.lecture_chat_pipeline_execution_dto import (
     LectureChatPipelineExecutionDTO,
 )
 from app.pipeline.chat.lecture_chat_pipeline import LectureChatPipeline
+from app.pipeline.rewriting_pipeline import RewritingPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
+    ChatGPTWrapperStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
     InconsistencyCheckCallback,
     LectureChatCallback,
+    RewritingCallback,
 )
 from app.pipeline.chat.course_chat_pipeline import CourseChatPipeline
 from app.dependencies import TokenValidator
@@ -34,6 +38,7 @@ from app.domain.text_exercise_chat_pipeline_execution_dto import (
 )
 from app.pipeline.text_exercise_chat_pipeline import TextExerciseChatPipeline
 from app.web.status.status_update import TextExerciseChatCallback
+from app.pipeline.chat_gpt_wrapper_pipeline import ChatGPTWrapperPipeline
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
@@ -65,6 +70,31 @@ def run_exercise_chat_pipeline_worker(
         callback.error("Fatal error.", exception=e)
 
 
+def run_chatgpt_wrapper_pipeline_worker(
+    dto: ExerciseChatPipelineExecutionDTO, _variant: str
+):
+    try:
+        callback = ChatGPTWrapperStatusCallback(
+            run_id=dto.settings.authentication_token,
+            base_url=dto.settings.artemis_base_url,
+            initial_stages=dto.initial_stages,
+        )
+        pipeline = ChatGPTWrapperPipeline(callback=callback)
+    except Exception as e:
+        logger.error(f"Error preparing ChatGPT wrapper pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+        capture_exception(e)
+        return
+
+    try:
+        pipeline(dto=dto)
+    except Exception as e:
+        logger.error(f"Error running ChatGPT wrapper pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+
+
 @router.post(
     "/tutor-chat/{variant}/run",
     status_code=status.HTTP_202_ACCEPTED,
@@ -77,9 +107,12 @@ def run_exercise_chat_pipeline(
         description="Exercise Chat Pipeline Execution DTO"
     ),
 ):
-    thread = Thread(
-        target=run_exercise_chat_pipeline_worker, args=(dto, variant, event)
-    )
+    if variant == "chat-gpt-wrapper":
+        thread = Thread(target=run_chatgpt_wrapper_pipeline_worker, args=(dto, variant))
+    else:
+        thread = Thread(
+            target=run_exercise_chat_pipeline_worker, args=(dto, variant, event)
+        )
     thread.start()
 
 
@@ -235,6 +268,39 @@ def run_competency_extraction_pipeline(
     thread.start()
 
 
+def run_rewriting_pipeline_worker(dto: RewritingPipelineExecutionDTO, _variant: str):
+    try:
+        callback = RewritingCallback(
+            run_id=dto.execution.settings.authentication_token,
+            base_url=dto.execution.settings.artemis_base_url,
+            initial_stages=dto.execution.initial_stages,
+        )
+        pipeline = RewritingPipeline(callback=callback)
+    except Exception as e:
+        logger.error(f"Error preparing rewriting pipeline: {e}")
+        logger.error(traceback.format_exc())
+        capture_exception(e)
+        return
+
+    try:
+        pipeline(dto=dto)
+    except Exception as e:
+        logger.error(f"Error running rewriting extraction pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+
+
+@router.post(
+    "/rewriting/{variant}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(TokenValidator())],
+)
+def run_rewriting_pipeline(variant: str, dto: RewritingPipelineExecutionDTO):
+    logger.info(f"Rewriting pipeline started with variant: {variant} and dto: {dto}")
+    thread = Thread(target=run_rewriting_pipeline_worker, args=(dto, variant))
+    thread.start()
+
+
 def run_inconsistency_check_pipeline_worker(
     dto: InconsistencyCheckPipelineExecutionDTO, _variant: str
 ):
@@ -247,9 +313,6 @@ def run_inconsistency_check_pipeline_worker(
         pipeline = InconsistencyCheckPipeline(callback=callback)
     except Exception as e:
         logger.error(f"Error preparing inconsistency check pipeline: {e}")
-        logger.error(traceback.format_exc())
-        capture_exception(e)
-        return
 
     try:
         pipeline(dto=dto)
@@ -339,6 +402,22 @@ def get_pipeline(feature: str):
                     id="default",
                     name="Default Variant",
                     description="Default inconsistency check variant.",
+                )
+            ]
+        case "REWRITING":
+            return [
+                FeatureDTO(
+                    id="rewriting",
+                    name="Default Variant",
+                    description="Default rewriting variant.",
+                )
+            ]
+        case "CHAT_GPT_WRAPPER":
+            return [
+                FeatureDTO(
+                    id="chat_gpt_wrapper",
+                    name="Default Variant",
+                    description="Default ChatGPT wrapper variant.",
                 )
             ]
         case _:
