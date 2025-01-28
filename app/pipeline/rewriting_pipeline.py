@@ -13,8 +13,8 @@ from app.domain.rewriting_pipeline_execution_dto import RewritingPipelineExecuti
 from app.llm import CapabilityRequestHandler, RequirementList, CompletionArguments
 from app.pipeline import Pipeline
 from app.pipeline.prompts.rewriting_prompts import (
-    faq_system_prompt,
-    problem_statement_system_prompt,
+    system_prompt_faq,
+    system_prompt_problem_statement,
 )
 from app.web.status.status_update import RewritingCallback
 
@@ -51,8 +51,8 @@ class RewritingPipeline(Pipeline):
             raise ValueError("You need to provide a text to rewrite")
 
         variant_prompts = {
-            "faq": faq_system_prompt,
-            "problem_statement": problem_statement_system_prompt,
+            "faq": system_prompt_faq,
+            "problem_statement": system_prompt_problem_statement,
         }
         print(variant_prompts[self.variant])
         prompt = variant_prompts[self.variant].format(

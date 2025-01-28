@@ -31,7 +31,7 @@ The text that has to be rewritten starts now:
 ###END###\
 """
 
-problem_statement_system_prompt = """\
+system_prompt_problem_statement = """\
 <Instructions>
 You are an excellent tutor with deep expertise in **computer science** and **practical applications**, teaching at the \
 university level. Your goal is to **proofread and refine** the problem statement you are given, focusing on what \

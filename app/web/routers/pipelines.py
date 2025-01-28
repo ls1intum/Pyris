@@ -20,6 +20,7 @@ from app.pipeline.chat.lecture_chat_pipeline import LectureChatPipeline
 from app.pipeline.rewriting_pipeline import RewritingPipeline
 from app.web.status.status_update import (
     ExerciseChatStatusCallback,
+    ChatGPTWrapperStatusCallback,
     CourseChatStatusCallback,
     CompetencyExtractionCallback,
     LectureChatCallback,
@@ -34,6 +35,7 @@ from app.domain.text_exercise_chat_pipeline_execution_dto import (
 )
 from app.pipeline.text_exercise_chat_pipeline import TextExerciseChatPipeline
 from app.web.status.status_update import TextExerciseChatCallback
+from app.pipeline.chat_gpt_wrapper_pipeline import ChatGPTWrapperPipeline
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 logger = logging.getLogger(__name__)
@@ -77,9 +79,12 @@ def run_exercise_chat_pipeline(
         description="Exercise Chat Pipeline Execution DTO"
     ),
 ):
-    thread = Thread(
-        target=run_exercise_chat_pipeline_worker, args=(dto, variant, event)
-    )
+    if variant == "chat-gpt-wrapper":
+        thread = Thread(target=run_chatgpt_wrapper_pipeline_worker, args=(dto, variant))
+    else:
+        thread = Thread(
+            target=run_exercise_chat_pipeline_worker, args=(dto, variant, event)
+        )
     thread.start()
 
 
@@ -273,6 +278,30 @@ def run_rewriting_pipeline(variant: str, dto: RewritingPipelineExecutionDTO):
     thread.start()
 
 
+def run_chatgpt_wrapper_pipeline_worker(
+    dto: ExerciseChatPipelineExecutionDTO, _variant: str
+):
+    try:
+        callback = ChatGPTWrapperStatusCallback(
+            run_id=dto.settings.authentication_token,
+            base_url=dto.settings.artemis_base_url,
+            initial_stages=dto.initial_stages,
+        )
+        pipeline = ChatGPTWrapperPipeline(callback=callback)
+    except Exception as e:
+        logger.error(f"Error preparing ChatGPT wrapper pipeline: {e}")
+        logger.error(traceback.format_exc())
+        capture_exception(e)
+        return
+
+    try:
+        pipeline(dto=dto)
+    except Exception as e:
+        logger.error(f"Error running ChatGPT wrapper pipeline: {e}")
+        logger.error(traceback.format_exc())
+        callback.error("Fatal error.", exception=e)
+
+
 @router.get("/{feature}/variants")
 def get_pipeline(feature: str):
     """
@@ -339,16 +368,23 @@ def get_pipeline(feature: str):
         case "REWRITING":
             return [
                 FeatureDTO(
-                    id="faq",
+                    id="faq_rewriting",
                     name="FAQ Variant",
                     description="FAQ rewriting variant.",
                 ),
                 FeatureDTO(
-                    id="problem_statement",
+                    id="problem_statement_rewriting",
                     name="Problem Statement Variant",
                     description="Problem statement rewriting variant.",
                 ),
             ]
-
+        case "CHAT_GPT_WRAPPER":
+            return [
+                FeatureDTO(
+                    id="chat_gpt_wrapper",
+                    name="Default Variant",
+                    description="Default ChatGPT wrapper variant.",
+                )
+            ]
         case _:
             return Response(status_code=status.HTTP_400_BAD_REQUEST)
