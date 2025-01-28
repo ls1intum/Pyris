@@ -356,7 +356,7 @@ def get_pipeline(feature: str):
                 FeatureDTO(
                     id="default",
                     name="Default Variant",
-                    description="Default lecture chat variant and rewriting variant."
+                    description="Default lecture chat variant and rewriting variant.",
                 )
             ]
         case "REWRITING":
