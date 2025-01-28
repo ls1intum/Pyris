@@ -17,7 +17,7 @@ from openai.lib.azure import AzureOpenAI
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject
-from pydantic import Field, BaseModel
+from pydantic import BaseModel
 
 from app.domain.data.text_message_content_dto import TextMessageContentDTO
 from ...common.message_converters import map_role_to_str, map_str_to_role
