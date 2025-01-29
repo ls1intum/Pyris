@@ -5,6 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 from . import Pipeline
+from .lecture_ingestion_pipeline import batch_update_lock
 from ..domain.data.faq_dto import FaqDTO
 
 from app.domain.ingestion.ingestion_pipeline_execution_dto import (
@@ -21,7 +22,8 @@ from ..llm import (
 )
 from ..web.status.faq_ingestion_status_callback import FaqIngestionStatus
 
-batch_update_lock = threading.Lock()
+# we use the same lock as the lecture ingestion pipeline
+batch_update_lock = batch_update_lock
 
 
 class FaqIngestionPipeline(AbstractIngestion, Pipeline):
