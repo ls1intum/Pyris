@@ -43,7 +43,6 @@ from ...retrieval.faq_retrieval import FaqRetrieval
 from ...retrieval.faq_retrieval_utils import should_allow_faq_tool, format_faqs
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
-from ...vector_database.faq_schema import FaqSchema
 from ...vector_database.lecture_schema import LectureSchema
 from weaviate.collections.classes.filters import Filter
 from ...web.status.status_update import ExerciseChatStatusCallback
