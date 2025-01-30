@@ -43,6 +43,7 @@ from ..prompts.iris_course_chat_prompts_elicit import (
 from ...domain import CourseChatPipelineExecutionDTO
 from app.common.PipelineEnum import PipelineEnum
 from ...retrieval.faq_retrieval import FaqRetrieval
+from ...retrieval.faq_retrieval_utils import should_allow_faq_tool, format_faqs
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.faq_schema import FaqSchema
@@ -328,14 +329,7 @@ class CourseChatPipeline(Pipeline):
                 base_url=dto.settings.artemis_base_url,
             )
 
-            result = ""
-            for faq in self.retrieved_faqs:
-                res = "[FAQ ID: {}, FAQ Question: {}, FAQ Answer: {}]".format(
-                    faq.get(FaqSchema.FAQ_ID.value),
-                    faq.get(FaqSchema.QUESTION_TITLE.value),
-                    faq.get(FaqSchema.QUESTION_ANSWER.value),
-                )
-                result += res
+            result = format_faqs(self.retrieved_faqs)
             return result
 
         if dto.user.id % 3 < 2:
@@ -436,7 +430,7 @@ class CourseChatPipeline(Pipeline):
             if self.should_allow_lecture_tool(dto.course.id):
                 tool_list.append(lecture_content_retrieval)
 
-            if self.should_allow_faq_tool(dto.course.id):
+            if should_allow_faq_tool(self.db, dto.course.id):
                 tool_list.append(faq_content_retrieval)
 
             tools = generate_structured_tools_from_functions(tool_list)
@@ -519,23 +513,6 @@ class CourseChatPipeline(Pipeline):
                 ),
                 limit=1,
                 return_properties=[LectureSchema.COURSE_NAME.value],
-            )
-            return len(result.objects) > 0
-        return False
-
-    def should_allow_faq_tool(self, course_id: int) -> bool:
-        """
-        Checks if there are indexed faqs for the given course
-
-        :param course_id: The course ID
-        :return: True if there are indexed faqs for the course, False otherwise
-        """
-        if course_id:
-            # Fetch the first object that matches the course ID with the language property
-            result = self.db.faqs.query.fetch_objects(
-                filters=Filter.by_property(FaqSchema.COURSE_ID.value).equal(course_id),
-                limit=1,
-                return_properties=[FaqSchema.COURSE_NAME.value],
             )
             return len(result.objects) > 0
         return False
