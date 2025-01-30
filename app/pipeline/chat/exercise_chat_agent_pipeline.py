@@ -40,7 +40,7 @@ from ...llm import CapabilityRequestHandler, RequirementList
 from ...llm import CompletionArguments
 from ...llm.langchain import IrisLangchainChatModel
 from ...retrieval.faq_retrieval import FaqRetrieval
-from ...retrieval.faq_retrieval_utils import should_allow_faq_tool
+from ...retrieval.faq_retrieval_utils import should_allow_faq_tool, format_faqs
 from ...retrieval.lecture_retrieval import LectureRetrieval
 from ...vector_database.database import VectorDatabase
 from ...vector_database.faq_schema import FaqSchema
@@ -412,7 +412,7 @@ class ExerciseChatAgentPipeline(Pipeline):
             """
             self.callback.in_progress("Retrieving faq content ...")
             self.retrieved_faqs = self.faq_retriever(
-                chat_history=history,
+                chat_history=chat_history,
                 student_query=query.contents[0].text_content,
                 result_limit=10,
                 course_name=dto.course.name,
