@@ -377,7 +377,7 @@ class ExerciseChatAgentPipeline(Pipeline):
             Only use this once.
             """
             self.callback.in_progress("Retrieving lecture content ...")
-            self.retrieved_paragraphs = self.lectureRetriever(
+            self.retrieved_paragraphs = self.lecture_retriever(
                 chat_history=chat_history,
                 student_query=query.contents[0].text_content,
                 result_limit=5,
