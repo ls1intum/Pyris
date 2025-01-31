@@ -11,7 +11,7 @@ from app.llm import CapabilityRequestHandler, RequirementList, CompletionArgumen
 from app.llm.langchain.iris_langchain_chat_model import IrisLangchainChatModel
 from app.pipeline import Pipeline
 from app.web.status.status_update import InconsistencyCheckCallback
-from app.pipeline.prompts.inconsistency_check_prompts import solver_prompt, scorer_prompt
+from app.pipeline.prompts.inconsistency_check_prompts import solver_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -51,32 +51,8 @@ class GuessConsistencyIssues(BaseModel):
     )    
 
 
-class ScoredConsistencyIssue(BaseModel):
-    """The scored consistency issue found in the programming exercise."""
-
-    candidate: ConsistencyIssue = Field(
-        description="The candidate consistency issue under review."
-    )
-
-    score_reasoning: str = Field(
-        description="The reasoning behind the score given to the consistency issue. Weighting factors should be explained."
-    )
-
-    score: float = Field(
-        description="The score given to the consistency issue. The score should be between 0.00 and 1.00. The higher the score, the more severe the issue, lower scores are nitpicks."
-    )
-
-class ScoredConsistencyIssues(BaseModel):
-    """Submit multiple scored consistency issues found in the programming exercise."""
-    
-    issues: List[ScoredConsistencyIssue] = Field(
-        description="The list of scored consistency issues found in the programming exercise."
-    )
-
-
 class InconsistencyCheckPipeline(Pipeline):
     solver_llm: IrisLangchainChatModel
-    scorer_llm: IrisLangchainChatModel
     callback: InconsistencyCheckCallback
 
     def __init__(self, callback: Optional[InconsistencyCheckCallback] = None):
@@ -94,18 +70,6 @@ class InconsistencyCheckPipeline(Pipeline):
             completion_args=completion_args,
         ).with_structured_output(GuessConsistencyIssues)
         self.solver = self.solver_prompt | self.solver_llm
-
-        self.scorer_prompt = PromptTemplate.from_template(scorer_prompt)
-        self.scorer_llm = IrisLangchainChatModel(
-            request_handler=CapabilityRequestHandler(
-                requirements=RequirementList(
-                    gpt_version_equivalent=4.5,
-                    context_length=16385,
-                )
-            ),
-            completion_args=completion_args,
-        ).with_structured_output(ScoredConsistencyIssues)
-        self.scorer = self.scorer_prompt | self.scorer_llm
 
         self.callback = callback
         self.tokens = []
@@ -129,6 +93,7 @@ class InconsistencyCheckPipeline(Pipeline):
         consistency_issues: Dict[str, List[ConsistencyIssue]] = {}
 
         file_paths = set(dto.exercise.template_repository.keys()) | set(dto.exercise.solution_repository.keys())
+        
         for file_path in file_paths:
             template_file = dto.exercise.template_repository.get(file_path, "empty file")
             solution_file = dto.exercise.solution_repository.get(file_path, "empty file")
@@ -142,12 +107,26 @@ class InconsistencyCheckPipeline(Pipeline):
                 }
             )
 
-            logger.info(f"Consistency issues found in {file_path}: {response}")
-            # consistency_issues[file_path] = response.issues
+            if response:
+                consistency_issues[file_path] = response.issues
+            else:
+                logger.error(f"Failed to parse response for {file_path}, skipping...")
+        
+        # I'm not fixing this
+        # self._append_tokens(self.solver_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
+        # self._append_tokens(self.scorer_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
 
+        final_result = ''
+        for file_path, issues in consistency_issues.items():
+            if not issues:
+                continue
+            
+            if final_result:
+                final_result += '\n'
+            final_result += f"### File: `{file_path}`\n"
+            for issue in issues:
+                final_result += f"#### {issue.title}\n"
+                final_result += f"**Description**:\n{issue.description}\n"
+                final_result += f"**Suggestion**:\n{issue.suggestion}\n"
 
-        self._append_tokens(self.solver_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
-        self._append_tokens(self.scorer_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
-
-        #TODO
-        self.callback.done(final_result="", tokens=self.tokens)
+        self.callback.done(final_result=final_result, tokens=self.tokens)
