@@ -102,7 +102,7 @@ class InconsistencyCheckPipeline(Pipeline):
                 "consistency_issues": formatted_consistency_issues,
             }
         )
-        
+
         result = summary_response.content.strip()
 
         # Remove ``` from start and end if exists
@@ -111,7 +111,7 @@ class InconsistencyCheckPipeline(Pipeline):
             if result.startswith("markdown"):
                 result = result[8:]
             result = result.strip()
-        
+
         # Remove first heading or heading containing 'Summary of Consistency Issues'
         result = re.sub(r"^#\s.*?\n", "", result)
         result = re.sub(r"^#+.*?Summary of Consistency Issues\s*\n", "", result)
