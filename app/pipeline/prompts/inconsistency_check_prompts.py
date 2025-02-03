@@ -56,7 +56,8 @@ Parts of a programming exercise:
 </ConsistencyIssues>
 
 <Response>
-Respond with a summary of the consistency issues found in the exercise. Make it clear which file path contains the \
-issues. Just provide the easily digestible formatted markdown without other explanations.
+Respond with a summary of the consistency issues found in the exercise, stay specific and clear so the issues can be \
+easily fixed by the teaching assistants. Make it clear which file path contains the issues. Just provide the easily \
+digestible formatted markdown without other explanations.
 </Response>
 """
