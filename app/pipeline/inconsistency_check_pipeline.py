@@ -102,7 +102,7 @@ class InconsistencyCheckPipeline(Pipeline):
                 "consistency_issues": formatted_consistency_issues,
             }
         )
-
+        
         result = summary_response.content.strip()
 
         # Remove ``` from start and end if exists
@@ -112,10 +112,9 @@ class InconsistencyCheckPipeline(Pipeline):
                 result = result[8:]
             result = result.strip()
         
-        # Remove first heading
+        # Remove first heading or heading containing 'Summary of Consistency Issues'
         result = re.sub(r"^#\s.*?\n", "", result)
-
-        logger.info(f"Consistency issues found: {result}")
+        result = re.sub(r"^#+.*?Summary of Consistency Issues\s*\n", "", result)
 
         self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
         self.callback.done(final_result=result, tokens=self.tokens)
