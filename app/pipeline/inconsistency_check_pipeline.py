@@ -75,10 +75,10 @@ class InconsistencyCheckPipeline(Pipeline):
                 "file_path": file_path,
                 "problem_statement": dto.exercise.problem_statement,
                 "template_file": dto.exercise.template_repository.get(
-                    file_path, "empty file"
+                    file_path, "no file found"
                 ),
                 "solution_file": dto.exercise.solution_repository.get(
-                    file_path, "empty file"
+                    file_path, "no file found"
                 ),
             }
             for file_path in file_paths
