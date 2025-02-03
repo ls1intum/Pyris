@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional
 
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableParallel
 from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
 
@@ -61,39 +61,47 @@ class InconsistencyCheckPipeline(Pipeline):
         logger.info("Running inconsistency check pipeline...")
         self.callback.in_progress()
 
+        # First, for each file in the exercise, we will check for consistency issues via the solver pipeline
         consistency_issues: Dict[str, str] = {}
-
         file_paths = set(dto.exercise.template_repository.keys()) | set(dto.exercise.solution_repository.keys())
+        solver_inputs = [
+            {
+                "file_path": file_path,
+                "problem_statement": dto.exercise.problem_statement,
+                "template_file": dto.exercise.template_repository.get(file_path, "empty file"),
+                "solution_file": dto.exercise.solution_repository.get(file_path, "empty file"),
+            }
+            for file_path in file_paths
+        ]
+        file_responses = self.solver.map().invoke(solver_inputs)
+        consistency_issues = {
+            file_path: response.content
+            for file_path, response in zip(file_paths, file_responses)
+        }
         
-        for file_path in file_paths:
-            template_file = dto.exercise.template_repository.get(file_path, "empty file")
-            solution_file = dto.exercise.solution_repository.get(file_path, "empty file")
-
-            response = self.solver.invoke(
-                {
-                    "problem_statement": dto.exercise.problem_statement,
-                    "file_path": file_path,
-                    "template_file": template_file,
-                    "solution_file": solution_file,
-                }
-            )
-
-            consistency_issues[file_path] = response.content
-
+        # Second, we will prettify the consistency issues and provide a summary using the prettify pipeline
         formatted_consistency_issues = '\n'.join([
             f"<PotentialFileIssues filePath=`{file_path}`>\n{issues}\n</PotentialFileIssues>"
             for file_path, issues 
             in consistency_issues.items()
         ])
-        
-        final_response = self.prettify.invoke(
+        summary_response = self.prettify.invoke(
             {
                 "problem_statement": dto.exercise.problem_statement,
                 "consistency_issues": formatted_consistency_issues,
             }
         )
         
-        logger.info(final_response.content)
+        result = summary_response.content.strip()
+        
+        # remove ``` from start and end if exists
+        if result.startswith("```") and result.endswith("```"):
+            result = result[3:-3]
+            if result.startswith("markdown"):
+                result = result[8:]
+            result = result.strip()
+
+        logger.info(result)
 
         self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
-        self.callback.done(final_result=final_response.content, tokens=self.tokens)
+        self.callback.done(final_result=result, tokens=self.tokens)
