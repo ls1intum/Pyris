@@ -1,9 +1,9 @@
 import logging
-from typing import Dict, List, Literal, Optional
+from typing import Dict, Optional
 
+from langchain_core.runnables import Runnable
 from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
-from pydantic import BaseModel, Field
 
 from app.common.PipelineEnum import PipelineEnum
 from app.domain import InconsistencyCheckPipelineExecutionDTO
@@ -11,56 +11,23 @@ from app.llm import CapabilityRequestHandler, RequirementList, CompletionArgumen
 from app.llm.langchain.iris_langchain_chat_model import IrisLangchainChatModel
 from app.pipeline import Pipeline
 from app.web.status.status_update import InconsistencyCheckCallback
-from app.pipeline.prompts.inconsistency_check_prompts import solver_prompt
+from app.pipeline.prompts.inconsistency_check_prompts import solver_prompt, prettify_prompt
 
 logger = logging.getLogger(__name__)
 
 
-IssueLocation = Literal["problem_statement", "template_file", "solution_file", "uncertain"]
-
-
-class ConsistencyIssue(BaseModel):
-    """The consistency issue found in the programming exercise."""
-
-    location: IssueLocation = Field(
-        description="The location of the consistency issue in the programming exercise."
-    )
-    
-    title: str = Field(
-        description="The title of the consistency issue found in the programming exercise."
-    )
-
-    description: str = Field(
-        description="The description of the consistency issue found in the programming exercise."
-    )
-    
-    suggestion: str = Field(
-        description="The suggestion to fix the consistency issue found in the programming exercise."
-    )
-
-
-class GuessConsistencyIssues(BaseModel):
-    """Submit multiple consistency issues found in the programming exercise as guesses."""
-    
-    reasoning: str = Field(
-        description="The reasoning behind the submitted guesses. Explain how you arrived at these consistency issues."
-    )
-    
-    issues: List[ConsistencyIssue] = Field(
-        description="The list of consistency issues found in the programming exercise."
-    )    
-
-
 class InconsistencyCheckPipeline(Pipeline):
-    solver_llm: IrisLangchainChatModel
+    llm: IrisLangchainChatModel
     callback: InconsistencyCheckCallback
+    
+    solver: Runnable
+    prettify: Runnable
 
     def __init__(self, callback: Optional[InconsistencyCheckCallback] = None):
         super().__init__(implementation_id="inconsistency_check_pipeline")
         completion_args = CompletionArguments(temperature=0, max_tokens=2000)
 
-        self.solver_prompt = PromptTemplate.from_template(solver_prompt)
-        self.solver_llm = IrisLangchainChatModel(
+        self.llm = IrisLangchainChatModel(
             request_handler=CapabilityRequestHandler(
                 requirements=RequirementList(
                     gpt_version_equivalent=4.5,
@@ -68,8 +35,12 @@ class InconsistencyCheckPipeline(Pipeline):
                 )
             ),
             completion_args=completion_args,
-        ).with_structured_output(GuessConsistencyIssues)
-        self.solver = self.solver_prompt | self.solver_llm
+        )
+        self.solver_prompt = PromptTemplate.from_template(solver_prompt)
+        self.solver = self.solver_prompt | self.llm
+        
+        self.prettify_prompt = PromptTemplate.from_template(prettify_prompt)
+        self.prettify = self.prettify_prompt | self.llm
 
         self.callback = callback
         self.tokens = []
@@ -90,7 +61,7 @@ class InconsistencyCheckPipeline(Pipeline):
         logger.info("Running inconsistency check pipeline...")
         self.callback.in_progress()
 
-        consistency_issues: Dict[str, List[ConsistencyIssue]] = {}
+        consistency_issues: Dict[str, str] = {}
 
         file_paths = set(dto.exercise.template_repository.keys()) | set(dto.exercise.solution_repository.keys())
         
@@ -98,7 +69,7 @@ class InconsistencyCheckPipeline(Pipeline):
             template_file = dto.exercise.template_repository.get(file_path, "empty file")
             solution_file = dto.exercise.solution_repository.get(file_path, "empty file")
 
-            response: GuessConsistencyIssues = self.solver.invoke(
+            response = self.solver.invoke(
                 {
                     "problem_statement": dto.exercise.problem_statement,
                     "file_path": file_path,
@@ -107,26 +78,22 @@ class InconsistencyCheckPipeline(Pipeline):
                 }
             )
 
-            if response:
-                consistency_issues[file_path] = response.issues
-            else:
-                logger.error(f"Failed to parse response for {file_path}, skipping...")
+            consistency_issues[file_path] = response.content
+
+        formatted_consistency_issues = '\n'.join([
+            f"<PotentialFileIssues filePath=`{file_path}`>\n{issues}\n</PotentialFileIssues>"
+            for file_path, issues 
+            in consistency_issues.items()
+        ])
         
-        # I'm not fixing this
-        # self._append_tokens(self.solver_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
-        # self._append_tokens(self.scorer_llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
+        final_response = self.prettify.invoke(
+            {
+                "problem_statement": dto.exercise.problem_statement,
+                "consistency_issues": formatted_consistency_issues,
+            }
+        )
+        
+        logger.info(final_response.content)
 
-        final_result = ''
-        for file_path, issues in consistency_issues.items():
-            if not issues:
-                continue
-            
-            if final_result:
-                final_result += '\n'
-            final_result += f"### File: `{file_path}`\n"
-            for issue in issues:
-                final_result += f"#### {issue.title}\n"
-                final_result += f"**Description**:\n{issue.description}\n"
-                final_result += f"**Suggestion**:\n{issue.suggestion}\n"
-
-        self.callback.done(final_result=final_result, tokens=self.tokens)
+        self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
+        self.callback.done(final_result=final_response.content, tokens=self.tokens)
