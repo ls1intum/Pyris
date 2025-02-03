@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional
 
-from langchain_core.runnables import Runnable, RunnableParallel
+from langchain_core.runnables import Runnable
 from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
 

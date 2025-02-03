@@ -28,7 +28,7 @@ at a time. You need to compare the problem statement with the template file and 
 
 <Response>
 Respond with any potential consistency issues found in the exercise formatted in markdown. \
-Just provide the easily digestible formatted markdown without other explanations. It is fine to provide no issues if 
+Just provide the easily digestible formatted markdown without other explanations. It is fine to provide no issues if \
 you are confident that the files are consistent.
 </Response>
 """
