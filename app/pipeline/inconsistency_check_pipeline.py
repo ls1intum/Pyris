@@ -1,4 +1,6 @@
 import logging
+import re
+
 from typing import Dict, Optional
 
 from langchain_core.runnables import Runnable
@@ -103,12 +105,17 @@ class InconsistencyCheckPipeline(Pipeline):
 
         result = summary_response.content.strip()
 
-        # remove ``` from start and end if exists
+        # Remove ``` from start and end if exists
         if result.startswith("```") and result.endswith("```"):
             result = result[3:-3]
             if result.startswith("markdown"):
                 result = result[8:]
             result = result.strip()
+        
+        # Remove first heading
+        result = re.sub(r"^#\s.*?\n", "", result)
+
+        logger.info(f"Consistency issues found: {result}")
 
         self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
         self.callback.done(final_result=result, tokens=self.tokens)
