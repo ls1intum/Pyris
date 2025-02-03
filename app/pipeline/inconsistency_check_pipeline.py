@@ -110,7 +110,5 @@ class InconsistencyCheckPipeline(Pipeline):
                 result = result[8:]
             result = result.strip()
 
-        logger.info(result)
-
         self._append_tokens(self.llm.tokens, PipelineEnum.IRIS_INCONSISTENCY_CHECK)
         self.callback.done(final_result=result, tokens=self.tokens)
