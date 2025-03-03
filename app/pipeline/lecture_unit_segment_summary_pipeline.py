@@ -58,7 +58,7 @@ class LectureUnitSegmentSummaryPipeline(Pipeline):
         slide_number_start, slide_number_end = self._get_slide_range()
 
         summaries = []
-        for slide_index in range(slide_number_start, slide_number_end):
+        for slide_index in range(slide_number_start, slide_number_end + 1):
             transcriptions = self._get_transcriptions(slide_index)
             slides = self._get_slides(slide_index)
             summary = self._create_summary(transcriptions, slides)

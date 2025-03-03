@@ -26,18 +26,16 @@ from app.llm import (
 from weaviate.classes.query import Filter
 from app.llm.langchain import IrisLangchainChatModel
 from app.pipeline import Pipeline
-from app.pipeline.faq_ingestion_pipeline import batch_update_lock
+from app.pipeline.lecture_unit_pipeline import LectureUnitPipeline
+from app.vector_database.database import batch_update_lock
 from app.pipeline.prompts.transcription_ingestion_prompts import (
     transcription_summary_prompt,
 )
-from app.service.lecture_unit.lecture_unit_service import LectureUnitService
 from app.vector_database.lecture_transcription_schema import (
     init_lecture_transcription_schema,
     LectureTranscriptionSchema,
 )
 from app.web.status.transcription_ingestion_callback import TranscriptionIngestionStatus
-
-batch_insert_lock = batch_update_lock
 
 CHUNK_SEPARATOR_CHAR = "\31"
 
@@ -59,7 +57,6 @@ class TranscriptionIngestionPipeline(Pipeline):
         self.callback = callback
         self.collection = init_lecture_transcription_schema(client)
         self.llm_embedding = BasicRequestHandler("embedding-small")
-        self.lecture_unit_service = LectureUnitService()
 
         request_handler = CapabilityRequestHandler(
             requirements=RequirementList(
@@ -104,7 +101,8 @@ class TranscriptionIngestionPipeline(Pipeline):
                 base_url="", #TODO: send missing data from Artemis
             )
 
-            self.lecture_unit_service.ingest_lecture_unit(lecture_unit=lecture_unit_dto)
+            LectureUnitPipeline()(lecture_unit_dto)
+
             self.callback.done("Ingested lecture unit summary into vector database", tokens=self.tokens)
 
         except Exception as e:
@@ -125,9 +123,8 @@ class TranscriptionIngestionPipeline(Pipeline):
 
 
     def batch_insert(self, chunks):
-        global batch_insert_lock
-        with batch_insert_lock:
-            with self.collection.batch.rate_limit(requests_per_minute=600) as batch:
+        with batch_update_lock:
+            with self.collection.batch.dynamic() as batch:
                 try:
                     for chunk in chunks:
                         embed_chunk = self.llm_embedding.embed(

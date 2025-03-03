@@ -12,6 +12,7 @@ from unstructured.cleaners.core import clean
 from weaviate import WeaviateClient
 from weaviate.classes.query import Filter
 from . import Pipeline
+from .lecture_unit_pipeline import LectureUnitPipeline
 from ..common.pyris_message import PyrisMessage, IrisMessageRole
 from ..domain.data.image_message_content_dto import ImageMessageContentDTO
 
@@ -23,7 +24,6 @@ from app.domain.ingestion.ingestion_pipeline_execution_dto import (
 from ..domain.data.text_message_content_dto import TextMessageContentDTO
 from app.common.PipelineEnum import PipelineEnum
 from ..llm.langchain import IrisLangchainChatModel
-from ..service.lecture_unit.lecture_unit_service import LectureUnitService
 from ..vector_database.lecture_unit_page_chunk_schema import init_lecture_unit_page_chunk_schema, LectureUnitPageChunkSchema
 from ..ingestion.abstract_ingestion import AbstractIngestion
 from ..llm import (
@@ -153,8 +153,7 @@ class LectureUnitPageIngestionPipeline(AbstractIngestion, Pipeline):
                 base_url=self.dto.settings.artemis_base_url
             )
 
-            lecture_service = LectureUnitService()
-            lecture_service.ingest_lecture_unit(lecture_unit=lecture_unit_dto)
+            LectureUnitPipeline()(lecture_unit=lecture_unit_dto)
 
             self.callback.done("Lecture Unit Summary Ingestion Finished", tokens=self.tokens)
 
