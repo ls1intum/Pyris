@@ -308,7 +308,9 @@ class RewritingCallback(StatusCallback):
         base_url: str,
         initial_stages: List[StageDTO],
     ):
-        url = f"{base_url}/api/iris/public/pyris/pipelines/rewriting/runs/{run_id}/status"
+        url = (
+            f"{base_url}/api/iris/public/pyris/pipelines/rewriting/runs/{run_id}/status"
+        )
         stages = initial_stages or []
         stages.append(
             StageDTO(
