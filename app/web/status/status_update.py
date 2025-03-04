@@ -110,8 +110,8 @@ class StatusCallback(ABC):
         tokens: Optional[List[TokenUsageDTO]] = None,
         next_stage_message: Optional[str] = None,
         start_next_stage: bool = True,
-        inconsistencies : Optional[List[str]] = None,
-        improvement : Optional[str] = None
+        inconsistencies: Optional[List[str]] = None,
+        improvement: Optional[str] = None,
     ):
         """
         Transition the current stage to DONE and update the status.
@@ -317,7 +317,9 @@ class RewritingCallback(StatusCallback):
         base_url: str,
         initial_stages: List[StageDTO],
     ):
-        url = f"{base_url}/api/iris/public/pyris/pipelines/rewriting/runs/{run_id}/status"
+        url = (
+            f"{base_url}/api/iris/public/pyris/pipelines/rewriting/runs/{run_id}/status"
+        )
         stages = initial_stages or []
         stages.append(
             StageDTO(

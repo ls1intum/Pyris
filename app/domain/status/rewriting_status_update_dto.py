@@ -7,5 +7,4 @@ class RewritingStatusUpdateDTO(StatusUpdateDTO):
     result: str = ""
     suggestions: List[str] = []
     inconsistencies: List[str] = []
-    improvement: str= ""
-
+    improvement: str = ""
