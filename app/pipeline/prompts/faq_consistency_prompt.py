@@ -13,7 +13,7 @@ final result is consistent with the given FAQs. Please compare each FAQ with the
 {final_result}
 
 ### Output:
-Generate the following response dictionary: 
+Generate the following response dictionary:
 "type": "consistent" or "inconsistent"
 
 The following four entries to the dictionary are optional and can only be set if inconsistencies are detected:
@@ -29,12 +29,12 @@ and reside within properties dict of each list entry.
 -Localize the message to the language of the ###Final Result.
 -Make sure to always insert two new lines after the last character of this sentences.
 The affected FAQs can only contain the faq_id, faq_question_title, and faq_question_answer of inconsistent FAQs.
-Make sure to not include any additional FAQs, that are consistent with the final_result. 
+Make sure to not include any additional FAQs, that are consistent with the final_result.
 Insert the faq_id, faq_question_title, and faq_question_answer of the inconsistent FAQ in the placeholder.
 
 -"suggestion": This entry is a list of strings, each string represents a suggestion to improve the final result.\n
 - Each suggestion should focus on a different inconsistency.
-- Each suggestions highlights what is the inconsistency and how it can be improved. 
+- Each suggestions highlights what is the inconsistency and how it can be improved.
 - Do not mention the term final result, call it provided text
 - Please ensure that at no time, you have a different amount of suggestions than inconsistencies.\n
 Both should have the same amount of entries.
