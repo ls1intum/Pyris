@@ -138,13 +138,14 @@ class RewritingPipeline(Pipeline):
         result = response.contents[0].text_content
         data = json.loads(result)
 
-        result_dict = {
-            "type": data["type"],
-            "message": data["message"],
-            "faqs": data["faqs"],
-            "suggestion": data["suggestion"],
-            "improved version": data["improved version"],
-        }
+        result_dict = {}
+
+        keys_to_check = ["type", "message", "faqs", "suggestion", "improved version"]
+
+        for key in keys_to_check:
+            if key in data:
+                result_dict[key] = data[key]
+
         logging.info(f"Consistency FAQ consistency check response: {result_dict}")
 
         return result_dict
