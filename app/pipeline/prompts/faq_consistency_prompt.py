@@ -4,13 +4,14 @@ You are an AI assistant responsible for verifying the consistency of information
 You have been provided with a list of FAQs and a final result. Your task is to determine whether the
 final result is consistent with the given FAQs. Please compare each FAQ with the final result separately.
 
-
-
 ### Given FAQs:
 {faqs}
 
 ### Final Result:
 {final_result}
+
+Please ensure, your output is always english. Only translate it to a different language if the final result is \
+in a different language.
 
 ### Output:
 Generate the following response dictionary:
