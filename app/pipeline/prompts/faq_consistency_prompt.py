@@ -10,12 +10,12 @@ final result is consistent with the given FAQs. Please compare each FAQ with the
 ### Final Result:
 {final_result}
 
-Please ensure, your output is always english. Only translate it to a different language if the final result is \
-in a different language.
-
 ### Output:
 Generate the following response dictionary:
 "type": "consistent" or "inconsistent"
+
+Firstly, identify the language of the course. The language of the course is either german or english. You can extract
+the language from the existing FAQs. Your output should be in the same language as the course language.
 
 The following four entries to the dictionary are optional and can only be set if inconsistencies are detected:
 "faqs": This entry should be a list of Strings, each string represents an FAQ.
@@ -27,7 +27,6 @@ and reside within properties dict of each list entry.
 -Do not include any additional FAQs that are consistent with the final_result.
 
 "message": "The provided text was rephrased, however it contains inconsistent information with existing FAQs."
--Localize the message to the language of the ###Final Result.
 -Make sure to always insert two new lines after the last character of this sentences.
 The affected FAQs can only contain the faq_id, faq_question_title, and faq_question_answer of inconsistent FAQs.
 Make sure to not include any additional FAQs, that are consistent with the final_result.
@@ -41,6 +40,8 @@ Insert the faq_id, faq_question_title, and faq_question_answer of the inconsiste
 Both should have the same amount of entries.
 
 -"improved version": This entry should be a string that represents the improved version of the final result.
+
+For each of the fields, make sure that the output is in the same language as the course language. 
 
 
 Do NOT provide any explanations or additional text.
