@@ -136,7 +136,8 @@ class RewritingPipeline(Pipeline):
 
         self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         result = response.contents[0].text_content
-        logging.info(f"Consistency FAQ consistency check response: {result}")
+        logging.info(f"Consistency FAQ consistency check response repr: {repr(result)}")
+        logging.info(f"Consistency FAQ consistency check response : {result}")
         if not result or result.strip() == "":
             result = '{"type": "consistent"}'
 
