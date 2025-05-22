@@ -136,10 +136,13 @@ class RewritingPipeline(Pipeline):
 
         self._append_tokens(response.token_usage, PipelineEnum.IRIS_REWRITING_PIPELINE)
         result = response.contents[0].text_content
-        logging.info(f"Consistency FAQ consistency check response repr: {repr(result)}")
-        logging.info(f"Consistency FAQ consistency check response : {result}")
-        if not result or result.strip() == "":
-            result = '{"type": "consistent"}'
+        logging.info(f"Consistency response: {result}")
+        logging.info(f"Consistency response: {repr(result)}")
+
+        if result.strip().startswith("```json"):
+            result = result.strip().removeprefix("```json").removesuffix("```").strip()
+        elif result.strip().startswith("```"):
+            result = result.strip().removeprefix("```").removesuffix("```").strip()
 
         data = json.loads(result)
 
